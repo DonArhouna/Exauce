@@ -949,55 +949,36 @@ l'arborescence des services ni aux valeurs servant la REH.
   valider au M2 — c'est la recommandation, rester simple, v1 sans service
   in-house).
 
-## 6. Seed et parité (US-011, page 13)
+## 6. Seed idempotent et parité (US-011, page 13, Décisions Q-103, Q-104, Q-105)
 
-Le seed est construit à partir de `Frontend/src/data/content.data.ts`, de
-`Frontend/src/i18n/locales/{fr,en}.json` et de `Frontend/src/lib/routes.ts`.
-Il est **idempotent** : chaque ligne porte un `source_key` (nœuds, pages,
-bureaux, équipe, publications, secteurs, types d'intervention).
+### 6.1 Architecture du Seed : Script CLI dédié (Point 3 validé)
+Le seed est orchestré par un **script Python CLI dédié et idempotent** (`python -m app.cli.seed` ou `scripts/seed.py`), et **non par une migration Alembic** :
+- **Séparation DDL / Contenu** : Les migrations Alembic gèrent exclusivement la structure du schéma (tables, contraintes, index, types). Le peuplement des données relève du script de seed.
+- **Idempotence stricte** : Chaque entité semée est identifiée par son `source_key` unique partiel (`ON CONFLICT (source_key) DO UPDATE`). Le script peut être rejoué à tout moment sans créer de doublons.
+- **Gestion des environnements (`--production` vs `--with-demo`)** :
+  - En dev / staging : `python -m app.cli.seed --with-demo` importe les 3 publications d'exemple marquées « démo » (Q-104).
+  - En production : `python -m app.cli.seed --production` exclut les articles de démonstration pour ne semer que le catalogue officiel.
 
-1. Langues : `fr` (défaut, active), `en` (active).
-2. `content_nodes` : 2 familles → 10 domaines → 20 groupes → 94 prestations,
-   positions conservées 1..N par parent, `source_key` = id frontend
-   (`accompagnement`, `audit-externe`, `application-logicielle`…).
-3. `entity_translations` des nœuds : une ligne par (nœud, `fr`) et une par
-   (nœud, `en`), slugs identiques à ceux du frontend
-   (`fr/services/accompagnement/…` ↔ `en/services/support/…`) ; les 4 slugs
-   de prestations dupliqués sont contextualisés par le groupe parent
-   (doc 16 §7.2). Les 94 prestations reçoivent un `id` et un slug — ce que le
-   frontend actuel n'a pas.
-4. `pages` : 10 lignes — `home`, `services`, `interventions`, `sectors`,
-   `publications`, `about`, `contact`, `legal_notice`,
-   `client_area`, `not_found` — avec `template`,
-   `is_in_nav`/`nav_position` (7 entrées de menu) et `is_system` pour
-   `home`, `not_found` et `legal_notice`. Statut `draft` +
-   `banners_pending` pour la page légale (H-007).
-5. `section_types` : les 21 codes du catalogue (doc 16 §3.4), avec leurs
-   schémas.
-6. `page_sections` : 29 blocs — accueil 10 (hero, trust_bar, about_preview,
-   domains_grid, audit_grid, interventions_grid, sectors_grid, stats,
-   publications_grid, cta), services 5, interventions 2, à propos 5,
-   publications 1, contact 2 (`contact_form`, `offices_grid`), espace client 1, page légale
-   3 (mentions, confidentialité, cookies). Chaque bloc porte un `source_key`
-   (`hero`, `mentions`…) et ses traductions FR/EN (`entity_type='page_section'`).
-7. `categories` : 6 (`governance`, `audit`, `finance`, `hr`, `it`, `legal`) ;
-   `publications` : les 3 « Exemple » (`source_key='pub-1..3'`, statut
-   `draft`).
-8. `intervention_types` : `recurrentes` / `ponctuelles` + traductions
-   (dont les phrases signature `home.signature.*`).
-9. `sectors` : 3 secteurs + 9 sous-catégories (`approved=false` tant que les
-   descriptifs de `propositions-secteurs.md` ne sont pas validés).
-10. `offices` : le bureau siège `hq` (`is_headquarters=true`), alimenté par
-    `ORGANIZATION` (e-mail, tél fixe +221 33 814 51 24, tél mobile
-    +221 77 099 31 83, Dakar) + traductions FR/EN.
-11. `team_members` : le fondateur `fondateur` (`is_founder=true`), alimenté
-    par `home.founder` / `home.founderRole` ; biographie vide (à rédiger).
-12. `site_settings` : `identity` (nom légal, nom commercial, tagline),
-    `contact` (e-mail générique, réseaux), `ui_copy` (5 CTA partagés),
-    `cookies` (bandeau + 3 boutons + texte de personnalisation),
-    `features` (espace client, recherche, bandeau cookies), `seo`
-    (image OG par défaut = logo, robots, JSON-LD), `retention`.
-13. `redirects` : vide au seed (aucune URL historique).
+### 6.2 Données semées
+1. **Langues** : `fr` (défaut, active), `en` (active).
+2. **`content_nodes`** : 2 familles → 10 domaines → 20 groupes → 94 prestations, positions conservées 1..N par parent, `source_key` = id frontend.
+3. **`entity_translations` des nœuds** : une ligne par (nœud, `fr`) et une par (nœud, `en`), slugs identiques à ceux du frontend (`fr/services/accompagnement/…` ↔ `en/services/support/…`).
+4. **`pages`** : **10 lignes** — `home`, `services`, `interventions`, `sectors`, `publications`, `about`, `contact`, `legal_notice`, `client_area`, `not_found` — dont 7 en navigation (`is_in_nav=true`). Statut `draft` + `banners_pending` pour la page légale.
+5. **`section_types`** : les 21 codes du catalogue (doc 16 §3.4).
+6. **`page_sections`** : **29 blocs** — accueil 10, services 5, interventions 2, à propos 5, publications 1, contact 2 (`contact_form`, `offices_grid`), espace client 1, page légale 3 (`mentions`, `privacy`, `cookies`).
+7. **`categories`** : 6 (`governance`, `audit`, `finance`, `hr`, `it`, `legal`).
+8. **`publications`** : les 3 « Exemple » (`source_key='pub-1..3'`, statut `draft`, `is_demo=true`), importées uniquement avec `--with-demo` (exclues en `--production`, Q-104).
+9. **`intervention_types`** : `recurrentes` / `ponctuelles` + traductions (dont les phrases signature `home.signature.*`).
+10. **`sectors`** : 3 secteurs + 9 sous-catégories (`approved=false` tant que les descriptifs ne sont pas validés).
+11. **`offices`** : le bureau siège `hq` (`is_headquarters=true`), alimenté par `ORGANIZATION` (+221 33 814 51 24, +221 77 099 31 83, Dakar).
+12. **`team_members`** : le fondateur `fondateur` (`is_founder=true`).
+13. **`users` (Fondateur - Q-105)** : Création du compte fondateur administrateur sans mot de passe par défaut (`password_hash=NULL`, `must_reset_password=true` ; activation par invitation sécurisée à la première connexion).
+14. **`site_settings`** : groupes `identity`, `contact`, `ui_copy`, `cookies`, `features`, `seo`, `retention`.
+15. **`redirects` (Redirections initiales - Q-103/A1)** : 4 redirections 301 semées pour absorber l'ancienne vue Localisations :
+    - `/fr/localisations` $\rightarrow$ `/fr/contact#implantations`
+    - `/en/locations` $\rightarrow$ `/en/contact#implantations`
+    - `/fr/locations` $\rightarrow$ `/fr/contact#implantations`
+    - `/en/localisations` $\rightarrow$ `/en/contact#implantations`
 
 **Test de parité (doit s'exécuter en CI)** :
 
@@ -1008,18 +989,18 @@ bureaux, équipe, publications, secteurs, types d'intervention).
 | `COUNT(... 'group')` | 20 |
 | `COUNT(... 'service')` | 94 |
 | slugs FR/EN des nœuds vs `PAGE_SLUGS` + slugs du frontend | 100 % identiques |
-| slugs de prestations uniques par langue | 94 / 94 (aucun doublon) |
-| `pages` / dont `is_in_nav` | 11 / 7 |
+| `pages` / dont `is_in_nav` | **10 / 7** |
 | `page_sections` de la page légale (`legal_document`) | 3 |
-| `section_types` / `page_sections` | 21 / 30 |
+| `section_types` / `page_sections` | 21 / **29** |
 | `page_sections` de l'accueil | 10 |
 | secteurs / sous-catégories | 3 / 9 |
-| `categories` / publications « Exemple » importées | 6 / 3 (draft) |
+| `categories` / publications importées (mode dev) | 6 / 3 (`is_demo=true`) |
 | `offices` / dont siège | 1 / 1 |
 | `team_members` / dont fondateur | 1 / 1 |
+| compte fondateur `users` sans mot de passe par défaut (Q-105) | 1 (`must_reset_password=true`) |
 | clés i18n **éditoriales** (doc 15) couvertes par une cible en base | 125 / 125 |
-| clés i18n restantes après purge des clés mortes | 174 (FR = EN) |
-| `redirects` au seed | 0 |
+| clés i18n restantes après purge des clés mortes | 175 (FR = EN) |
+| `redirects` au seed (anciennes URLs Localisations - Q-103) | **4** |
 
 ## 7. DDL illustratif (extrait, non exécuté — aucun code applicatif)
 

@@ -267,20 +267,17 @@ Fonctions à ajouter (mêmes signatures que les sélecteurs actuels) :
 `getSitemap()`. Les états chargement/erreur existent déjà dans
 `PublicationsPage` ; ils doivent être généralisés.
 
-## 4. Seed (renvoi à 06 §6)
+## 4. Seed (renvoi à 06 §6, Point 3 validé)
 
-Le seed est **un outil one-shot idempotent**, pas une saisie manuelle :
+Le seed est exécuté par un **script Python CLI dédié et idempotent** (`python -m app.cli.seed` / `scripts/seed.py`) et **non par une migration Alembic** :
 
-- source : un export JSON figé de `content.data.ts` + `fr.json`/`en.json`
-  (éviter un parsing TypeScript au déploiement) ;
-clé de rapprochement : `source_key` sur les nœuds, pages, blocs de page,
-bureaux, équipe, publications, secteurs, types d'intervention ;
-- transaction unique : nœuds + traductions + pages + sections + réglages +
-  publications + bureaux + équipe ; échec = rollback complet ;
-- statuts : contenus déjà publics = `published` ; légaux = `draft` +
-  `banners_pending` ; publications « Exemple » = `draft` (Q-104) ;
-- `redirects` : vide au seed, car les slugs du seed sont **identiques** à
-  ceux du frontend (les alias d'URL existants sont traités en Q-103).
+- **Source** : un export JSON figé de `content.data.ts` + `fr.json`/`en.json` (évite tout parsing TypeScript au déploiement) ;
+- **Clé de rapprochement** : `source_key` unique partiel sur les nœuds, pages, blocs de page, bureaux, équipe, publications, secteurs, types d'intervention (`ON CONFLICT (source_key) DO UPDATE`) ;
+- **Transaction unique** : nœuds + traductions + pages + sections + réglages + bureaux + équipe + redirections ; échec = rollback complet ;
+- **Statuts** : contenus déjà publics = `published` ; légaux = `draft` + `banners_pending` ;
+- **Publications « Exemple » (Q-104)** : marquées `is_demo=true`, importées uniquement avec `--with-demo` en dev/staging et exclues en production (`--production`) ;
+- **Compte Fondateur (Q-105)** : créé sans mot de passe initial (`must_reset_password=true`) avec invitation sécurisée ;
+- **`redirects` (Q-103)** : contient dès le seed les 4 redirections 301 historiques de `/localisations` vers `/contact#implantations`.
 
 Les volumes attendus (test de parité 06 §6) : 2 / 10 / 20 / 94 nœuds,
 **10 pages** (7 dans le menu), 21 types de sections, **29 blocs**, 6
