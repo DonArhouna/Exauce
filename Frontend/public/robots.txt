@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /fr/espace-client
+Disallow: /en/customer-area
+
+Sitemap: https://www.exauceac.com/sitemap.xml

@@ -1,0 +1,32 @@
+# Dépendances
+node_modules/
+
+# Builds générés
+Frontend/dist/
+Analyse/modelisation/site/
+*.tsbuildinfo
+
+# Variables d'environnement (garder .env.example)
+.env
+.env.local
+.env.*.local
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Tests / couverture
+coverage/
+.vitest/
+
+# Logs et fichiers temporaires
+*.log
+tmp/
+
+# OS / éditeurs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

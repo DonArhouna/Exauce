@@ -1,0 +1,52 @@
+@import './fonts.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design tokens (variables CSS) ─────────────────────────────── */
+:root {
+  --color-turquoise: 78 185 174; /* #4EB9AE */
+  --color-turquoise-deep: 18 159 164; /* #129FA4 */
+  --color-ink: 12 15 17; /* #0C0F11 */
+  --color-abyss: 15 47 51; /* #0F2F33 */
+  --color-ivory: 247 249 248; /* #F7F9F8 */
+  --color-champagne: 201 169 106; /* #C9A96A */
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-ivory text-ink font-sans antialiased;
+  }
+  ::selection {
+    @apply bg-turquoise-500/30;
+  }
+  /* Focus visible accessible sur tout */
+  :focus-visible {
+    @apply outline-none ring-2 ring-turquoise-500 ring-offset-2 ring-offset-white rounded-sm;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Filet signature « traits de vitesse » en fin de titres */
+  .speed-underline {
+    background-image: repeating-linear-gradient(
+      -12deg,
+      transparent 0 6px,
+      theme('colors.turquoise.500') 6px 12px
+    );
+  }
+}

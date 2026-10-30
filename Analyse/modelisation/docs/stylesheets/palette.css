@@ -1,0 +1,27 @@
+:root {
+  /* Charte EXAUCE : turquoise #4EB9AE · encre #0C0F11 · abysse #0F2F33 */
+  [data-md-color-scheme="default"] {
+    --md-primary-fg-color: #0F2F33;      /* abysse : bandeaux, en-tête */
+    --md-primary-bg-color: #F7F9F8;      /* ivoire */
+    --md-accent-fg-color: #4EB9AE;       /* turquoise */
+    --md-accent-fg-color--transparent: rgba(78, 185, 174, 0.12);
+    --md-typeset-a-color: #129FA4;       /* turquoise profond (contraste liens sur clair) */
+    --md-default-bg-color: #F7F9F8;
+  }
+  [data-md-color-scheme="slate"] {
+    --md-primary-fg-color: #0C0F11;      /* encre */
+    --md-accent-fg-color: #4EB9AE;
+    --md-typeset-a-color: #6FD4CC;       /* turquoise éclairci pour le contraste sombre */
+    --md-default-bg-color: #0C0F11;
+  }
+}
+
+/* Champs personnalisés déclarés pour Material (primary: custom / accent: custom) */
+[data-md-color-primary="custom"] {
+  --md-primary-fg-color: var(--md-primary-fg-color);
+}
+
+.md-typeset .admonition,
+.md-typeset details {
+  border-radius: 0.5rem;
+}

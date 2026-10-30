@@ -1,0 +1,112 @@
+site_name: EXAUCE — Modélisation Backend & Back-office
+site_description: >-
+  Analyse et modélisation fonctionnelle et technique du Backend (FastAPI + PostgreSQL)
+  et du Back-office d'EXAUCE Audit & Conseils SAS. Référence unique avant écriture du code.
+site_url: ""
+repo_url: ""
+
+theme:
+  name: material
+  language: fr
+  logo: assets/logo-exauce.png
+  favicon: assets/favicon.png
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.instant
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.tabs.link
+    - toc.follow
+  palette:
+    # Mode clair — fond ivoire, accents turquoise
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Passer en mode sombre
+    # Mode sombre — fond abysse
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Passer en mode clair
+
+extra_css:
+  - stylesheets/palette.css
+
+plugins:
+  - search
+  - glightbox
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: §
+  - pymdownx.arithmatex
+  - pymdownx.betterem
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+nav:
+  - Accueil: index.md
+  - "00 · Introduction":
+      - 00-introduction.md
+  - "01 · Cadrage":
+      - 01-cadrage.md
+  - "02 · Exigences":
+      - 02-exigences.md
+  - "03 · Cas d'usage et user stories":
+      - 03-cas-usage.md
+  - "04 · Scénarios":
+      - 04-scenarios.md
+  - "05 · Modélisation du domaine":
+      - 05-domaine.md
+  - "06 · Modélisation des données":
+      - 06-donnees.md
+  - "07 · Multi-langue":
+      - 07-multi-langue.md
+  - "08 · API":
+      - 08-api.md
+      - "Contrat OpenAPI (machine-lisible)": openapi.yaml
+  - "09 · Sécurité et conformité":
+      - 09-securite.md
+  - "10 · Back-office":
+      - 10-back-office.md
+  - "11 · Architecture et déploiement":
+      - 11-architecture.md
+  - "12 · Qualité et tests":
+      - 12-qualite.md
+  - "13 · Migration du frontend":
+      - 13-migration-frontend.md
+  - "14 · Décisions, traçabilité, feuille de route":
+      - 14-adr-roadmap.md

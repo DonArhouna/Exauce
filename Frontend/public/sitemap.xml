@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sitemap — généré depuis la table de slugs centrale (scripts/generate-sitemap.mjs).
+  TODO(backend) : régénérer avec les publications réelles.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://www.exauceac.com/fr</loc>
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/services</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/services" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/services" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/interventions</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/interventions" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/interventions" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/secteurs</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/secteurs" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/sectors" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/publications</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/publications" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/publications" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/a-propos</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/a-propos" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/about-us" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/localisations</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/localisations" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/locations" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/mentions-legales</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/mentions-legales" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/legal-notice" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/espace-client</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/espace-client" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/customer-area" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/contact</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/contact" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/contact" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/services/accompagnement</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/services/accompagnement" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/services/support" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/services/accompagnement/gouvernance</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/services/accompagnement/gouvernance" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/services/support/governance" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/services/accompagnement/organisation-strategie</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/services/accompagnement/organisation-strategie" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/services/support/organization-strategy" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/services/accompagnement/audit-controle-interne</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/services/accompagnement/audit-controle-interne" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/services/support/audit-internal-control" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/services/accompagnement/systeme-information</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/services/accompagnement/systeme-information" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/services/support/information-system" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/services/accompagnement/gestion-financiere</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/services/accompagnement/gestion-financiere" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/services/support/financial-management" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/services/accompagnement/juridique-fiscale</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/services/accompagnement/juridique-fiscale" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/services/support/legal-tax" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/services/accompagnement/gestion-ressources-humaines</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/services/accompagnement/gestion-ressources-humaines" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/services/support/human-resources-management" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/services/audit-externe</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/services/audit-externe" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/services/external-audit" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/services/audit-externe/audit-legal</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/services/audit-externe/audit-legal" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/services/external-audit/legal-audit" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/services/audit-externe/audit-contractuel</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/services/audit-externe/audit-contractuel" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/services/external-audit/contractual-audit" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/services/audit-externe/examen-limite</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/services/audit-externe/examen-limite" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/services/external-audit/limited-review" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/interventions/recurrentes</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/interventions/recurrentes" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/interventions/recurring" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/interventions/ponctuelles</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/interventions/ponctuelles" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/interventions/one-off" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/secteurs/public</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/secteurs/public" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/sectors/public" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/secteurs/prive</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/secteurs/prive" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/sectors/private" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/secteurs/non-gouvernemental</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/secteurs/non-gouvernemental" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/sectors/non-governmental" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/publications/exemple-gouvernance-structure-des-assemblees</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/publications/exemple-gouvernance-structure-des-assemblees" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/publications/sample-governance-shareholders-meetings" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/publications/exemple-cartographie-des-risques</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/publications/exemple-cartographie-des-risques" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/publications/sample-risk-mapping" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/publications/exemple-reporting-financier</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/publications/exemple-reporting-financier" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/publications/sample-financial-reporting" />
+  </url>
+</urlset>

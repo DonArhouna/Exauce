@@ -1,0 +1,5 @@
+mkdocs==1.6.1
+mkdocs-material==9.7.6
+mkdocs-glightbox==0.5.3
+# ⚠️ Épinglé : MkDocs 2.0 (annoncé) est incompatible avec Material (plugin system supprimé).
+mkdocs<2

@@ -1,0 +1,533 @@
+openapi: 3.1.0
+info:
+  title: EXAUCE Backend — Contrat API v1
+  version: 1.0.0-M3
+  description: >-
+    Contrat de référence pour le Backend (FastAPI + PostgreSQL) d'EXAUCE
+    Audit & Conseils SAS. Trois surfaces : public, espace client, back-office.
+    Chaque réponse de contenu est mono-langue avec repli explicite (is_fallback).
+  contact:
+    name: Projet EXAUCE
+servers:
+  - url: /api/v1
+    description: Serveur unique (Docker Compose)
+tags:
+  - name: public-content
+  - name: public-search
+  - name: public-contact
+  - name: client
+  - name: admin
+paths:
+  /services-tree:
+    get:
+      operationId: getServicesTree
+      tags: [public-content]
+      summary: Arbre complet des services (4 niveaux) dans la langue demandée
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/ifNoneMatch'
+      responses:
+        '200':
+          description: Arbre publié (ou repli explicite)
+          headers:
+            ETag:
+              schema: {type: string}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ServicesTree'}
+        '304': {description: 'Non modifié (ETag)'}
+        '404': {$ref: '#/components/responses/Eproblem'}
+  /domains/{slug}:
+    get:
+      operationId: getDomain
+      tags: [public-content]
+      summary: Détail d'un domaine avec groupes et prestations
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: {type: string, pattern: '^[a-z0-9-]+$'}
+        - $ref: '#/components/parameters/lang'
+      responses:
+        '200':
+          description: Domaine publié
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DomainDetail'}
+        '404': {$ref: '#/components/responses/Eproblem'}
+  /publications:
+    get:
+      operationId: listPublications
+      tags: [public-content]
+      summary: Publications publiées (paginées au curseur)
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - name: cursor
+          in: query
+          schema: {type: string}
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 100, default: 10}
+        - name: category
+          in: query
+          schema: {type: string}
+      responses:
+        '200':
+          description: Liste publiée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: {$ref: '#/components/schemas/PublicationSummary'}
+                  next_cursor: {type: string, nullable: true}
+  /publications/{slug}:
+    get:
+      operationId: getPublication
+      tags: [public-content]
+      summary: Détail d'une publication publiée
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: {type: string, pattern: '^[a-z0-9-]+$'}
+        - $ref: '#/components/parameters/lang'
+      responses:
+        '200':
+          description: Publication publiée
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PublicationDetail'}
+        '404': {$ref: '#/components/responses/Eproblem'}
+  /pages/{key}:
+    get:
+      operationId: getPage
+      tags: [public-content]
+      summary: Page éditoriale (about, contact, légaux avec bandeau)
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema: {type: string}
+        - $ref: '#/components/parameters/lang'
+      responses:
+        '200':
+          description: Page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Page'}
+        '404': {$ref: '#/components/responses/Eproblem'}
+  /settings/public:
+    get:
+      operationId: getPublicSettings
+      tags: [public-content]
+      summary: Coordonnées et SEO publics (modifiables au back-office)
+      responses:
+        '200':
+          description: Paramètres publics
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PublicSettings'}
+  /languages/active:
+    get:
+      operationId: listActiveLanguages
+      tags: [public-content]
+      summary: Langues actives (sélecteur de langue du frontend)
+      responses:
+        '200':
+          description: Langues actives
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Language'}
+  /search:
+    get:
+      operationId: search
+      tags: [public-search]
+      summary: Recherche plein texte, indexée par langue
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: {type: string, minLength: 2, maxLength: 120}
+        - $ref: '#/components/parameters/lang'
+      responses:
+        '200':
+          description: Résultats (éventuellement vides, jamais 5xx)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items: {$ref: '#/components/schemas/SearchHit'}
+                  message: {type: string}
+  /contact:
+    post:
+      operationId: submitContact
+      tags: [public-contact]
+      summary: Soumission du formulaire de contact (idempotent)
+      parameters:
+        - $ref: '#/components/parameters/idempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ContactRequest'}
+            example:
+              name: Awa Diop
+              email: awa@example.com
+              subject: Demande d'audit
+              message: Bonjour…
+              lang: fr
+              honeypot: ''
+              elapsed_ms: 8400
+      responses:
+        '202':
+          description: Lead enregistré
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: {type: string, format: uuid}
+                  status: {type: string, enum: [new]}
+        '409': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
+        '429': {$ref: '#/components/responses/Eproblem'}
+  /client/auth/activate:
+    post:
+      operationId: activateClientAccount
+      tags: [client]
+      summary: Activation du compte via le lien d'invitation (v2)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token: {type: string}
+                password: {type: string, format: password, minLength: 14}
+                mfa_activate: {type: boolean, default: false}
+      responses:
+        '200': {description: 'Compte activé, session créée'}
+        '410': {$ref: '#/components/responses/Eproblem'}
+  /client/auth/login:
+    post:
+      operationId: clientLogin
+      tags: [client]
+      summary: Connexion espace client (MFA en deux étapes si activé)
+      responses:
+        '200': {description: 'Session créée, ou mfa_required'}
+        '401': {$ref: '#/components/responses/Eproblem'}
+  /client/documents:
+    get:
+      operationId: listClientDocuments
+      tags: [client]
+      summary: Documents de mon compte (contrôle d'appartenance strict)
+      responses:
+        '200':
+          description: Liste
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/ClientDocument'}
+        '401': {$ref: '#/components/responses/Eproblem'}
+  /client/documents/{id}/download:
+    get:
+      operationId: downloadClientDocument
+      tags: [client]
+      summary: Téléchargement (URL courte signée, anti-IDOR, audit)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Flux du fichier
+          content:
+            application/pdf: {schema: {type: string, format: binary}}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '404': {$ref: '#/components/responses/Eproblem'}
+  /admin/auth/login:
+    post:
+      operationId: adminLogin
+      tags: [admin]
+      summary: Connexion back-office (2 étapes si MFA)
+      responses:
+        '200': {description: 'Session ou mfa_required'}
+        '401': {$ref: '#/components/responses/Eproblem'}
+  /admin/content/tree:
+    get:
+      operationId: adminGetTree
+      tags: [admin]
+      summary: Arbre des services (toutes langues, y compris drafts)
+      parameters:
+        - $ref: '#/components/parameters/allLangs'
+      responses:
+        '200':
+          description: Arbre complet
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ServicesTree'}
+    post:
+      operationId: adminCreateNode
+      tags: [admin]
+      summary: Création d'un nœud (famille/domaine/groupe/prestation)
+      x-permission: [tree, create, default]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/NodeUpsert'}
+      responses:
+        '201': {description: 'Nœud créé'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+  /admin/content/{type}/{id}/publish:
+    post:
+      operationId: adminPublishContent
+      tags: [admin]
+      summary: Publication (statut approuvé requis ; invalide cache + sitemap)
+      x-permission: [content, publish, default]
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema: {type: string, enum: [node, page, publication]}
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200': {description: 'Publié'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+  /admin/content/{type}/{id}/translation/{lang}:
+    put:
+      operationId: adminPutTranslation
+      tags: [admin]
+      summary: Écriture d'une traduction (permission par langue)
+      x-permission: [content, edit, lang]
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema: {type: string, enum: [node, page, publication, category, media, setting, sector, interventiontype]}
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - name: lang
+          in: path
+          required: true
+          schema: {type: string, minLength: 2, maxLength: 10}
+      responses:
+        '200': {description: 'Traduction enregistrée'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+  /admin/leads:
+    get:
+      operationId: adminListLeads
+      tags: [admin]
+      summary: Liste paginée des leads
+      x-permission: [leads, view, default]
+      responses:
+        '200': {description: 'Liste'}
+  /admin/audit:
+    get:
+      operationId: adminAuditLog
+      tags: [admin]
+      summary: Journal d'audit (lecture ; append-only côté service)
+      x-permission: [audit, view, default]
+      responses:
+        '200': {description: 'Entrées audit'}
+components:
+  parameters:
+    lang:
+      name: lang
+      in: query
+      required: false
+      description: Code BCP-47 ; sinon Accept-Language ; sinon langue par défaut
+      schema: {type: string}
+    allLangs:
+      name: all_langs
+      in: query
+      schema: {type: boolean, default: false}
+    ifNoneMatch:
+      name: If-None-Match
+      in: header
+      schema: {type: string}
+    idempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Clé d'idempotence (24 h), rejouée sans doublon
+      schema: {type: string, format: uuid}
+  responses:
+    Eproblem:
+      description: Erreur standard RFC 9457
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type: {type: string}
+        title: {type: string}
+        status: {type: integer}
+        code: {type: string, description: Code stable (catalogue page 08)}
+        detail: {type: string}
+        correlation_id: {type: string}
+    Localized:
+      type: object
+      description: Champ traduit avec repli explicite (ADR-001)
+      properties:
+        value: {type: string}
+        is_fallback: {type: boolean}
+    SearchHit:
+      type: object
+      properties:
+        entity_type: {type: string}
+        entity_id: {type: string, format: uuid}
+        title: {type: string}
+        slug: {type: string}
+        href: {type: string}
+        rank: {type: number}
+        is_fallback: {type: boolean}
+    Language:
+      type: object
+      properties:
+        code: {type: string, maxLength: 10}
+        label: {type: string}
+        direction: {type: string, enum: [ltr, rtl]}
+        is_default: {type: boolean}
+    ServicesTree:
+      type: object
+      properties:
+        lang: {type: string}
+        default_lang: {type: string}
+        alternate:
+          type: object
+          additionalProperties: {type: string}
+        fallback:
+          type: object
+          nullable: true
+          description: "Cible de repli si la langue manque (H-009) : {lang, href}"
+        families:
+          type: array
+          items: {$ref: '#/components/schemas/Family'}
+    Family:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        slug: {type: string}
+        title: {type: string}
+        is_fallback: {type: boolean}
+        domains:
+          type: array
+          items: {$ref: '#/components/schemas/Domain'}
+    Domain:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        slug: {type: string}
+        title: {type: string}
+        is_fallback: {type: boolean}
+        groups:
+          type: array
+          items: {$ref: '#/components/schemas/Group'}
+    Group:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        slug: {type: string}
+        title: {type: string}
+        is_fallback: {type: boolean}
+        services:
+          type: array
+          items: {type: string}
+    DomainDetail:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        slug: {type: string}
+        title: {type: string}
+        intro: {$ref: '#/components/schemas/Localized'}
+        prev: {type: string, nullable: true}
+        next: {type: string, nullable: true}
+        groups:
+          type: array
+          items: {$ref: '#/components/schemas/Group'}
+    PublicationSummary:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        slug: {type: string}
+        title: {type: string}
+        published_at: {type: string, format: date-time}
+        is_fallback: {type: boolean}
+    PublicationDetail:
+      allOf:
+        - $ref: '#/components/schemas/PublicationSummary'
+        - type: object
+          properties:
+            intro: {$ref: '#/components/schemas/Localized'}
+            body: {$ref: '#/components/schemas/Localized'}
+            cover: {type: string, nullable: true}
+    Page:
+      type: object
+      properties:
+        key: {type: string}
+        title: {$ref: '#/components/schemas/Localized'}
+        body: {$ref: '#/components/schemas/Localized'}
+        banner_pending: {type: boolean, description: Bandeau "à compléter par le cabinet" (H-007)}
+    PublicSettings:
+      type: object
+      description: Coordonnées éditables au back-office (EF-106)
+      properties:
+        name: {type: string}
+        email: {type: string, format: email}
+        phone_fixed: {type: string}
+        phone_mobile: {type: string}
+        city: {type: string}
+        address: {type: string, nullable: true}
+        socials:
+          type: object
+          additionalProperties: {type: string}
+    ContactRequest:
+      type: object
+      required: [name, email, subject, message]
+      properties:
+        name: {type: string, maxLength: 120}
+        email: {type: string, format: email}
+        phone: {type: string, nullable: true}
+        subject: {type: string, maxLength: 200}
+        message: {type: string, maxLength: 5000}
+        lang: {type: string}
+        honeypot: {type: string, description: Doit rester vide (chasse au bot)}
+        elapsed_ms: {type: integer, description: Délai de rédaction (anti-bot)}
+    ClientDocument:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        original_name: {type: string}
+        mime: {type: string}
+        size_bytes: {type: integer}
+        created_at: {type: string, format: date-time}
+    NodeUpsert:
+      type: object
+      required: [node_type]
+      properties:
+        node_type: {type: string, enum: [family, domain, group, service]}
+        parent_id: {type: string, format: uuid, nullable: true}
+        position: {type: integer}
