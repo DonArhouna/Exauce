@@ -1,41 +1,33 @@
-# 18 · Synthèse des questions ouvertes et décisions attendues
+# 18 · Synthèse des décisions validées (Prêt pour le Backend)
 
-> 🟡 **Statut : M6 — à faire valider.**
-> Ce document récapitule de manière exhaustive l'ensemble des arbitrages de conception
-> et de cadrage technique qui requièrent votre validation formelle avant d'engager
-> l'implémentation du Backend et du Back-office.
-
----
-
-## 1. Questions ouvertes d'architecture et de routes (Série Q-100)
-
-| ID | Sujet | Constat actuel | Options en arbitrage | Recommandation technique |
-|---|---|---|---|---|
-| **Q-101** | **URL d'une prestation** | Les 94 prestations sont aujourd'hui affichées sur la page du domaine parent sous forme de liste. Elles ne possèdent pas d'URL propre. | **S1 (Ancre stable)** : `.../{domaine}#{groupe}/{prestation}`. Rapide, pas de nouveau gabarit, mais la redirection 301 HTTP côté serveur est impossible car le fragment `#` n'est pas transmis au serveur.<br><br>**S2 (Page dédiée)** : `.../{domaine}/{groupe}/{prestation}`. URL canonique, indexation SEO propre, redirection 301 automatique lors d'une modification de slug, mais nécessite un gabarit d'affichage dédié pour 94 prestations. | **Option S2** recommandée si l'objectif de redirection automatique et de référencement précis par prestation est prioritaire ; sinon **Option S1** pour conserver la parité stricte avec l'ergonomie actuelle. |
-| **Q-102** | **Pages légales (URLs)** | Le frontend actuel sert **une seule URL** (`/mentions-legales` ou `/legal-notice`) regroupant les mentions, la politique de confidentialité et la gestion des cookies en 3 blocs. | **L1 (1 page + 3 sections)** : Conserve l'URL unique actuelle. Conforme à la maquette initiale.<br><br>**L2 (3 pages distinctes)** : `/mentions-legales`, `/confidentialite`, `/cookies`. Permet des liens directs depuis le bandeau de consentement et les formulaires, et clarifie le sitemap. | **Option L1** au seed (parité stricte), avec possibilité d'activer **Option L2** à la demande sans migration de schéma (la table `pages` supporte les deux). |
-| **Q-103** | **Gestion des alias de routes et redirections d'anciennes URLs** | Le frontend acceptait des alias croisés (ex. `/fr/sectors` et `/fr/secteurs`). De plus, la fusion de « Localisations » dans « Contact » rend obsolètes `/fr/localisations` et `/en/locations`. | **A1 (Redirection 301 gérée au seed)** : Rediriger systématiquement l'alias étranger vers le slug canonique de la langue demandée via la table `redirects`, et enregistrer au seed les redirections 301 de `/fr/localisations` → `/fr/contact#implantations`, `/en/locations` → `/en/contact#implantations` (ainsi que les croisements `/fr/locations` et `/en/localisations`).<br><br>**A2 (Tolérance)** : Laisser l'alias fonctionner mais imposer un canonical strict vers le slug français. | **Option A1** (redirection 301 stricte au seed dans la table `redirects`) pour une hygiène SEO irréprochable et la préservation du référencement. |
-| **Q-104** | **Statut des 3 publications « Exemple » au seed** | Les 3 articles existants (`pub-1..3`) sont des textes de démonstration avec date et catégorie, mais sans corps rédigé. | **P1 (Publié - `published`)** : Visibles dès le premier démarrage pour conserver la parité visuelle exacte avec le frontend actuel.<br><br>**P2 (Brouillon - `draft`)** : Masqués publiquement tant que le cabinet n'a pas rédigé les vrais articles. | **Option P1** avec mention « Exemple » en pré-production, puis bascule en brouillon avant l'ouverture publique. |
-| **Q-105** | **Auteur des publications d'exemple** | Le frontend affiche « Assane KANE ». Aucun utilisateur n'existe encore en base avant le premier seed. | **U1 (Compte utilisateur)** : Créer automatiquement le compte fondateur dans `users` au seed et y lier les articles via `author_id`.<br><br>**U2 (Champ texte libre)** : Autoriser un nom d'auteur textuel dans `data.author_name` tant qu'aucun compte n'est rattaché. | **Option U1** (création du compte fondateur au seed). |
+> 🟢 **Statut : M6 — Décisions formellement arbitrées et validées.**
+> Ce document récapitule l'ensemble des arbitrages de conception et de cadrage technique
+> validés avant l'implémentation du Backend et du Back-office.
 
 ---
 
-## 2. Décision sur le mode de rendu SEO (Document 17)
+## 1. Décisions d'architecture, de contenu et de routes (Série Q-100)
 
-Conformément à l'analyse détaillée du document [17 · SEO et rendu](17-seo-rendu.md) :
-
-| Option | Description | Coût d'infrastructure | Complexité |
+| ID | Sujet | Décision validée | Modalités d'implémentation |
 |---|---|---|---|
-| **Option A (Recommandée)** | **Prérendu au build (SSG / Static Site Generation)** : Nginx sert les 30 fichiers HTML statiques complets (SEO 100% garanti pour tous les robots). Régénération automatique déclenchée par webhook lors des publications. | **0 € / mois** additionnel (25 Mo RAM sur le serveur Docker Compose existant) | 2 à 3 jours-homme |
-| **Option B** | **Rendu runtime serveur (SSR Node.js)** : Un conteneur Node.js exécute React à chaque visite pour composer le HTML à la volée. | VPS avec +2 Go de RAM requis | 6 à 8 jours-homme + maintenance continue du runtime |
-
-👉 **Décision attendue** : Confirmation du choix de l'**Option A**.
+| **Q-101** | **URL d'une prestation** | **Option S1 (Ancre stable)** | `/{lang}/services/{famille}/{domaine}#{groupe}`. Les 94 prestations sont consultées au sein de leur domaine parent. Elles n'ont **ni URL autonome, ni slug public, ni redirection 301 côté serveur** (les ancres `#` ne transitant pas sur le réseau HTTP). Seuls les 10 domaines et 2 familles ont des slugs publics. |
+| **Q-102** | **Pages légales (URLs)** | **Option L1 (1 page unique à 3 sections)** | Une URL unique (`/fr/mentions-legales` et `/en/legal-notice`) regroupant mentions légales, confidentialité et cookies sous 3 sections typées `legal_document`. |
+| **Q-103** | **Gestion des redirections des anciennes URLs** | **Option A1 (Redirections 301 au seed)** | 4 redirections 301 semées dans la table `redirects` : `/fr/localisations` $\rightarrow$ `/fr/contact#implantations`, `/en/locations` $\rightarrow$ `/en/contact#implantations`, et les croisements FR/EN correspondants. |
+| **Q-104** | **Statut des 3 publications « Exemple » au seed** | **Option P1 (Démo dev / exclusion prod)** | Les articles sont marqués `is_demo=true`. Ils sont importés en dev/staging via `--with-demo` pour préserver la parité visuelle, et formellement exclus du seed de production (`--production`). |
+| **Q-105** | **Compte auteur du fondateur** | **Option U1 (Sans mot de passe par défaut)** | Création du compte fondateur dans `users` au seed avec le rôle super-administrateur. `password_hash=NULL`, `must_reset_password=true` ; activation via invitation signée ou réinitialisation sécurisée à la première connexion. |
+| **Q-106** | **Validation du formulaire Contact (`POST /contact`)** | **Option V1 (Validation stricte & alignement)** | Le frontend génère l'en-tête `Idempotency-Key` (UUIDv4), transmet `lang`, le champ invisible `honeypot` et le timer `elapsed_ms`, et valide la réponse HTTP 202 (`{ id, status: "new" }`). |
+| **Q-107** | **Mode de rendu SEO** | **Option A (Prérendu au build / SSG)** | Nginx sert les 29 fichiers HTML prérendus (< 25 ms, 25 Mo RAM, 0 €). Les redirections 301 sont exécutées via une `map` Nginx générée à chaud lors de la publication. |
 
 ---
 
-## 3. Validation du modèle éditorial cible (Document 16)
+## 2. Synthèse des corrections actées dans l'analyse
 
-Veuillez confirmer votre accord sur les choix structurants du modèle :
-1. **`page_sections` (blocs typés)** : Découpage des pages en blocs réordonnables (`hero`, `trust_bar`, `stats`, `cta`, `domains_grid`, `legal_document`...) avec configuration JSONB validée par schéma et traductions stockées dans `entity_translations` (`entity_type='page_section'`).
-2. **`offices`** : Table dédiée pour les implantations géographiques, permettant un siège unique (`is_headquarters=true`), des coordonnées multiples (téléphones, e-mail, carte) et des traductions par ville/pays.
-3. **`content_nodes.source_key`** : Présence d'une clé textuelle stable et unique (index partiel) assurant l'idempotence stricte et la réversibilité du script de migration sans dérive.
+1. **Redirections 301 Nginx Map** : Nginx résout les redirections 301 en mémoire via `redirects.map` sans passer par FastAPI ; `@fastapi_fallback` ne traite que les chemins 404 inconnus.
+2. **Pipeline de publication atomique** : Worker asynchrone générant les 29 fichiers HTML et `sitemap.xml` dans un répertoire temporaire, bascule de lien symbolique atomique (Zero Downtime) et rollback garanti sans interruption si échec de build. Statut éditeur en direct dans le back-office via SSE.
+3. **Seed idempotent séparé** : Script CLI dédié `python -m app.cli.seed` basé sur `source_key` (`ON CONFLICT DO UPDATE`), séparé des migrations DDL Alembic, avec bascule `--production` / `--with-demo`.
+4. **URLs filtrées `?category=`** : Balise canonique stricte vers l'URL sans filtre et exclusion du sitemap XML.
+5. **Comptage unique du sitemap** : **29 URLs exactes** immuables (9 pages statiques + 2 familles + 10 domaines + 2 interventions + 3 secteurs + 3 publications).
+6. **Sessions et CORS** : Cookie `session_id` avec `Domain: .exauceac.com`, `HttpOnly: true`, `SameSite: Lax`, `Secure: true`. CORS avec `allow_credentials=True` et origines explicites sans wildcard. Test d'intégration CSRF bloquant au Sprint 1.
+7. **Dette Mermaid** : Notée explicitement « non vérifiée par outil CLI automatisé (absence de Chromium en sandbox) » avec relecture manuelle confirmée.
+8. **Test de contrat Schemathesis** : Intégré au plan de test Backend pour fuzzing des endpoints FastAPI via le runner ASGI in-memory.
 
