@@ -30,13 +30,15 @@ flowchart LR
 ```mermaid
 flowchart TB
   subgraph HOST["Serveur Debian + Docker Compose"]
-    PX["Reverse proxy · Traefik<br/>TLS auto, HSTS"] --> FE["Frontend public (SSR)"]
+    PX["Reverse proxy · Traefik<br/>TLS auto, HSTS"] --> FE["Frontend public (Nginx SSG)<br/>Pages HTML prérendues"]
     PX --> BO["Back-office SPA<br/>React + Vite"]
     PX --> API["Backend API<br/>FastAPI · Gunicorn + Uvicorn"]
+    FE -. "301 & fallback" .-> API
     API --> DB[("PostgreSQL 16<br/>unaccent + pgcrypto")]
     API --> ST[("Fichiers · volume dédié")]
     API -- analyse --> CL["ClamAV"]
     WK["Worker / planificateur<br/>publications, outbox, purges"] --> DB
+    WK -. "Rebuild SSG & map" .-> FE
     BK["Sauvegarde<br/>pg_dump chiffré + restic"] --> DB
     BK --> ST
   end
@@ -63,20 +65,36 @@ flowchart LR
 *Figure 3 : composants — chaque route déclare sa permission ; le
 décorateur applique la matrice (page 10) systématiquement.*
 
-## 2. Déploiement Docker Compose (extrait)
+## 2. Déploiement Docker Compose et Architecture de Publication (SSG)
 
 ```yaml
 services:
-  proxy:   # Traefik v3 — TLS Let's Encrypt, HSTS, routage /api et /admin
-  api:     # FastAPI — image unique, uvicorn workers
-  worker:  # même image, commande worker (APScheduler / ARQ)
-  db:      # PostgreSQL 16, volume dédié, healthcheck pg_isready
-  clamav:  # antivirus, réseau interne uniquement
-  backup:  # cron : pg_dump -Fc chiffré, puis restic hors site
+  proxy:    # Traefik v3 — TLS Let's Encrypt, HSTS, routage vers frontend, bo et api
+  frontend: # Nginx Alpine — sert les 29 fichiers HTML prérendus + map 301 instantanée
+  bo:       # Nginx Alpine — sert le Back-office SPA React
+  api:      # FastAPI — image unique Python 3.12, workers Uvicorn
+  worker:   # même image, exécute le worker de publication SSG, outbox e-mails, purges
+  db:       # PostgreSQL 16, volume dédié, healthcheck pg_isready
+  clamav:   # antivirus, réseau interne uniquement
+  backup:   # cron : pg_dump -Fc chiffré, puis restic hors site
 volumes:
   db-data:
-  exauce-files:   # monté hors racine web
+  exauce-files:    # monté hors racine web
+  static-releases: # volume partagé entre worker (génération SSG) et frontend (Nginx)
 ```
+
+### 2.1 Traitement des redirections 301 et Nginx Map (Point 1 validé)
+Puisque le frontend public est prérendu et servi par Nginx sans passer par le moteur Python, les redirections 301 issues de la table `redirects` sont exécutées directement par Nginx :
+1. **Fichier `redirects.map`** : À chaque parution, le worker extrait les redirections actives (`/fr/localisations` $\rightarrow$ `/fr/contact#implantations`, anciens slugs) et génère `/etc/nginx/conf.d/redirects.map`.
+2. **Rechargement Nginx** : Commande `nginx -s reload` exécutée par le worker. Nginx répond en 301 en < 5 ms en mémoire.
+3. **Fallback dynamique `@fastapi_fallback`** : Si une URL inconnue arrive (`try_files` échoue), elle est relayée à FastAPI (`/api/v1/public/resolve-path`) qui vérifie la table `redirects` avant de renvoyer la 404.
+
+### 2.2 Pipeline de publication automatisé (Point 2 validé)
+- **Déclenchement** : Éditeur clique sur « Publier » dans le Back-office $\rightarrow$ création d'une entrée `publication_jobs`.
+- **Worker** : Extrait la base, génère les 29 fichiers HTML, `sitemap.xml` et `redirects.map` dans `/var/www/releases/build-<id>`.
+- **Smoke test & Déploiement atomique** : Si le build est complet, bascule atomique du lien symbolique `current -> build-<id>` et `nginx -s reload` (Zero Downtime).
+- **Gestion des pannes & Rollback** : En cas d'erreur de génération, le symlink `current` reste inchangé : le site public en production reste 100 % en ligne. Le job passe à `status='failed'` et consigne les logs d'erreurs.
+- **Feedback éditeur** : L'état (`queued` $\rightarrow$ `building` $\rightarrow$ `success`/`failed`) est affiché en direct dans le Back-office via SSE.
 
 *Extrait illustratif ; le compose complet vivra dans le dépôt Backend
 (M6+). Chaque service a un healthcheck et une politique de redémarrage.*

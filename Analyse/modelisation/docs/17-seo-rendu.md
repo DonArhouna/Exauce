@@ -25,7 +25,7 @@ Pour résoudre ce constat, deux options d'architecture sont envisageables.
 ## 2. Option A · Prérendu au build (SSG / Static Site Generation)
 
 ### 2.1 Principe et fonctionnement
-Lors de la publication ou du déploiement en production, un script de prérendu automatisé (ex. `@prerenderer/rollup` ou script Vite SSG) parcourt la liste des **30 URLs publiques** déclarées par l'API :
+Lors de la publication ou du déploiement en production, un script de prérendu automatisé (ex. `@prerenderer/rollup` ou script Vite SSG) parcourt la liste des **29 URLs publiques** déclarées par l'API (après fusion de Localisations dans Contact) :
 - 10 pages institutionnelles (accueil, services, interventions, secteurs, publications, à propos, contact unifié, mentions légales, etc.) en FR et EN ;
 - 10 domaines d'intervention ;
 - 3 publications d'exemple ;
@@ -36,20 +36,82 @@ Pour chaque URL, le script génère un fichier HTML complet contenant :
 - L'arborescence DOM pré-rendue dans `<div id="root">` pour un affichage immédiat ;
 - Les scripts React bundle pour l'hydratation interactive immédiate.
 
-### 2.2 Déploiement et architecture
-- **Serveur web** : Nginx sert directement les fichiers HTML statiques depuis le système de fichiers.
-- **Runtime** : **Aucun serveur Node.js en production 24h/24**. Le conteneur frontend reste un simple conteneur Nginx allégé (Alpine Linux).
-- **Mise à jour du contenu** :
-  - *Option A1 (Rebuild automatique)* : Un webhook sur l'action `publish` du back-office déclenche un build de prérendu incrémental en tâche de fond (durée ~20 secondes).
-  - *Option A2 (Mix SPA dynamique)* : Le prérendu garantit le socle indexable pour les robots ; les visiteurs naviguent ensuite en mode SPA fluide en consommant l'API `/api/v1` sans rechargement.
+### 2.2 Déploiement, Nginx et gestion des redirections 301 (Décision Q-107 validée)
 
-### 2.3 Métriques et chiffrage (Option A)
+- **Serveur web & Runtime** : Nginx sert directement les 29 fichiers HTML statiques prérendus depuis le système de fichiers. **Aucun serveur Node.js en production 24h/24**. Le conteneur frontend reste un simple Nginx allégé (Alpine Linux, ~25 Mo RAM).
+- **Comment la table `redirects` devient des redirections 301 effectives sans FastAPI** :
+  Puisque Nginx sert les pages statiques sans solliciter FastAPI, les requêtes publiques ne traversent pas de middleware Python en lecture nominale. Deux mécanismes complémentaires garantissent des redirections 301 instantanées :
+  1. **Génération d'une `map` Nginx à la publication (chemin ultra-rapide)** :
+     Lors de chaque publication ou modification de redirection dans le back-office, le pipeline extrait les lignes actives de la table PostgreSQL `redirects` et génère un fichier de mapping Nginx `/etc/nginx/conf.d/redirects.map` :
+     ```nginx
+     map $uri $redirect_301_target {
+         default "";
+         /fr/localisations /fr/contact#implantations;
+         /en/locations     /en/contact#implantations;
+         /fr/locations     /fr/contact#implantations;
+         /en/localisations /en/contact#implantations;
+         # Slugs d'entités renommés par les éditeurs...
+     }
+     ```
+     Le worker déclenche ensuite un rechargement à chaud (`nginx -s reload`). Nginx intercepte l'URL dès l'entrée et répond en **HTTP 301 Moved Permanently en < 5 ms**, sans solliciter le backend.
+  2. **Fallback dynamique `@fastapi_fallback` (sécurité pour les chemins inconnus)** :
+     Dans le bloc `server` de Nginx :
+     ```nginx
+     location / {
+         if ($redirect_301_target != "") {
+             return 301 $redirect_301_target;
+         }
+         try_files $uri $uri/index.html @fastapi_fallback;
+     }
+
+     location @fastapi_fallback {
+         # Si un slug vient d'être renommé avant le prochain reload Nginx,
+         # FastAPI interroge la table redirects et renvoie 301 ou la page 404.
+         proxy_pass http://backend:8000/api/v1/public/resolve-path?path=$uri;
+     }
+     ```
+
+### 2.3 Pipeline de publication automatisé (Zero Downtime & Rollback)
+
+1. **Déclenchement** :
+   - Un éditeur clique sur « Publier » sur une entité modifiée ou sur le bouton global « Publier les modifications » dans le header du back-office.
+   - L'API FastAPI enregistre un job dans la table `publication_jobs(id, triggered_by, status='queued', started_at, completed_at, log_output)`.
+2. **Exécution par le Worker en tâche de fond** :
+   - Le worker (APScheduler / Celery / tâche ARQ) prend le job en charge (`status='building'`).
+   - Il interroge la base PostgreSQL pour extraire les contenus publiés et la table `redirects`.
+   - Il génère les 29 fichiers HTML statiques ainsi que `sitemap.xml` et `redirects.map` dans un répertoire temporaire isolé : `/var/www/releases/build-<job_id>`.
+3. **Smoke-test et déploiement atomique** :
+   - **Vérification automatique** : Le worker contrôle la présence des 29 fichiers HTML, la validité des balises `<title>`, et la non-vacuité de `sitemap.xml`.
+   - **Si succès (Bascule atomique)** :
+     - Bascule instantanée du lien symbolique : `ln -sfn /var/www/releases/build-<job_id> /var/www/current`.
+     - Rechargement de Nginx : `nginx -s reload`.
+     - Le job passe à `status='success'` avec horodatage de fin. Les anciennes releases sont purgées (conservation des 3 dernières pour rollback express).
+   - **Si échec (Rollback immédiat garanti)** :
+     - Le lien symbolique `current` **n'est pas touché**.
+     - Le site public existant reste **100 % en ligne sans aucune interruption ni page blanche**.
+     - Le répertoire temporaire défaillant est conservé pour inspection, le job passe à `status='failed'`, et le journal d'erreurs d'exécution (`log_output`) est consigné.
+4. **Visibilité pour l'éditeur dans le Back-office** :
+   - Un composant persistant dans la barre d'administration informe l'éditeur en temps réel (via Server-Sent Events `/api/v1/admin/publication-status` ou polling court) :
+     - 🟡 *« Publication en cours... (étape 2/3 : prérendu HTML) »*
+     - 🟢 *« Site publié avec succès (dernière parution : aujourd'hui à 15:42) »*
+     - 🔴 *« Échec de la publication : la page À propos comporte une balise non fermée. Le site en ligne n'a pas été modifié. [Voir le rapport] »*
+   - Un écran d'historique `/admin/publications/history` liste l'ensemble des builds passés avec leur auteur, statut et logs.
+
+### 2.4 URLs filtrées `?category=` et hygiène SEO
+
+- **Règle canonique** : Les URLs de listing filtrées (ex. `/fr/publications?category=audit` ou `/en/publications?category=governance`) portent systématiquement une balise canonique pointant vers la page racine sans paramètre de requête :
+  ```html
+  <link rel="canonical" href="https://exauceac.com/fr/publications" />
+  ```
+- **Exclusion du Sitemap XML** : Seule l'URL sans filtre (`/fr/publications` et `/en/publications`) est déclarée dans `sitemap.xml`. Les URLs avec querystring `?category=` sont formellement exclues du sitemap pour éviter la dispersion du budget de crawl des robots d'indexation.
+
+### 2.5 Métriques et chiffrage (Option A)
 | Critère | Valeur / Évaluation |
 |---|---|
 | **TTFB (Time To First Byte)** | **< 25 ms** (fichiers statiques servis en mémoire par Nginx) |
 | **Consommation mémoire serveur** | **~25 Mo** (Nginx pur) |
 | **Disponibilité en cas de panne DB** | **100 %** : le site vitrine reste navigable même si PostgreSQL redémarre |
-| **Temps de génération au build** | 15 à 30 secondes pour 30 URLs |
+| **Temps de génération au build** | 15 à 30 secondes pour 29 URLs |
 | **Complexité de développement** | **Faible (2 à 3 jours-homme)** : conservation du code React actuel sans réécriture d'architecture |
 | **Coût d'hébergement additionnel** | **0 € / mois** (s'intègre dans le serveur Docker Compose existant) |
 | **Risques techniques** | Faibles : pas de fuite mémoire serveur, pas d'incompatibilité de session |
@@ -98,12 +160,9 @@ Chaque requête HTTP arrivant sur le domaine public est interceptée par un serv
 
 ---
 
-## 5. Recommandation technique (soumise à validation)
+## 5. Arbitrage formel validé (Décision Q-107)
 
-- **Option A (Prérendu au build)** est **techniquement et économiquement recommandée** pour le site vitrine institutionnel d'EXAUCE. Le volume de pages (environ 30 à 100 pages à moyen terme) correspond exactement au profil d'excellence de la génération statique : rapidité maximale, coût nul, robustesse totale, absence de surface de vulnérabilité Node.js en ligne.
-- **Option B (SSR)** ne se justifie que si le cabinet prévoit des milliers d'articles de blog avec un besoin de publication à la seconde près sans aucun délai de régénération.
-
-👉 **Décision attendue de votre part** :
-1. Validez-vous l'**Option A** (Prérendu au build / SSG) avec régénération en tâche de fond ?
-2. Ou souhaitez-vous engager l'**Option B** (SSR Node.js runtime) malgré le surcoût de complexité et d'infrastructure ?
+- **Option A (Prérendu au build / SSG)** est **officiellement retenue** pour le site vitrine institutionnel d'EXAUCE.
+- Le volume de pages (29 URLs) correspond exactement au profil d'excellence de la génération statique : rapidité maximale (< 25 ms), coût d'hébergement additionnel nul, robustesse totale en cas de panne de la base de données, et sécurité renforcée (pas de runtime Node.js exposé publiquement).
+- Nginx sert les fichiers prérendus, applique la `map` de redirections 301 générée automatiquement, et ne relaie à FastAPI que le fallback et les requêtes d'API dynamiques (`/api/v1`).
 
