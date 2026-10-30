@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   CheckCircle2,
@@ -22,13 +22,14 @@ import { sendContactMessage } from '@/services/api/api';
 import { ORGANIZATION, OFFICES } from '@/data/content.data';
 import type { Lang } from '@/types/content';
 
-/** Schéma de validation côté client (Zod). */
+/** Schéma de validation côté client (Zod) incluant le champ honeypot anti-spam. */
 const schema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
   phone: z.string().optional(),
   subject: z.string().min(1),
   message: z.string().min(10),
+  honeypot: z.string().optional(),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -43,6 +44,7 @@ export default function ContactPage() {
 
   const [sent, setSent] = useState(false);
   const [failed, setFailed] = useState(false);
+  const startTimeRef = useRef<number>(Date.now());
   const {
     register,
     handleSubmit,
@@ -50,10 +52,39 @@ export default function ContactPage() {
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   const onSubmit = async (data: FormData) => {
+    // Si le champ honeypot est renseigné par un robot, feindre le succès sans envoyer (EF-303)
+    if (data.honeypot && data.honeypot.trim().length > 0) {
+      setSent(true);
+      return;
+    }
+
     setFailed(false);
     try {
-      await sendContactMessage(data);
-      setSent(true);
+      const elapsed_ms = Math.max(0, Date.now() - startTimeRef.current);
+      const idempotencyKey =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : 'c0a80101-0000-4000-8000-000000000001';
+
+      const res = await sendContactMessage(
+        {
+          name: data.name,
+          email: data.email,
+          phone: data.phone || undefined,
+          subject: data.subject,
+          message: data.message,
+          lang,
+          honeypot: '',
+          elapsed_ms,
+        },
+        { idempotencyKey },
+      );
+
+      if (res && res.status === 'new') {
+        setSent(true);
+      } else {
+        setFailed(true);
+      }
     } catch {
       setFailed(true);
     }
@@ -127,6 +158,19 @@ export default function ContactPage() {
                 <textarea id="message" rows={5} {...register('message')} className={field} />
                 {errors.message && <p className={err}>{t('contact.required')}</p>}
               </div>
+
+              {/* Champ honeypot masqué anti-spam bots (EF-303) */}
+              <div aria-hidden="true" style={{ display: 'none', position: 'absolute', left: '-9999px' }}>
+                <label htmlFor="hp_company">Ne pas remplir ce champ</label>
+                <input
+                  id="hp_company"
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  {...register('honeypot')}
+                />
+              </div>
+
               {failed && <p className="text-sm text-red-600">{t('contact.error')}</p>}
               <Button type="submit" disabled={isSubmitting}>
                 <Send className="h-4 w-4" aria-hidden="true" />

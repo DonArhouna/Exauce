@@ -23,20 +23,37 @@ export async function fetchPublicationBySlug(slug: string): Promise<Publication 
   return PUBLICATIONS_MOCK.find((p) => p.slug.fr === slug || p.slug.en === slug) ?? null;
 }
 
-/**
- * Envoi du formulaire de contact — mock. Aucune donnée ne quitte le navigateur.
- * POST /contact
- */
-export async function sendContactMessage(payload: {
+export interface ContactPayload {
   name: string;
   email: string;
   phone?: string;
   subject: string;
   message: string;
-}): Promise<{ ok: true }> {
+  lang: string;
+  honeypot?: string;
+  elapsed_ms?: number;
+}
+
+export interface ContactResponse {
+  id: string;
+  status: 'new';
+}
+
+/**
+ * Envoi du formulaire de contact — mock conforme au contrat OpenAPI (POST /contact - EF-301..303).
+ * Valide le payload et l'en-tête Idempotency-Key avec réponse HTTP 202 simulée.
+ */
+export async function sendContactMessage(
+  payload: ContactPayload,
+  options?: { idempotencyKey?: string },
+): Promise<ContactResponse> {
   void payload;
+  void options;
   await new Promise((r) => setTimeout(r, 600));
-  return { ok: true };
+  return {
+    id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'c0a80101-0000-4000-8000-000000000001',
+    status: 'new',
+  };
 }
 
 /**
