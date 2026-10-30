@@ -28,5 +28,6 @@ tmp/
 # OS / éditeurs
 .DS_Store
 Thumbs.db
+~$*
 .vscode/
 .idea/

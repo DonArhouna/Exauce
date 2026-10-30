@@ -110,3 +110,11 @@ nav:
       - 13-migration-frontend.md
   - "14 · Décisions, traçabilité, feuille de route":
       - 14-adr-roadmap.md
+  - "15 · Inventaire du contenu":
+      - 15-inventaire-contenu.md
+  - "16 · Modèle éditorial":
+      - 16-modele-editorial.md
+  - "17 · SEO et rendu (options chiffrées)":
+      - 17-seo-rendu.md
+  - "18 · Questions ouvertes et décisions":
+      - 18-questions-ouvertes.md
