@@ -1,4 +1,4 @@
-import type { InterventionType, Location, Publication, Sector, ServiceFamily } from '@/types/content';
+import type { InterventionType, Location, Publication, PublicationCategory, Sector, ServiceFamily } from '@/types/content';
 
 /**
  * ORGANISATION — informations stables du cabinet (docx, niveau 1).
@@ -547,6 +547,16 @@ export const SECTORS: [Sector, Sector, Sector] = [
     ],
   },
 ];
+
+/** Catégories éditoriales des publications du cabinet. */
+export const PUBLICATION_CATEGORIES: readonly PublicationCategory[] = [
+  'governance',
+  'audit',
+  'finance',
+  'hr',
+  'it',
+  'legal',
+] as const;
 
 /** PUBLICATIONS — placeholders mockés clairement marqués « Exemple » (branchement backend FastAPI prévu). */
 export const PUBLICATIONS_MOCK: Publication[] = [

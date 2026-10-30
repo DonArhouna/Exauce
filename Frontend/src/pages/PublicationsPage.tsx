@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BookOpen, Search as SearchIcon, RotateCcw, Loader2, AlertTriangle } from 'lucide-react';
 import { Page } from '@/components/layout/Page';
@@ -7,7 +7,7 @@ import { PageHero } from '@/components/layout/PageHero';
 import { Reveal } from '@/components/ui/Reveal';
 import { Badge } from '@/components/ui/Card';
 import { fetchPublications } from '@/services/api/api';
-import { PUBLICATIONS_MOCK } from '@/data/content.data';
+import { PUBLICATIONS_MOCK, PUBLICATION_CATEGORIES } from '@/data/content.data';
 import type { Lang, Publication, PublicationCategory } from '@/types/content';
 
 const CAT_LABELS: Record<PublicationCategory, string> = {
@@ -19,22 +19,25 @@ const CAT_LABELS: Record<PublicationCategory, string> = {
   legal: 'legal',
 };
 
-/** Métadonnées partagées des catégories (libellés FR/EN depuis i18n). */
-const CATEGORIES: PublicationCategory[] = ['governance', 'audit', 'finance', 'hr', 'it', 'legal'];
-
 /**
- * Publications — liste avec filtres par catégorie, recherche locale,
- * tri par date, « charger plus ». Données mockées, backend FastAPI prévu.
+ * Publications — liste avec filtres par catégorie (synchronisés dans l'URL),
+ * recherche locale, tri par date, « charger plus ». Données mockées, backend FastAPI prévu.
  */
 export default function PublicationsPage() {
   const { lang = 'fr' } = useParams();
   const l = lang as Lang;
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<PublicationCategory | 'all'>('all');
   const [visible, setVisible] = useState(6);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
+
+  const catParam = searchParams.get('category');
+  const category: PublicationCategory | 'all' =
+    catParam && (PUBLICATION_CATEGORIES as readonly string[]).includes(catParam)
+      ? (catParam as PublicationCategory)
+      : 'all';
 
   // Chargement via la couche API (mock → HTTP plus tard)
   const publications = useMemo(() => PUBLICATIONS_MOCK.slice().sort((a, b) => b.date.localeCompare(a.date)), []);
@@ -60,6 +63,18 @@ export default function PublicationsPage() {
     );
   }, [publications, category, query, l]);
 
+  const handleCategoryChange = (newCat: PublicationCategory | 'all') => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (newCat === 'all') {
+      nextParams.delete('category');
+    } else {
+      nextParams.set('category', newCat);
+    }
+    setSearchParams(nextParams, { replace: true });
+    setVisible(6);
+    void simulate();
+  };
+
   return (
     <Page title={`${t('nav.publications')} — EXAUCE Audit & Conseils`}>
       <PageHero
@@ -75,17 +90,17 @@ export default function PublicationsPage() {
             <div className="flex flex-wrap gap-2" role="group" aria-label={t('nav.publications')}>
               <button
                 type="button"
-                onClick={() => { setCategory('all'); setVisible(6); }}
+                onClick={() => handleCategoryChange('all')}
                 aria-pressed={category === 'all'}
                 className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${category === 'all' ? 'bg-ink text-ivory' : 'bg-white text-slate-600 hover:bg-turquoise-500/10 hover:text-turquoise-800'} border border-ink/10`}
               >
                 {t('publications.filterAll')}
               </button>
-              {CATEGORIES.map((c) => (
+              {PUBLICATION_CATEGORIES.map((c) => (
                 <button
                   key={c}
                   type="button"
-                  onClick={() => { setCategory(c); setVisible(6); void simulate(); }}
+                  onClick={() => handleCategoryChange(c)}
                   aria-pressed={category === c}
                   className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${category === c ? 'bg-turquoise-600 text-white' : 'bg-white text-slate-600 hover:bg-turquoise-500/10 hover:text-turquoise-800'} border border-ink/10`}
                 >

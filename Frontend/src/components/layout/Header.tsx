@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { NavLink, useParams, useNavigate } from 'react-router-dom';
+import { NavLink, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Menu, X, LogIn, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Logo } from '../ui/Logo';
-import { SpeedLines } from '../ui/SpeedLines';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { UtilityBar } from './UtilityBar';
-import { useNavItems, useServiceMegaColumns } from '@/data/navigation';
+import { NavMegaDropdown } from './NavMegaDropdown';
+import { useNavItems, type NavItem } from '@/data/navigation';
 import { useScrolled } from '@/hooks/useScrolled';
 import { cn } from '@/lib/utils';
 import { Lang } from '@/types/content';
@@ -15,16 +16,15 @@ import { pagePath } from '@/lib/routes';
 
 /**
  * Header sticky : barre utilitaire + navigation compacte au scroll,
- * méga-menu « Services » (niveaux 2-3) et menu mobile plein écran.
+ * méga-menus « Services » et « Publications » (popup au survol)
+ * et menu mobile plein écran navigable.
  */
 export function Header({ onSearchOpen }: { onSearchOpen: () => void }) {
   const { lang = 'fr' } = useParams();
   const { t } = useTranslation();
   const scrolled = useScrolled(40);
-  const [megaOpen, setMegaOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const navItems = useNavItems(lang as Lang);
-  const megaColumns = useServiceMegaColumns(lang as Lang);
 
   return (
     <header className="sticky top-0 z-40">
@@ -46,79 +46,14 @@ export function Header({ onSearchOpen }: { onSearchOpen: () => void }) {
           {/* Navigation desktop */}
           <nav aria-label="Principal" className="hidden items-center gap-1 lg:flex">
             {navItems.map((item) =>
-              item.mega ? (
-                <div
+              item.megaColumns ? (
+                <NavMegaDropdown
                   key={item.key}
-                  className="relative"
-                  onMouseEnter={() => setMegaOpen(true)}
-                  onMouseLeave={() => setMegaOpen(false)}
-                >
-                  <NavLink
-                    to={item.href}
-                    className={({ isActive }) =>
-                      cn(
-                        'block rounded-full px-4 py-2 text-sm font-medium transition-colors',
-                        isActive
-                          ? 'text-turquoise-900'
-                          : 'text-ink/80 hover:text-turquoise-900',
-                      )
-                    }
-                    aria-expanded={megaOpen}
-                    aria-haspopup="true"
-                  >
-                    {item.label}
-                  </NavLink>
-                  <AnimatePresence>
-                    {megaOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 8 }}
-                        transition={{ duration: 0.18 }}
-                        className="absolute left-1/2 top-full w-[42rem] max-w-[85vw] -translate-x-1/2 pt-2"
-                      >
-                        <div className="overflow-hidden rounded-card border border-ink/8 bg-white p-6 shadow-cardHover">
-                          <div className="mb-4 flex items-center gap-3">
-                            <SpeedLines className="h-4" />
-                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-turquoise-700">
-                              {t('nav.services')}
-                            </p>
-                          </div>
-                          <div className="grid grid-cols-2 gap-6">
-                            {megaColumns.map((col) => (
-                              <div key={col.title}>
-                                <NavLink
-                                  to={col.familyHref}
-                                  className="font-display text-lg text-ink hover:text-turquoise-700"
-                                  onClick={() => setMegaOpen(false)}
-                                >
-                                  {col.title}
-                                </NavLink>
-                                <ul className="mt-3 space-y-1.5">
-                                  {col.items.map((it) => (
-                                    <li key={it.href}>
-                                      <NavLink
-                                        to={it.href}
-                                        onClick={() => setMegaOpen(false)}
-                                        className="group flex items-center gap-2 text-sm text-slate-600 hover:text-ink"
-                                      >
-                                        <span
-                                          aria-hidden="true"
-                                          className="h-px w-3 bg-turquoise-500/60 transition-all group-hover:w-5 group-hover:bg-turquoise-500"
-                                        />
-                                        {it.label}
-                                      </NavLink>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                  label={item.label}
+                  href={item.href}
+                  badgeKicker={item.badgeKicker ?? item.label}
+                  columns={item.megaColumns}
+                />
               ) : (
                 <NavLink
                   key={item.key}
@@ -182,12 +117,11 @@ function MobileMenu({
 }: {
   open: boolean;
   onClose: () => void;
-  items: { key: string; label: string; href: string }[];
+  items: NavItem[];
   lang: Lang;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const megaColumns = useServiceMegaColumns(lang);
 
   return (
     <AnimatePresence>
@@ -196,7 +130,7 @@ function MobileMenu({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-abyss-gradient text-ivory lg:hidden"
+          className="fixed inset-0 z-50 overflow-y-auto bg-abyss-gradient text-ivory lg:hidden"
           role="dialog"
           aria-modal="true"
         >
@@ -211,16 +145,63 @@ function MobileMenu({
               <X className="h-6 w-6" aria-hidden="true" />
             </button>
           </div>
-          <nav aria-label="Mobile" className="flex flex-col gap-1 px-6 pt-4">
-            {items
-              .filter((i) => i.key !== 'services')
-              .map((item, idx) => (
+          <nav aria-label="Mobile" className="flex flex-col gap-1 px-6 pb-12 pt-4">
+            {items.map((item, idx) =>
+              item.megaColumns ? (
+                <div key={item.key} className="border-b border-white/10 py-4">
+                  <motion.button
+                    type="button"
+                    initial={{ opacity: 0, x: -16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.04 * idx }}
+                    className="text-left font-display text-2xl hover:text-turquoise-400"
+                    onClick={() => {
+                      onClose();
+                      navigate(item.href);
+                    }}
+                  >
+                    {item.label}
+                  </motion.button>
+                  <div className="mt-3 space-y-4 pl-2">
+                    {item.megaColumns.map((col) => (
+                      <div key={col.title}>
+                        <button
+                          type="button"
+                          className="text-left text-xs font-semibold uppercase tracking-wider text-turquoise-400 hover:text-turquoise-300"
+                          onClick={() => {
+                            onClose();
+                            navigate(col.familyHref);
+                          }}
+                        >
+                          {col.title}
+                        </button>
+                        <ul className="mt-1.5 space-y-1.5">
+                          {col.items.map((it) => (
+                            <li key={it.href}>
+                              <button
+                                type="button"
+                                className="text-sm text-white/80 hover:text-turquoise-200"
+                                onClick={() => {
+                                  onClose();
+                                  navigate(it.href);
+                                }}
+                              >
+                                {it.label}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
                 <motion.button
                   key={item.key}
                   type="button"
                   initial={{ opacity: 0, x: -16 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.05 * idx }}
+                  transition={{ delay: 0.04 * idx }}
                   className="border-b border-white/10 py-4 text-left font-display text-2xl hover:text-turquoise-400"
                   onClick={() => {
                     onClose();
@@ -229,40 +210,10 @@ function MobileMenu({
                 >
                   {item.label}
                 </motion.button>
-              ))}
-            {/* Services + sous-domaines dépliants */}
-            {megaColumns.map((col) => (
-              <div key={col.title} className="border-b border-white/10 py-4">
-                <motion.button
-                  type="button"
-                  className="text-left font-display text-2xl hover:text-turquoise-400"
-                  onClick={() => {
-                    onClose();
-                    navigate(col.familyHref);
-                  }}
-                >
-                  {col.title}
-                </motion.button>
-                <ul className="mt-2 space-y-1.5">
-                  {col.items.map((it) => (
-                    <li key={it.href}>
-                      <button
-                        type="button"
-                        className="text-sm text-turquoise-300 hover:text-turquoise-200"
-                        onClick={() => {
-                          onClose();
-                          navigate(it.href);
-                        }}
-                      >
-                        {it.label}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+              ),
+            )}
             <a
-              href={pagePath(lang as Lang, 'clientArea')}
+              href={pagePath(lang, 'clientArea')}
               className="mt-6 inline-flex items-center gap-2 text-sm text-turquoise-300"
               onClick={onClose}
             >

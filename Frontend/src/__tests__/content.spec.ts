@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
-import { SERVICES, SECTORS, INTERVENTIONS, PUBLICATIONS_MOCK } from '../data/content.data';
+import { SERVICES, SECTORS, INTERVENTIONS, PUBLICATIONS_MOCK, PUBLICATION_CATEGORIES } from '../data/content.data';
 
 /**
  * Tests de points critiques — légers, sans réseau :
@@ -57,5 +57,13 @@ describe('Référentiels stables', () => {
     expect(INTERVENTIONS).toHaveLength(2);
     expect(new Set(PUBLICATIONS_MOCK.map((p) => p.slug.fr)).size).toBe(PUBLICATIONS_MOCK.length);
     expect(new Set(PUBLICATIONS_MOCK.map((p) => p.slug.en)).size).toBe(PUBLICATIONS_MOCK.length);
+  });
+
+  it('définit 6 catégories de publications stables issues des référentiels éditoriaux', () => {
+    expect(PUBLICATION_CATEGORIES).toHaveLength(6);
+    expect(new Set(PUBLICATION_CATEGORIES).size).toBe(6);
+    for (const pub of PUBLICATIONS_MOCK) {
+      expect(PUBLICATION_CATEGORIES).toContain(pub.category);
+    }
   });
 });
