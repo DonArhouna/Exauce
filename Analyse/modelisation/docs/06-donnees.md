@@ -65,6 +65,7 @@ erDiagram
     uuid id PK
     uuid page_id FK
     varchar section_type FK
+    varchar source_key "UQ partiel (page_id, source_key)"
     int position
     boolean is_active
     jsonb config "non traduit, validé par schéma"
@@ -560,7 +561,7 @@ et les règles contradictoires.
 | Colonne | Type | Contraintes | Description |
 |---|---|---|---|
 | id | UUID | PK | — |
-| page_key | VARCHAR(40) | NN, UQ | Registre fermé : `home`, `services`, `interventions`, `sectors`, `publications`, `about`, `locations`, `legal_notice`, `privacy`, `cookies`, `contact`, `client_area`, `not_found` |
+| page_key | VARCHAR(40) | NN, UQ | Registre fermé : `home`, `services`, `interventions`, `sectors`, `publications`, `about`, `locations`, `legal_notice`, `contact`, `client_area`, `not_found` (11 pages ; les 3 textes légaux sont des sections de `legal_notice`) |
 | template | VARCHAR(20) | NN, ck home/standard/legal/contact/coming_soon | Gabarit de rendu attendu par le frontend |
 | source_key | VARCHAR(60) | `NULL`, UQ partiel | Clé de migration (idempotence du seed) |
 | is_in_nav | BOOLEAN | NN, def false | Présence dans le menu principal |
@@ -588,6 +589,7 @@ semé par migration, non éditable comme du contenu).
 | id | UUID | PK | — |
 | page_id | UUID | NN, FK pages `ON DELETE CASCADE` | Page porteuse |
 | section_type | VARCHAR(40) | NN, FK section_types.code `ON DELETE RESTRICT` | Type de bloc |
+| source_key | VARCHAR(60) | `NULL`, UQ partiel `(page_id, source_key) WHERE source_key IS NOT NULL` | Clé stable du bloc (ex. `mentions`, `hero`) : idempotence du seed et cible d'édition |
 | position | INT | NN | Ordre ; `uq_section_position (page_id, position) DEFERRABLE INITIALLY DEFERRED` |
 | is_active | BOOLEAN | NN, def true | Masquer sans supprimer |
 | config | JSONB | NN (`{}`), validé par `section_types.config_schema` | Réglages non traduits (limite, variante, média, cible) |
@@ -808,7 +810,7 @@ non réversible ou pseudonymisé de façon paramétrée — À VALIDER avec CDP)
 
 | Table | Index / contrainte | Justification |
 |---|---|---|
-| entity_translations | (entity_type, entity_id) ; (lang, status) | menus d'arbre, filtre « à traduire »
+| entity_translations | (entity_type, entity_id) ; (lang, status) | menus d'arbre, filtre « à traduire » |
 | entity_translations | UQ (entity_type, entity_id, lang) | invariant i18n |
 | entity_translations | UQ (entity_type, lang, slug) `WHERE slug IS NOT NULL` | slug unique par langue (EF-604) |
 | content_nodes | (parent_id, position) | ordre stable d'affichage |
@@ -816,6 +818,7 @@ non réversible ou pseudonymisé de façon paramétrée — À VALIDER avec CDP)
 | content_nodes | UQ partiel `(source_key) WHERE source_key IS NOT NULL` | idempotence du seed |
 | pages | UQ `(source_key) WHERE source_key IS NOT NULL` | idempotence du seed |
 | page_sections | UQ (page_id, position) `DEFERRABLE INITIALLY DEFERRED` | réordonnancement en une transaction |
+| page_sections | UQ partiel `(page_id, source_key) WHERE source_key IS NOT NULL` | idempotence du seed et cible d'édition |
 | page_sections | (page_id, is_active) | rendu d'une page |
 | offices | UQ partiel `(is_headquarters) WHERE is_headquarters` | un seul siège |
 | team_members | UQ partiel `(is_founder) WHERE is_founder` | une seule fiche fondateur |
@@ -963,19 +966,20 @@ bureaux, équipe, publications, secteurs, types d'intervention).
    de prestations dupliqués sont contextualisés par le groupe parent
    (doc 16 §7.2). Les 94 prestations reçoivent un `id` et un slug — ce que le
    frontend actuel n'a pas.
-4. `pages` : 13 lignes — `home`, `services`, `interventions`, `sectors`,
+4. `pages` : 11 lignes — `home`, `services`, `interventions`, `sectors`,
    `publications`, `about`, `locations`, `contact`, `legal_notice`,
-   `privacy`, `cookies`, `client_area`, `not_found` — avec `template`,
+   `client_area`, `not_found` — avec `template`,
    `is_in_nav`/`nav_position` (7 entrées de menu) et `is_system` pour
-   `home`, `not_found` et les 3 pages légales. Statut `draft` +
-   `banners_pending` pour les légaux (H-007).
+   `home`, `not_found` et `legal_notice`. Statut `draft` +
+   `banners_pending` pour la page légale (H-007).
 5. `section_types` : les 21 codes du catalogue (doc 16 §3.4), avec leurs
    schémas.
 6. `page_sections` : 30 blocs — accueil 10 (hero, trust_bar, about_preview,
    domains_grid, audit_grid, interventions_grid, sectors_grid, stats,
    publications_grid, cta), services 5, interventions 2, à propos 5,
-   publications 1, localisations 2, contact 1, espace client 1, pages légales
-   3. Chaque bloc reçoit ses traductions FR/EN (`entity_type='page_section'`).
+   publications 1, localisations 2, contact 1, espace client 1, page légale
+   3 (mentions, confidentialité, cookies). Chaque bloc porte un `source_key`
+   (`hero`, `mentions`…) et ses traductions FR/EN (`entity_type='page_section'`).
 7. `categories` : 6 (`governance`, `audit`, `finance`, `hr`, `it`, `legal`) ;
    `publications` : les 3 « Exemple » (`source_key='pub-1..3'`, statut
    `draft`).
@@ -1005,15 +1009,16 @@ bureaux, équipe, publications, secteurs, types d'intervention).
 | `COUNT(... 'service')` | 94 |
 | slugs FR/EN des nœuds vs `PAGE_SLUGS` + slugs du frontend | 100 % identiques |
 | slugs de prestations uniques par langue | 94 / 94 (aucun doublon) |
-| `pages` / dont `is_in_nav` | 13 / 7 |
+| `pages` / dont `is_in_nav` | 11 / 7 |
+| `page_sections` de la page légale (`legal_document`) | 3 |
 | `section_types` / `page_sections` | 21 / 30 |
 | `page_sections` de l'accueil | 10 |
 | secteurs / sous-catégories | 3 / 9 |
 | `categories` / publications « Exemple » importées | 6 / 3 (draft) |
 | `offices` / dont siège | 1 / 1 |
 | `team_members` / dont fondateur | 1 / 1 |
-| clés i18n **éditoriales** (doc 15) couvertes par une cible en base | 124 / 124 |
-| clés i18n restantes après purge des clés mortes | 173 (FR = EN) |
+| clés i18n **éditoriales** (doc 15) couvertes par une cible en base | 125 / 125 |
+| clés i18n restantes après purge des clés mortes | 174 (FR = EN) |
 | `redirects` au seed | 0 |
 
 ## 7. DDL illustratif (extrait, non exécuté — aucun code applicatif)
@@ -1082,6 +1087,7 @@ CREATE TABLE page_sections (
   id           UUID PRIMARY KEY,
   page_id      UUID NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
   section_type VARCHAR(40) NOT NULL REFERENCES section_types(code) ON DELETE RESTRICT,
+  source_key   VARCHAR(60),
   position     INT  NOT NULL,
   is_active    BOOLEAN NOT NULL DEFAULT true,
   config       JSONB   NOT NULL DEFAULT '{}',
@@ -1090,6 +1096,8 @@ CREATE TABLE page_sections (
   CONSTRAINT uq_section_position UNIQUE (page_id, position)
     DEFERRABLE INITIALLY DEFERRED
 );
+CREATE UNIQUE INDEX uq_section_source ON page_sections (page_id, source_key)
+  WHERE source_key IS NOT NULL;
 
 CREATE TABLE offices (
   id              UUID PRIMARY KEY,

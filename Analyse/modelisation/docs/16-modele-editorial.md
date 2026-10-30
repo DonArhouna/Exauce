@@ -138,15 +138,20 @@ nouveau bloc. Les blocs typés évitent les deux écueils.
   `config_schema` (JSON Schema 2020-12) pour les champs non traduits et un
   `translation_schema` pour les champs traduits. Un type inconnu ne peut pas
   être instancié (FK).
-- `page_sections` : **instance** d'un bloc sur une page, avec `position`,
-  `is_active` et `config JSONB`. Les textes ne sont **jamais** dans `config` :
+- `page_sections` : **instance** d'un bloc sur une page, avec `source_key`
+  (clé stable du bloc, ex. `mentions`, `hero`), `position`, `is_active` et
+  `config JSONB`. Les textes ne sont **jamais** dans `config` :
   ils sont dans `entity_translations` (`entity_type='page_section'`), ce qui
   conserve le workflow, les versions, les permissions par langue et le repli
   `is_fallback`.
-- `pages` : chaque page publique est une ligne (`page_key` stable), y compris
-  `home`, `about`, `contact`, `locations`, `legal_notice`, `privacy`,
-  `cookies`, `client_area`, `not_found`. Les pages « système » ne sont pas
-  supprimables (`is_system=true`).
+- `pages` : chaque page publique est une ligne (`page_key` stable), soit
+  `home`, `services`, `interventions`, `sectors`, `publications`, `about`,
+  `locations`, `legal_notice`, `contact`, `client_area`, `not_found`
+  (**11 pages**). Le frontend actuel ne sert qu'**une** URL légale : les
+  mentions, la confidentialité et les cookies sont **trois sections**
+  `legal_document` de `legal_notice`, pas trois pages. Éclater ces textes en
+  trois URLs indexables reste une option (Q-102, doc 13). Les pages
+  « système » ne sont pas supprimables (`is_system=true`).
 - Ordre : `position` entier, `UNIQUE (page_id, position) DEFERRABLE INITIALLY
   DEFERRED` pour permettre les réordonnancements en une transaction.
 

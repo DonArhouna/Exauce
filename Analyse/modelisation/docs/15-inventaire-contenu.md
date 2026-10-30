@@ -1,9 +1,9 @@
 # 15 · Inventaire du contenu éditable
 
 > 🟡 **Statut : M2 — à faire valider.**
-> Inventaire **exhaustif** des 182 clés i18n du frontend
+> Inventaire **exhaustif** des 183 clés i18n du frontend
 > (`Frontend/src/i18n/locales/fr.json` et `en.json`, symétrie vérifiée :
-> 182 = 182), avec pour chacune : son usage réel, sa classification
+> 183 = 183), avec pour chacune : son usage réel, sa classification
 > (éditorial / interface / technique / clé morte) et sa **cible** dans le
 > modèle de données. Le modèle est justifié en
 > [16 · Modèle éditorial](16-modele-editorial.md).
@@ -25,8 +25,8 @@
 | `i18n — technique` | reste dans le code / les templates (exception) |
 | `— (clé morte)` | supprimée du frontend, aucun équivalent en base |
 
-**Synthèse** : **124 clés éditoriales**, **44 clés d'interface**, **5 clés
-techniques**, **9 clés mortes** = **182** (182 = 182 entre FR et EN). Le
+**Synthèse** : **125 clés éditoriales**, **44 clés d'interface**, **5 clés
+techniques**, **9 clés mortes** = **183** (183 = 183 entre FR et EN). Le
 détail des exceptions est en §17.
 
 ## 1. Navigation (`nav.*`) — 17 clés
@@ -90,7 +90,7 @@ fermeture, langue) restent des libellés d'interface.*
 *La page 404 reste `noindex` (correctif frontend `bb3a5d1`) ; son texte est
 éditable, mais elle n'entre ni dans le sitemap ni dans la navigation.*
 
-## 5. Contact (`contact.*`) — 11 clés
+## 5. Contact (`contact.*`) — 12 clés
 
 | Clé | Usage | Classe | Cible |
 |---|---|---|---|
@@ -98,6 +98,7 @@ fermeture, langue) restent des libellés d'interface.*
 | `contact.email` | libellé du champ | UI | `i18n — UI` |
 | `contact.phone` | libellé du champ | UI | `i18n — UI` |
 | `contact.address` | adresse affichée | Éditorial | `offices.hq.data.address_lines` + `data.city` |
+| `contact.companyName` | raison sociale affichée | Éditorial | `site_settings.identity.legal_name` |
 | `contact.subject` | libellé du champ | UI | `i18n — UI` |
 | `contact.message` | libellé du champ | UI | `i18n — UI` |
 | `contact.send` | bouton d'envoi | UI | `i18n — UI` |
@@ -106,8 +107,8 @@ fermeture, langue) restent des libellés d'interface.*
 | `contact.required` | validation « obligatoire » | Technique | `i18n — technique` |
 | `contact.invalidEmail` | validation e-mail | Technique | `i18n — technique` |
 
-*`contact.address` a été ajouté au frontend dans le correctif `bb3a5d1` ; sa
-valeur cible est portée par le bureau siège, pas par une chaîne i18n.*
+*`contact.address` et `contact.companyName` ont été ajoutés au frontend dans les correctifs ;
+la valeur cible est portée par le bureau siège et les réglages d'identité, pas par une chaîne i18n statique.*
 
 ## 6. Espace client (`clientArea.*`) — 5 clés
 
@@ -289,13 +290,13 @@ les quatre libellés de champs restent des libellés d'interface.*
 
 | Clé | Usage | Classe | Cible |
 |---|---|---|---|
-| `legal.mentions` | titre de la page mentions | Éditorial | `pages.legal_notice.data.title` |
-| `legal.privacy` | titre de la page confidentialité | Éditorial | `pages.privacy.data.title` |
-| `legal.cookies` | titre de la page cookies / bandeau | Éditorial | `pages.cookies.data.title` |
+| `legal.mentions` | titre du bloc mentions | Éditorial | `page_sections.legal_notice.mentions.data.title` |
+| `legal.privacy` | titre du bloc confidentialité | Éditorial | `page_sections.legal_notice.privacy.data.title` |
+| `legal.cookies` | titre du bloc cookies | Éditorial | `page_sections.legal_notice.cookies.data.title` |
 | `legal.toComplete` | bandeau « à compléter » (H-007) | Éditorial | `site_settings.legal.banner_text` |
-| `legal.bodyMentions` | corps des mentions | Éditorial | `page_sections.legal_notice.document.data.body` |
-| `legal.bodyPrivacy` | corps de la confidentialité | Éditorial | `page_sections.privacy.document.data.body` |
-| `legal.bodyCookies` | corps des cookies | Éditorial | `page_sections.cookies.document.data.body` |
+| `legal.bodyMentions` | corps des mentions | Éditorial | `page_sections.legal_notice.mentions.data.body` |
+| `legal.bodyPrivacy` | corps de la confidentialité | Éditorial | `page_sections.legal_notice.privacy.data.body` |
+| `legal.bodyCookies` | corps des cookies | Éditorial | `page_sections.legal_notice.cookies.data.body` |
 | `legal.acceptAll` | bouton « tout accepter » | Éditorial | `site_settings.cookies.accept_label` |
 | `legal.refuseAll` | bouton « tout refuser » | Éditorial | `site_settings.cookies.refuse_label` |
 | `legal.custom` | bouton « personnaliser » | Éditorial | `site_settings.cookies.custom_label` |
@@ -333,8 +334,8 @@ dans le modèle.
 | Messages techniques | 5 | code backend, `fr.json` pour les messages génériques |
 | Clés mortes à supprimer | 9 | nulle part |
 | **Total des exceptions** | **58** | |
-| Mémoire : clés éditoriales | 124 | base PostgreSQL |
-| **Total général** | **182** | |
+| Mémoire : clés éditoriales | 125 | base PostgreSQL |
+| **Total général** | **183** | |
 
 ### 17.1 Libellés d'interface (44 clés)
 

@@ -85,7 +85,7 @@ complétude de traduction.*
 | Tableau de bord | derniers leads, contenus à relire, complétude i18n, santé | squelettes de chargement, alertes de santé |
 | Contenus — liste | filtres type/statut/langue/traduction manquante, recherche | filtre « à traduire » (EF-514) |
 | Contenus — éditeur | titre/intro/corps par langue, SEO, slug (+ conflit) | bandeau de conflit 409 (verrou optimiste EF-505) |
-| Pages & sections | les 13 pages ; éditeur de blocs (ajouter, réordonner, activer/désactiver), aperçu FR/EN, SEO par page, `og_media_id` | état vide (aucun bloc), conflit 409, page système non supprimable |
+| Pages & sections | les 11 pages ; éditeur de blocs (ajouter, réordonner, activer/désactiver), aperçu FR/EN, SEO par page, `og_media_id` | état vide (aucun bloc), conflit 409, page système non supprimable |
 | Bureaux & équipe | bureaux (un seul siège), téléphones/e-mail/carte, photos via médiathèque ; fiches équipe (un seul fondateur), biographie | refus de suppression du siège ou du fondateur sans remplaçant |
 | Arbre des services | drag & drop, ajout, fusion, suppression (refus explicite si enfants) | confirmation, prévisualisation des redirections à créer |
 | Publications | workflow + planification par langue | calendrier du planning, conflit de dates |
@@ -104,7 +104,7 @@ complétude de traduction.*
 | Colonne gauche (arborescence) | Colonne droite (édition) |
 |---|---|
 | Filtre : type / statut / langue | Onglets : Contenu · SEO · Historique · Révisions |
-| Arbre cliquable + badges de complétude | Langue actuelle en onglet (FR | EN) ; bandeau « traduction obsolète » si `stale` |
+| Arbre cliquable + badges de complétude | Langue actuelle en onglet (FR \| EN) ; bandeau « traduction obsolète » si `stale` |
 | Bouton « + nouveau » | Boutons : Enregistrer · Soumettre à relecture · ← versions |
 
 ## 4. Workflow éditorial (états, transitions, notifications)
