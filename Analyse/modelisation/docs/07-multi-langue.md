@@ -10,18 +10,21 @@
 
 | Entité | Traduisible | Champs concernés | Détail |
 |---|---|---|---|
-| Pages (about, contact, légaux…) | ✅ | title, intro, body, slug, SEO | H-007 : légaux « à compléter » par bandeau par langue |
+| Pages (home, about, contact, localisations, légaux…) | ✅ | title, intro, body, slug, SEO, libellé de navigation | H-007 : légaux « à compléter » par bandeau par langue |
+| Blocs de page (`page_sections`) | ✅ | textes de la section : kicker, titre, corps, libellés de CTA, items (`items[].title/text`) | `entity_type='page_section'` ; `config` reste non traduit (doc 16 §3) |
+| Bureaux (`offices`) | ✅ | name, address_lines, city, region, hours, notes, photo_alt | `entity_type='office'` ; téléphones/e-mail/carte non traduits |
+| Équipe et fondateur (`team_members`) | ✅ | full_name, role, bio, photo_alt | `entity_type='team_member'` |
 | Nœuds de l'arborescence services | ✅ | title, intro, body, slug | 4 niveaux, statut de traduction par nœud |
-| Prestations / groupes / domaines / familles | ✅ | idem | mêmes règles que les nœuds |
-| Intervention types | ✅ | title, intro | 2 types, éditables |
+| Prestations / groupes / domaines / familles | ✅ | idem | mêmes règles que les nœuds ; slug obligatoire (doc 16 §7) |
+| Intervention types | ✅ | title, intro, signature | 2 types, éditables |
 | Secteurs & sous-catégories | ✅ | title, description | non servis si `approved=false` (EF-104) |
 | Publications | ✅ | title, intro, body, slug, SEO | publication possiblement par langue |
 | Catégories | ✅ | title, slug | — |
-| Paramètres du site | ✅ si marqué translatable | valeurs de `site_settings` (coordonnées traduisibles selon langues du cabinet) | — |
-| Métadonnées SEO | ✅ | seo_title, seo_description, OG | par langue |
+| Paramètres du site | ✅ si marqué translatable | `identity.tagline`, `ui_copy.*` (CTA partagés), `cookies.*`, `legal.banner_text` | `entity_type='setting'` ; les valeurs traduisibles ne sont pas dupliquées dans `site_settings.value` |
+| Métadonnées SEO | ✅ | seo_title, seo_description, `og_media_id` | par langue ; repli sur l'OG global |
 | E-mails transactionnels | ✅ | template key + langue du destinataire (lead, client) | cf. point 10 |
 | Messages d'erreur API | ✅ | clés code → libellé dictionnaire app | cf. page 08 |
-| Libellés UI (frontend + back-office) | ✅ | fichiers de traduction frontend, i18n back-office (FR d'abord) | — |
+| Libellés UI (frontend + back-office) | ✅ | fichiers de traduction frontend, i18n back-office (FR d'abord) | **exception assumée** : les libellés de contrôles ne sont pas éditables en base (doc 15 §17) |
 | Médias (alt, légendes) | ✅ | via `entity_translations` (`entity_type='media'`) | — |
 | Documents clients | partiel | titre descriptif ; le contenu du fichier n'est pas traduit (H-008) | v2 |
 
@@ -87,13 +90,14 @@ clé JSONB documentée au dictionnaire).
 **Garde-fous d'intégrité (polymorphisme sans FK)** :
 
 1. **Registre contraignant** : CHECK sur `entity_type` ∈ liste fermée
-   (`node, page, publication, category, media, setting, interventiontype,
-   sector`) — impossible d'écrire un type inconnu (DDL ci-dessous).
+   (`node, page, page_section, publication, category, media, setting,
+   interventiontype, sector, office, team_member`) — impossible d'écrire un
+   type inconnu (DDL ci-dessous).
 2. **Écriture transactionnelle** : la création/l'écriture d'une entité
    et de ses traductions passe par la même couche applicative, dans la
    même transaction SQL — jamais d'INSERT orphelin possible côté app.
 3. **Nettoyage à la suppression d'une entité** : suppression d'un nœud,
-   d'une publication… ⇒ suppression CASCADE applicative (explicite) de ses `entity_translations`, `content_versions` et `slug_redirections` dans la même transaction ; aucune FK SQL directe n'existe pour `entity_id` polymorphe — c'est le point 4 qui garantit la détection.
+   d'une publication… ⇒ suppression CASCADE applicative (explicite) de ses `entity_translations`, `content_versions` et `redirects` dans la même transaction ; aucune FK SQL directe n'existe pour `entity_id` polymorphe — c'est le point 4 qui garantit la détection.
 4. **Détection des orphelins** : job quotidien (planificateur) :
    `SELECT ... FROM entity_translations t WHERE NOT EXISTS (SELECT 1 FROM <table_ref>{"<
      identifiée par entity_type>) r WHERE r.id = t.entity_id` — alerte
@@ -119,11 +123,13 @@ CREATE TABLE languages (
 CREATE TABLE entity_translations (
   id           UUID PRIMARY KEY,
   entity_type  VARCHAR(32) NOT NULL CHECK (entity_type IN
-                 ('node','page','publication','category','media',
-                  'setting','interventiontype','sector')),
+                 ('node','page','page_section','publication','category',
+                  'media','setting','interventiontype','sector','office',
+                  'team_member')),
   entity_id    UUID        NOT NULL,
   lang         VARCHAR(10) NOT NULL REFERENCES languages(code),
   slug         VARCHAR(180),
+  og_media_id  UUID        REFERENCES medias(id) ON DELETE SET NULL,
   status       VARCHAR(16) NOT NULL DEFAULT 'missing'
                CHECK (status IN ('missing','draft','in_review','published','stale')),
   data         JSONB       NOT NULL DEFAULT '{}',
@@ -134,7 +140,7 @@ CREATE TABLE entity_translations (
 -- une seule ligne par entité et langue
 ALTER TABLE entity_translations
   ADD CONSTRAINT uq_trans UNIQUE (entity_type, entity_id, lang);
--- slug unique par type d'entité et langue (peut ALTER si NULL)
+-- slug unique par type d'entité et langue (NULL = entité sans URL)
 CREATE UNIQUE INDEX uq_trans_slug
   ON entity_translations (entity_type, lang, slug)
   WHERE slug IS NOT NULL;
@@ -324,14 +330,27 @@ demeurent, l'API bascule en fallback explicite).
 
 ## 5. Slugs, URLs, hreflang, sitemap
 
-- **Slug par langue**, unique par (entity_type, lang) — cf. table
-  `entity_translations.uq_slug` (page 06).
+- **Slug par langue**, unique par (entity_type, lang) — cf.
+  `entity_translations.uq_trans_slug` (page 06). `slug` n'est `NULL` que pour
+  les entités sans URL publique (`page_section`, `setting`).
+- **Génération** (règle complète : doc 16 §7) : normalisation NFD,
+  minuscules, caractères non `[a-z0-9]` → `-`, compression des tirets ;
+  en cas de collision, contextualisation par le **groupe parent**, puis par
+  le **domaine**, puis suffixe `-2`, `-3`. Les 94 prestations — aujourd'hui
+  sans identifiant ni slug — en reçoivent un ; les trois libellés dupliqués
+  (13 + 2 + 2 occurrences) sont désambiguïsés par le groupe.
+- **Éditabilité** : le slug est éditable par langue au back-office ; il ne
+  peut pas être vide pour une entité publiée. Le slug EN est généré depuis le
+  libellé EN et reste indépendant du slug FR.
 - **Cohérence avec le frontend** : la table `PAGE_SLUGS` du frontend
   (`routes.ts`) reste la source des chemins d'URL, le backend s'aligne
   (seed de parité, page 13). La bascule finale : le backend devient source,
   le frontend consomme les slugs de l'API.
-- **Historique des slugs** : `slug_redirections` ; ancien slug → `301` vers
-  le nouveau (SC-604). Redirection transitive si re-changement.
+- **Historique des slugs** : table `redirects` (**table unique**, elle
+  absorbe `slug_redirections`) ; ancien chemin → `301` vers le nouveau
+  (SC-604). Un déplacement de nœud peut changer l'URL sans changer le slug :
+  la redirection est créée de la même façon. La cible est mise à jour à
+  chaque re-changement (pas de chaîne de redirections).
 - **hreflang / x-default / canonical** : servis par le frontend à partir
   des alternates de l'API (`alternate_fr`, `alternate_en`, …) — x-default = `fr`.
 - **Sitemap** généré par le backend (EF-701), une entrée par (URL, langue),
@@ -408,7 +427,7 @@ template i18n manquant, repli sur `fr` + indication dans l'e-mail.
 |---|---|---|---|
 | L1 | Contenu supprimé dans une seule langue | la traduction passe `missing` ; l'entité dans ladite langue = 404 spécifique, les autres langues servent normalement | EF-603 |
 | L2 | Source FR modifiée après publication EN | statut EN auto `stale` + notification au tableau de bord | EF-601 |
-| L3 | Slug en conflit dans une langue | la validation refuse (UQ) et propose un slug dédoublonné `slug-2` | EF-604 |
+| L3 | Slug en conflit dans une langue | la validation refuse (UQ) et propose un slug contextualisé par le groupe parent puis le domaine, sinon `slug-2`, `slug-3` (doc 16 §7) | EF-604 |
 | L4 | Langue désactivée avec publications actives | URLs de cette langue → 301 vers l'alternative fr ; sitemap mis à jour ; contenu conservé | EF-602/L |
 | L5 | Utilisateur avec langue non supportée (visiteur ou client) | l'interface sert la langue active la plus proche (avec `is_fallback`) ; la préférence `preferred_lang` est conservée telle quelle et resservira si la langue revient | — |
 | L6 | Arbre de services partiellement traduit | branches manquantes servies en repli + `is_fallback` ; le back-office affiche la complétude figée par branche | EF-603, US-002 |

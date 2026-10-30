@@ -24,19 +24,22 @@
 Les rôles sont semés (06 §2.3) ; la matrice acteurs × rôles de la page 03 (§5) donne la vue d'ensemble. L'opération effective = permission
 `(module, action, langue)`.
 
-| Module | Actions possibles | Rôle par défaut | Langue-scopable | MFA |
-|---|---|---|---|
-| Contenus (pages, publications, catégories) | view/create/edit/review/publish/delete/export | editor (edit), reviewer (review), admin (publish) | ✅ | oui (publish) |
-| Arbre des services | view/sort/move/merge/delete | admin | ✅ |
-| Médiathèque | view/create/edit/delete | editor | ❌ (média partagé) |
-| Leads | view/edit/status/notes/export/anonymize | crm | ✅ | oui (export) |
-| Clients & documents | view/create/edit/delete/upload | crm | ❌ | oui |
-| Utilisateurs & rôles | view/create/edit/delete/deactivate | admin / super_admin | ❌ | oui |
-| Langues & traductions | view/activate/deactivate | super_admin | (action globale) |
-| Paramètres du site | view/edit | admin | ✅ (valeurs traduites) |
-| SEO / redirections | view/edit/create/delete | admin | ✅ |
-| Journal d'audit | view/export | admin | ❌ |
-| Sauvegardes / santé | view/run | super_admin | ❌ |
+| Module (`permissions.module`) | Actions possibles | Rôle par défaut | Langue-scopable | MFA |
+|---|---|---|---|---|
+| `pages` — Pages & sections (accueil, à propos, légaux, 404…) | view/create/edit/review/publish/delete | editor (edit), reviewer (review), admin (publish) | ✅ | oui (publish) |
+| `tree` — Arbre des services | view/create/edit/move/merge/delete | admin | ✅ | non |
+| `publications` — Publications & catégories | view/create/edit/review/publish/delete | editor / reviewer / admin | ✅ | oui (publish) |
+| `media` — Médiathèque | view/create/edit/delete | editor | ❌ (média partagé) | non |
+| `leads` — Leads | view/edit/status/notes/export/anonymize | crm | ❌ | oui (export) |
+| `clients` — Clients & documents | view/create/edit/delete/upload | crm | ❌ | oui |
+| `users` — Utilisateurs & rôles | view/create/edit/delete/deactivate | admin / super_admin | ❌ | oui |
+| `languages` — Langues & traductions | view/activate/deactivate | super_admin | (action globale) | non |
+| `offices` — Bureaux et coordonnées | view/create/edit/delete/deactivate | admin | ✅ | non |
+| `team` — Équipe & fondateur | view/create/edit/delete/deactivate | admin | ✅ | non |
+| `settings` — Paramètres du site (identité, CTA, cookies) | view/edit | admin | ✅ (valeurs traduites) | non |
+| `seo` — SEO / redirections | view/create/edit/delete | admin | ✅ | non |
+| `audit` — Journal d'audit | view/export | admin | ❌ | oui (export) |
+| `backup` — Sauvegardes / santé | view/run | super_admin | ❌ | oui |
 
 *Table 1 : base de la matrice, détaillée en vue des besoins (mocks du
 tableau de bord au §6). Toute action impossible est invisible, pas grisée. **MFA TOTP
@@ -51,6 +54,8 @@ flowchart LR
   subgraph NAV["Navigation (sidebar)"]
     D[Tableau de bord]
     C[Contenus]
+    PG[Pages & sections]
+    O[Bureaux & équipe]
     T[Arbre des services]
     P[Publications]
     M[Médiathèque]
@@ -65,6 +70,8 @@ flowchart LR
   end
   D --> L
   D --> C
+  C --> PG
+  C --> O
   C --> T
   C --> P
   C --> M
@@ -78,6 +85,8 @@ complétude de traduction.*
 | Tableau de bord | derniers leads, contenus à relire, complétude i18n, santé | squelettes de chargement, alertes de santé |
 | Contenus — liste | filtres type/statut/langue/traduction manquante, recherche | filtre « à traduire » (EF-514) |
 | Contenus — éditeur | titre/intro/corps par langue, SEO, slug (+ conflit) | bandeau de conflit 409 (verrou optimiste EF-505) |
+| Pages & sections | les 13 pages ; éditeur de blocs (ajouter, réordonner, activer/désactiver), aperçu FR/EN, SEO par page, `og_media_id` | état vide (aucun bloc), conflit 409, page système non supprimable |
+| Bureaux & équipe | bureaux (un seul siège), téléphones/e-mail/carte, photos via médiathèque ; fiches équipe (un seul fondateur), biographie | refus de suppression du siège ou du fondateur sans remplaçant |
 | Arbre des services | drag & drop, ajout, fusion, suppression (refus explicite si enfants) | confirmation, prévisualisation des redirections à créer |
 | Publications | workflow + planification par langue | calendrier du planning, conflit de dates |
 | Médiathèque | upload (barre), remplacement, aperçu, usage (media_refs) | refus type/taille/AV (SC-801) |
@@ -85,7 +94,7 @@ complétude de traduction.*
 | Clients | comptes, invitations, dépôt de documents | états invité/suspendu |
 | Utilisateurs | invitations, activation/désactivation, rôles, MFA | sessions actives révocables |
 | Langues | liste, activation, direction RTL, défaut | avertissement : désactivation ⇒ redirections |
-| Paramètres | coordonnées, réseaux, SEO global, rétention | validation par schéma + audit |
+| Paramètres | identité (nom légal, tagline), CTA partagés, bandeau cookies, modules actifs, SEO global, rétention | validation par schéma + audit |
 | SEO/redirections | table `redirects`, aperçu des 301 automatiques | test d'URL intégré |
 | Journal d'audit | filtres (acteur, action, entité, date), export | pagination offset |
 | Santé & sauvegardes | état des services, dernière sauvegarde, restauration en 2 clics | procédure guidée (ENF-701) |
@@ -122,6 +131,17 @@ document client déposé, échec d'e-mail outbox (EF-903), conflit d'édition.
   aucune injection HTML directe (sécurité, page 09 §6).
 - **Slugs** : prévisualisation de l'URL publique par langue ; changement
   ⇒ proposition de redirection affichée (US-005).
+- **Pages composées** : l'accueil et les pages éditoriales s'éditent comme
+  une pile de blocs (`page_sections`) — ajout depuis le catalogue
+  `section_types`, réordonnancement, activation/désactivation, textes par
+  langue, réglages non traduits dans `config` (limite, variante, média,
+  cible). Un type inconnu est impossible (FK). Les pages `is_system`
+  (accueil, 404, légaux) ne peuvent pas être supprimées, seulement
+  éditées ; un bloc désactivé n'est pas servi mais reste versionné.
+- **Textes partagés** : le texte d'introduction « À propos » est aujourd'hui
+  réutilisé par l'accueil ; en v1 le seed le duplique et l'éditeur affiche
+  un avertissement (« ce texte existe aussi sur la page À propos »), la
+  résolution par référence étant l'alternative documentée (doc 16 §10).
 - **SEO par page** : seo_title (avec compteur 60), seo_description
   (compteur 160), OG image au choix de la médiathèque (défaut : logo).
 - **Aperçu draft** : bouton « prévisualiser » → lien signé expirable 1 h
@@ -132,7 +152,7 @@ document client déposé, échec d'e-mail outbox (EF-903), conflit d'édition.
 
 ## 6. Tableau de bord (métriques v1)
 
-.- Leads (statuts, ancienneté) · contenus en attente de relecture ·
+- Leads (statuts, ancienneté) · contenus en attente de relecture ·
   complétude i18n (par rubrique) · santé (sauvegarde, disque, outbox en
   échec).
 - Vues de publications : compteur simple (EF-512), sans suivi de

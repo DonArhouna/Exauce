@@ -5,6 +5,14 @@
 > dictionnaire de données exhaustif (un tableau par table), index et
 > contraintes, suppression / historisation, migrations Alembic, seed avec
 > parité **2 familles · 10 domaines · 20 groupes · 94 prestations**.
+>
+> **Révision du 30/10/2026** — intégration du contenu **intégralement
+> éditable** décidé avec le client : pages composées de blocs typés
+> (`pages` + `page_sections` + `section_types`), bureaux (`offices`), équipe
+> (`team_members`), SEO par langue (`entity_translations.og_media_id`),
+> clé de migration (`source_key`) et table unique de redirections. Détail et
+> justification : [16 · Modèle éditorial](16-modele-editorial.md) ; inventaire
+> des textes : [15 · Inventaire](15-inventaire-contenu.md).
 
 La table de correspondance classes ↔ tables est en [05 · Modélisation](05-domaine.md#table-correspondance-classes-tables) et la page [07](07-multi-langue.md) pour les règles
 de langue. Les FK, types et contraintes ci-dessous implémentent les
@@ -34,14 +42,39 @@ erDiagram
     varchar node_type "family|domain|group|service"
     int position "ordre dans le parent"
     varchar status "workflow editorial"
+    varchar source_key "UQ partiel, migration"
     timestamp created_at
     timestamp updated_at
   }
+  pages {
+    uuid id PK
+    varchar page_key "home, about, legal_notice…"
+    varchar template "home|standard|legal|contact"
+    varchar source_key "UQ partiel, migration"
+    boolean is_in_nav
+    boolean is_system
+    varchar status
+  }
+  section_types {
+    varchar code PK
+    varchar label
+    jsonb config_schema "JSON Schema 2020-12"
+    jsonb translation_schema "champs traduits autorisés"
+  }
+  page_sections {
+    uuid id PK
+    uuid page_id FK
+    varchar section_type FK
+    int position
+    boolean is_active
+    jsonb config "non traduit, validé par schéma"
+  }
   entity_translations {
-    varchar entity_type "page|node|publication|category…"
+    varchar entity_type "page|node|page_section|office|team_member|…"
     uuid entity_id "id de l'entité"
     varchar lang "BCP-47"
     varchar slug "unique par (type, lang)"
+    uuid og_media_id FK "image OG de la langue"
     varchar status "trad status"
     jsonb data "champs traduits (title, intro…)"
   }
@@ -52,24 +85,28 @@ erDiagram
     timestamp published_at
     uuid cover_media_id FK
     uuid author_id FK
+    varchar source_key "migration"
   }
   categories {
     uuid id PK
   }
-  pages {
-    uuid id PK
-    varchar page_key "about, legal_notice…"
-  }
   content_nodes ||--o{ content_nodes : "parent/enfants"
-  translations }o--o| content_nodes : "traduit"
-  translations }o--o| publications : "traduit"
-  translations }o--o| pages : "traduit"
-  translations }o--o| categories : "traduit"
+  pages ||--o{ page_sections : "compose"
+  section_types ||--o{ page_sections : "type"
+  entity_translations }o--o| content_nodes : "traduit"
+  entity_translations }o--o| pages : "traduit"
+  entity_translations }o--o| page_sections : "traduit"
+  entity_translations }o--o| publications : "traduit"
+  entity_translations }o--o| categories : "traduit"
 ```
 
-*Figure 1 : ER du contexte contenu. Note : `translations.id` (PK UUID) est
-omis dans le diagramme pour lisibilité ; l'unicité est
-`(entity_type, entity_id, lang)`.*
+*Figure 1 : ER du contexte contenu. `pages` porte les pages publiques,
+`page_sections` les blocs qui les composent (hero, chiffres, CTA…) et
+`section_types` le registre fermé des types de blocs. Note :
+`entity_translations.id` (PK UUID) est omis dans le diagramme pour
+lisibilité ; l'unicité est `(entity_type, entity_id, lang)`. Les traductions
+d'une section sont stockées comme celles de toute autre entité, ce qui
+conserve versions, permissions par langue et repli explicite.*
 
 ### 1.2 Contexte 2 · Multi-langue
 
@@ -86,16 +123,18 @@ erDiagram
   entity_translations {
     uuid id PK
     varchar status "missing…published…stale"
-    varchar slug
+    varchar slug "unique par (type, lang)"
+    uuid og_media_id FK
   }
-  slug_redirections {
+  redirects {
     uuid id PK
     varchar entity_type
     uuid entity_id
     varchar lang
-    varchar oldSlug
-    varchar newSlug
-    int statusCode "301|302"
+    varchar old_path "UQ (chemin complet)"
+    varchar target_path
+    int status_code "301|302"
+    boolean auto_generated
   }
   content_versions {
     uuid id PK
@@ -106,12 +145,16 @@ erDiagram
     uuid createdBy FK
   }
   languages ||--o{ entity_translations : "lang"
-  languages ||--o{ slug_redirections : "lang"
+  languages ||--o{ redirects : "lang"
   languages ||--o{ content_versions : "lang"
 ```
 
 *Figure 2 : la table `languages` pilote les langues actives ; une nouvelle
-langue = une ligne, aucune migration (EF-602).*
+langue = une ligne, aucune migration (EF-602). `redirects` est la **table
+unique** des redirections (elle absorbe l'ancienne `slug_redirections`) :
+elle stocke le chemin complet, ce qui couvre les slugs comme les
+déplacements de nœuds, et permet une réponse 301 avant tout traitement
+applicatif.*
 
 ### 1.3 Contexte 3 · Utilisateurs, rôles, permissions
 
@@ -282,20 +325,47 @@ erDiagram
 *Figure 6 : les métadonnées i18n (alt, légende) vivent dans
 `entity_translations` (`entity_type='media'`).*
 
-### 1.7 Contexte 7 · Paramètres, SEO, redirections
+### 1.7 Contexte 7 · Paramètres, identité, bureaux, équipe, SEO, redirections
 
 ```mermaid
 erDiagram
   site_settings {
     uuid id PK
-    varchar group_key "contact, networks, retention…"
-    jsonb value
+    varchar group_key "identity, contact, cookies, ui_copy, features, seo, retention"
     varchar setting_key
+    jsonb value
     boolean is_translatable
+  }
+  offices {
+    uuid id PK
+    varchar code "UQ, ex. hq, thies"
+    varchar source_key "UQ partiel, migration"
+    boolean is_headquarters
+    boolean is_active
+    int position
+    varchar phone_fixed
+    varchar phone_mobile
+    varchar email
+    varchar map_url
+    uuid media_id FK
+  }
+  team_members {
+    uuid id PK
+    varchar code "UQ"
+    varchar source_key "UQ partiel, migration"
+    boolean is_founder
+    boolean is_active
+    int position
+    uuid media_id FK
+    varchar email
+    varchar linkedin_url
+  }
+  medias {
+    uuid id PK
   }
   redirects {
     uuid id PK
-    varchar old_path "unik"
+    varchar old_path "UQ"
     varchar target_path
     int status_code "301|302"
     boolean auto_generated
@@ -309,10 +379,18 @@ erDiagram
   site_settings ||--o{ entity_translations : "libellés traduits"
   site_settings ||--o{ redirects : "gère"
   site_settings ||--o{ search_synonyms : "gère"
+  offices ||--o{ entity_translations : "traductions (office)"
+  team_members ||--o{ entity_translations : "traductions (team_member)"
+  medias ||--o{ offices : "photo"
+  medias ||--o{ team_members : "photo"
 ```
 
-*Figure 7 : les coordonnées (EF-106) font partie de `site_settings`
-(`group_key='contact'`) — éditables au back-office.*
+*Figure 7 : `site_settings` porte l'identité et les réglages ; les
+coordonnées **par bureau** vivent dans `offices` (EF-106, page localisations
+et pied de page), la fiche du fondateur et l'équipe dans `team_members`
+(accueil + « À propos »). L'image OG par langue est portée par
+`entity_translations.og_media_id` (figure 1), avec repli sur
+`site_settings` groupe `seo`.*
 
 ### 1.8 Contexte 8 · Audit & notifications
 
@@ -356,7 +434,7 @@ erDiagram
   consents ||--o{ audit_log : "standardisé trace"
 ```
 
-*Figure 8 : le `audit_log` est écrit ou rélé depuis tous les contextes.*
+*Figure 8 : le `audit_log` est écrit ou relu depuis tous les contextes.*
 
 ### 1.9 Diagramme global simplifié
 
@@ -369,6 +447,9 @@ erDiagram
   }
   content_nodes { uuid id PK }
   pages { uuid id PK }
+  page_sections { uuid id PK }
+  offices { uuid id PK }
+  team_members { uuid id PK }
   publications { uuid id PK }
   medias { uuid id PK }
   users { uuid id PK }
@@ -380,7 +461,11 @@ erDiagram
   entity_translations }o--|| languages : "lang"
   entity_translations }o--o| content_nodes : "traduit"
   entity_translations }o--o| pages : "traduit"
+  entity_translations }o--o| page_sections : "traduit"
+  entity_translations }o--o| offices : "traduit"
+  entity_translations }o--o| team_members : "traduit"
   entity_translations }o--o| publications : "traduit"
+  pages ||--o{ page_sections : "compose"
   users ||--o{ audit_log : "actions"
   users ||--o{ leads : "assigné à"
   client_accounts ||--o{ client_users : "membres"
@@ -413,10 +498,11 @@ médias et utilisateurs.*
 | Colonne | Type | Contraintes | Description | Exemple |
 |---|---|---|---|---|
 | id | UUID | PK | Identifiant | — |
-| entity_type | VARCHAR(32) | NN, CHECK liste fermée | `node` `page` `publication` `category` `media` `setting` `interventiontype` `sector` | `node` |
+| entity_type | VARCHAR(32) | NN, CHECK liste fermée | `node` `page` `page_section` `publication` `category` `media` `setting` `interventiontype` `sector` `office` `team_member` | `node` |
 | entity_id | UUID | NN | ID de l'entité traduite | — |
 | lang | VARCHAR(10) | NN, FK languages.code | Langue de la ligne | `en` |
-| slug | VARCHAR(180) | UQ par (entity_type, lang) | Slug dans cette langue | `payroll` |
+| slug | VARCHAR(180) | UQ par (entity_type, lang) ; `NULL` interdit pour les entités routées | Slug dans cette langue ; `NULL` seulement pour `page_section` et `setting` | `payroll` |
+| og_media_id | UUID | FK medias, `NULL` | Image Open Graph propre à la langue ; repli sur `site_settings.seo.default_og_media_id` | — |
 | status | VARCHAR(16) | NN, ck missing/draft/in_review/published/stale | Statut de la traduction | `published` |
 | data | JSONB | NN (`{}`) | Champs traduits par type d'entité : `title`, `intro`, `body`, `seo_title`, `seo_description`, `alt`, `caption`… ; schéma validé par type (ADR-001) | `{"title": "Traitement de la Paie"}` |
 | published_at | TIMESTAMPTZ |  | Publication de la traduction | — |
@@ -435,17 +521,24 @@ médias et utilisateurs.*
 | created_by | UUID | FK users | Auteur de la version |
 | created_at | TIMESTAMPTZ | NN | — |
 
-**Table `slug_redirections`** — propriétaire : Contenu/SEO.
+**Table `redirects`** — propriétaire : Contenu/SEO. **Table unique** des
+redirections (absorbe l'ancienne `slug_redirections`).
 
-| Colonne | Type | Contraintes | Description |
-|---|---|---|---|
-| id | UUID | PK | — |
-| entity_type / entity_id | VARCHAR(32), UUID | NN | Entité concernée |
-| lang | VARCHAR(10) | NN, FK | Langue du slug |
-| old_slug | VARCHAR(180) | NN | Ancien slug |
-| new_slug | VARCHAR(180) | NN | Nouveau slug |
-| status_code | SMALLINT | NN, ck 301/302 | Code de redirection |
-| uq | — | `uq_redir (entity_type, lang, old_slug)` | Pas de doublon d'ancien slug |
+| Colonne | Type | Contraintes | Description | Exemple |
+|---|---|---|---|---|
+| id | UUID | PK | — | — |
+| entity_type | VARCHAR(32) | NN, même CHECK que `entity_translations` | Entité d'origine (ou `NULL` pour une règle manuelle) | `node` |
+| entity_id | UUID | `NULL` | Entité concernée | — |
+| lang | VARCHAR(10) | `NULL`, FK languages | Langue du chemin ; `NULL` = règle toutes langues | `en` |
+| old_path | VARCHAR(500) | NN, UQ | Chemin complet d'origine | `/fr/services/accompagnement/ancien-slug` |
+| target_path | VARCHAR(500) | NN | Chemin cible | `/fr/services/accompagnement/nouveau-slug` |
+| status_code | SMALLINT | NN, ck 301/302 | Code de redirection (301 par défaut) | 301 |
+| auto_generated | BOOLEAN | NN, def true | Créée par le changement de slug (vs règle manuelle) | true |
+| created_at | TIMESTAMPTZ | NN | — | — |
+
+Règle : une modification de slug ou un déplacement de nœud crée **au plus
+une** ligne par ancien chemin ; l'unicité de `old_path` empêche les boucles
+et les règles contradictoires.
 
 ### 2.2 Contexte 1 · contenus
 
@@ -457,6 +550,7 @@ médias et utilisateurs.*
 | parent_id | UUID | FK content_nodes (NULL = racine famille) | Adjacence : cf. ADR-002 |
 | node_type | VARCHAR(8) | NN, ck family/domain/group/service | Type de nœud |
 | position | INT | NN | Ordre chez le même parent |
+| source_key | VARCHAR(80) | `NULL`, UQ partiel `WHERE source_key IS NOT NULL` | Clé de migration (`accompagnement`, `application-logicielle`…), rend le seed idempotent |
 | status | VARCHAR(16) | NN, ck cf. workflow | Workflow éditorial |
 | icon_media_id | UUID | FK medias, NULL | Optionnel (pictogramme) |
 | created_at / updated_at | TIMESTAMPTZ | NN | — |
@@ -466,30 +560,66 @@ médias et utilisateurs.*
 | Colonne | Type | Contraintes | Description |
 |---|---|---|---|
 | id | UUID | PK | — |
-| page_key | VARCHAR(40) | NN, UQ | Clef stable : `about`, `legal_notice`, `privacy`, `cookies`, `contact` |
+| page_key | VARCHAR(40) | NN, UQ | Registre fermé : `home`, `services`, `interventions`, `sectors`, `publications`, `about`, `locations`, `legal_notice`, `privacy`, `cookies`, `contact`, `client_area`, `not_found` |
+| template | VARCHAR(20) | NN, ck home/standard/legal/contact/coming_soon | Gabarit de rendu attendu par le frontend |
+| source_key | VARCHAR(60) | `NULL`, UQ partiel | Clé de migration (idempotence du seed) |
+| is_in_nav | BOOLEAN | NN, def false | Présence dans le menu principal |
+| nav_position | SMALLINT | `NULL` | Ordre dans le menu |
+| is_system | BOOLEAN | NN, def false | Page non supprimable (`home`, `not_found`, légaux) |
 | status | VARCHAR(16) | NN | Workflow éditorial (H-007 pour les légaux) |
 | banners_pending | BOOLEAN | NN, def true pour légaux | Banderole « à compléter par le cabinet » |
 | created_at / updated_at | TIMESTAMPTZ | NN | — |
+
+**Table `section_types`** — propriétaire : Contenu (registre technique,
+semé par migration, non éditable comme du contenu).
+
+| Colonne | Type | Contraintes | Description |
+|---|---|---|---|
+| code | VARCHAR(40) | PK | `hero`, `trust_bar`, `stats`, `legal_document`… (catalogue : doc 16 §3.4) |
+| label | VARCHAR(80) | NN | Libellé back-office (i18n back-office) |
+| config_schema | JSONB | NN | JSON Schema 2020-12 des champs non traduits de `page_sections.config` |
+| translation_schema | JSONB | NN | Schéma des champs attendus dans `entity_translations.data` |
+| is_active | BOOLEAN | NN, def true | Retrait d'un type sans casser les pages existantes |
+
+**Table `page_sections`** — propriétaire : Contenu.
+
+| Colonne | Type | Contraintes | Description |
+|---|---|---|---|
+| id | UUID | PK | — |
+| page_id | UUID | NN, FK pages `ON DELETE CASCADE` | Page porteuse |
+| section_type | VARCHAR(40) | NN, FK section_types.code `ON DELETE RESTRICT` | Type de bloc |
+| position | INT | NN | Ordre ; `uq_section_position (page_id, position) DEFERRABLE INITIALLY DEFERRED` |
+| is_active | BOOLEAN | NN, def true | Masquer sans supprimer |
+| config | JSONB | NN (`{}`), validé par `section_types.config_schema` | Réglages non traduits (limite, variante, média, cible) |
+| created_at / updated_at | TIMESTAMPTZ | NN | — |
+
+Les textes d'une section ne sont **jamais** dans `config` : ils sont dans
+`entity_translations` (`entity_type='page_section'`), comme le reste du
+contenu éditorial.
 
 **Table `categories` + `publications`** — propriétaire : Contenu.
 
 | Colonne | Type | Contraintes | Description |
 |---|---|---|---|
 | categories.id | UUID | PK | Catégorie de publication |
+| categories.code | VARCHAR(40) | NN, UQ | `governance`, `audit`, `finance`, `hr`, `it`, `legal` (slug FR de `pubCat.*`) |
+| categories.position | SMALLINT | NN | Ordre des filtres |
+| categories.source_key | VARCHAR(60) | `NULL`, UQ partiel | Clé de migration (`governance`…) |
 | publications.id | UUID | PK | — |
 | publications.category_id | UUID | FK categories, NULL | — |
 | publications.status | VARCHAR(16) | NN | Workflow éditorial |
 | publications.published_at | TIMESTAMPTZ | NULL jusqu'à publication | Ordre = décroissant |
 | publications.cover_media_id | UUID | FK medias, NULL | Image de couverture |
 | publications.author_id | UUID | FK users, NULL | Auteur du contenu (back-office) |
-| publications.legacy_key | VARCHAR(60) | UQ, NULL | Clé du contenu « Exemple » du frontend (migration) |
+| publications.source_key | VARCHAR(60) | `NULL`, UQ partiel | Clé de migration (`pub-1`…) — remplace `legacy_key` |
 
 **Table `intervention_types`** (2 types éditables) :
 
 | Colonne | Type | Contraintes | Description |
 |---|---|---|---|
 | id | UUID | PK | — |
-| code | VARCHAR(20) | UQ | `recurrent`, `oneoff` |
+| code | VARCHAR(20) | UQ | `recurrentes`, `ponctuelles` (identiques aux ids du frontend) |
+| source_key | VARCHAR(40) | `NULL`, UQ partiel | Clé de migration |
 | sort_order | SMALLINT | NN | Ordre d'affichage |
 
 Les 3 secteurs et les 9 sous-catégories vivent dans `sectors` :
@@ -498,7 +628,10 @@ Les 3 secteurs et les 9 sous-catégories vivent dans `sectors` :
 |---|---|---|---|
 | id | UUID | PK | — |
 | kind | VARCHAR(12) | ck sector/subcategory | Univers ou sous-catégorie |
+| code | VARCHAR(40) | NN, UQ | `public`, `prive`, `non-gouvernemental`, `ong`… |
+| source_key | VARCHAR(60) | `NULL`, UQ partiel | Clé de migration |
 | parent_id | UUID | FK sectors, NULL si sector | Rattachement |
+| position | INT | NN | Ordre dans le parent |
 | approved | BOOLEAN | NN | Descriptif validé par le cabinet (sinon non servi) |
 
 ### 2.3 Contexte 3 · utilisateurs back-office
@@ -520,11 +653,12 @@ Les 3 secteurs et les 9 sous-catégories vivent dans `sectors` :
 **Table `roles`** : `id UUID PK`, `code VARCHAR(30) UQ`, `label VARCHAR(60) NN`.
 Rôles semés : `super_admin`, `admin`, `editor`, `reviewer`, `crm`, `viewer`.
 
-**Table `permissions`** : `id UUID PK`, `module VARCHAR(20) NN`
-(registre : `content`, `tree`, `media`, `leads`, `clients`, `users`, `settings`,
-`seo`, `audit`, `backup`), `action VARCHAR(10) NN`
-(`view/create/edit/review/publish/delete/export`), `lang VARCHAR(10)` FK
-languages NULL = toutes.
+**Table `permissions`** : `id UUID PK`, `module VARCHAR(24) NN`
+(registre aligné sur la page 10 : `pages`, `tree`, `publications`, `media`,
+`leads`, `clients`, `users`, `languages`, `offices`, `team`, `settings`,
+`seo`, `audit`, `backup`), `action VARCHAR(12) NN`
+(`view/create/edit/review/publish/delete/export/move/merge/deactivate`),
+`lang VARCHAR(10)` FK languages NULL = toutes.
 
 **Table `role_permissions`** : pair `(role_id FK, permission_id FK)` PK composite.
 **Table `user_roles`** : pair `(user_id, role_id)` PK composite.
@@ -595,11 +729,52 @@ dans `entity_translations` (`entity_type='media'`).
 ### 2.7 Contexte 7 · paramètres, SEO, redirections
 
 **Table `site_settings`** : `id PK`, `group_key VARCHAR(40) NN`
-(`contact`, `networks`, `general`, `retention`, `seo`), `setting_key VARCHAR(40) NN`,
-uq `(group_key, setting_key)`,
-`value JSONB NN` (scalaire ou objet),
-`is_translatable BOOLEAN NN` (si oui : libellés traduits dans `entity_translations`,
-`entity_type='setting'`), `updated_by FK users`, `updated_at`.
+(registre : `identity`, `contact`, `cookies`, `ui_copy`, `features`, `seo`,
+`retention`), `setting_key VARCHAR(40) NN`, uq `(group_key, setting_key)`,
+`value JSONB NN` (scalaire ou objet), `is_translatable BOOLEAN NN` (si oui :
+libellés traduits dans `entity_translations`, `entity_type='setting'`),
+`updated_by FK users`, `updated_at`. Les CTA partagés et le bandeau cookies
+sont dans `ui_copy` / `cookies` (doc 16 §9) ; les valeurs traduisibles ne
+sont **pas** dupliquées dans `value`.
+
+**Table `offices`** — propriétaire : Contenu (identité/localisations).
+
+| Colonne | Type | Contraintes | Description |
+|---|---|---|---|
+| id | UUID | PK | — |
+| code | VARCHAR(40) | NN, UQ | `hq`, `thies`… |
+| source_key | VARCHAR(60) | `NULL`, UQ partiel | Clé de migration |
+| is_headquarters | BOOLEAN | NN, def false | Index partiel `uq_office_hq WHERE is_headquarters` : un seul siège |
+| is_active | BOOLEAN | NN, def true | Un bureau inactif n'est pas servi |
+| position | INT | NN | Ordre d'affichage |
+| phone_fixed | VARCHAR(40) | `NULL` | Téléphone fixe |
+| phone_mobile | VARCHAR(40) | `NULL` | Téléphone mobile |
+| email | VARCHAR(255) | `NULL` | E-mail du bureau |
+| map_url | VARCHAR(500) | `NULL` | Lien de carte (aucune clé d'API stockée) |
+| media_id | UUID | FK medias, `NULL` | Photo du bureau |
+| created_at / updated_at | TIMESTAMPTZ | NN | — |
+
+Traductions (`entity_type='office'`) : `name`, `address_lines[]`, `city`,
+`region`, `hours`, `notes`, `photo_alt`.
+
+**Table `team_members`** — propriétaire : Contenu (équipe).
+
+| Colonne | Type | Contraintes | Description |
+|---|---|---|---|
+| id | UUID | PK | — |
+| code | VARCHAR(40) | NN, UQ | `fondateur`, `associe-1`… |
+| source_key | VARCHAR(60) | `NULL`, UQ partiel | Clé de migration |
+| is_founder | BOOLEAN | NN, def false | Index partiel `uq_team_founder WHERE is_founder` : la fiche affichée sur l'accueil |
+| is_active | BOOLEAN | NN, def true | Masquer sans supprimer |
+| position | INT | NN | Ordre d'affichage |
+| media_id | UUID | FK medias, `NULL` | Portrait |
+| email | VARCHAR(255) | `NULL` | Contact public |
+| linkedin_url | VARCHAR(500) | `NULL` | Lien public |
+| created_at / updated_at | TIMESTAMPTZ | NN | — |
+
+Traductions (`entity_type='team_member'`) : `full_name`, `role`, `bio`,
+`photo_alt`. La section `founder_card` ne porte que le texte d'introduction
+et le repli, jamais le nom ni la biographie (source unique).
 
 **Table `redirects`** : `id PK`, `old_path VARCHAR(500) NN UQ`,
 `target_path NN`, `status_code ck 301/302`, `auto_generated BOOLEAN NN`,
@@ -635,14 +810,20 @@ non réversible ou pseudonymisé de façon paramétrée — À VALIDER avec CDP)
 |---|---|---|
 | entity_translations | (entity_type, entity_id) ; (lang, status) | menus d'arbre, filtre « à traduire »
 | entity_translations | UQ (entity_type, entity_id, lang) | invariant i18n |
-| entity_translations | UQ (entity_type, lang, slug) | slug unique par langue (EF-604) |
+| entity_translations | UQ (entity_type, lang, slug) `WHERE slug IS NOT NULL` | slug unique par langue (EF-604) |
 | content_nodes | (parent_id, position) | ordre stable d'affichage |
 | content_nodes | (node_type, status) | filtres back-office |
+| content_nodes | UQ partiel `(source_key) WHERE source_key IS NOT NULL` | idempotence du seed |
+| pages | UQ `(source_key) WHERE source_key IS NOT NULL` | idempotence du seed |
+| page_sections | UQ (page_id, position) `DEFERRABLE INITIALLY DEFERRED` | réordonnancement en une transaction |
+| page_sections | (page_id, is_active) | rendu d'une page |
+| offices | UQ partiel `(is_headquarters) WHERE is_headquarters` | un seul siège |
+| team_members | UQ partiel `(is_founder) WHERE is_founder` | une seule fiche fondateur |
 | publications | (status, published_at) | listes triées + filtres |
-| slug_redirections | UQ (entity_type, lang, oldSlug) | pas de règle contradictoire |
+| redirects | UQ (old_path) ; (entity_type, entity_id) | pas de règle contradictoire, purge par entité |
 | leads | (status, created_at) | files de traitement |
 | sessions | (user_id), (expires_at) | révocation et purge |
-| client_documents | UQ (account_id, original_name) RIEN | l'unicité n'est PAS imposée (SC-404) |
+| client_documents | (account_id, original_name) — **non unique** | l'unicité n'est PAS imposée (SC-404) |
 | media_refs | (ref_type, ref_id) | liste des référents à jour |
 | audit_log | (entity), (at) | consultabilité (EF-901) |
 | site_settings | UQ (group_key, setting_key) | invariant des paramètres |
@@ -650,7 +831,7 @@ non réversible ou pseudonymisé de façon paramétrée — À VALIDER avec CDP)
 
 Contraintes croisées : toutes FK `RESTRICT` sauf historisation des
 utilisateurs supprimés (`ON DELETE SET NULL` sur `leads.assigned_to`,
-`content_versions.created_by`) ; touts statuts via CHECK ; les slugs
+`content_versions.created_by`) ; tous les statuts via CHECK ; les slugs
 publiés et `old_slug` sont format NFC (validation applicative).
 
 ## ADR-002 · Modèle de l'arborescence des services
@@ -739,11 +920,14 @@ l'arborescence des services ni aux valeurs servant la REH.
 | Entité | Suppression | Historisation | Rétention |
 |---|---|---|---|
 | Contenu (nœud/page/publication) | logique (`status=archived`) ; possible après refus d'enfants (règles R14-1…R14-3) | `content_versions` par langue (défaut illimité) | archive ≤ 3 ans |
+| Bloc de page (`page_sections`) | désactivation (`is_active=false`) ; suppression physique possible si la page n'est pas `is_system` | version conservée dans `content_versions` | — |
+| Bureau (`offices`) | désactivation (`is_active=false`) ; suppression refusée pour le siège sans successeur désigné | traductions supprimées après confirmation | — |
+| Membre d'équipe (`team_members`) | désactivation ; suppression refusée pour le fondateur sans remplaçant | traductions supprimées après confirmation | — |
 | Traduction | opérée via l'entité | idem versions | — |
 | Média | refus de la suppression si référencé ; sinon `status=deleted` + fichier en quarantaine 30 j | variants conservés | — |
 | Lead | anonymisation (irréversible) selon rétention, audit conservé | — | 24 mois (défaut, ENF-702) |
 | Comptes client | désactivation puis anonymisation (demande EF-405) | documents en quarantaine avant purge | — |
-| Utilisateur back-office | `is_active=false` ; FK annotées SET NULL | les sessions révoquées | — |
+| Utilisateur back-office | `is_active=false` ; FK en `ON DELETE SET NULL` | les sessions révoquées | — |
 | Audit | jamais — rollover système de l'archive uniquement | — | 3 ans (À VALIDER JURIDIQUEMENT) |
 
 ## 5. Migrations (Alembic)
@@ -764,22 +948,52 @@ l'arborescence des services ni aux valeurs servant la REH.
 
 ## 6. Seed et parité (US-011, page 13)
 
-Le seed créé à partir de `Frontend/src/data/content.data.ts` :
+Le seed est construit à partir de `Frontend/src/data/content.data.ts`, de
+`Frontend/src/i18n/locales/{fr,en}.json` et de `Frontend/src/lib/routes.ts`.
+Il est **idempotent** : chaque ligne porte un `source_key` (nœuds, pages,
+bureaux, équipe, publications, secteurs, types d'intervention).
 
-1. 1. Langues : `fr` (défaut, active), `en` (active).
-2. Contenu du rendu du frontend : `content_nodes` (2 familles → 10 domaines
-   → 20 groupes → 94 prestations), avec positions conservées 1..N par parent.
-3. `entity_translations` : une ligne par (nœud, `fr`) et une par (nœud, `en`),
-   slugs exactement identiques à ceux composant les `PAGE_SLUGS` du
-   frontend (`fr/services/accompagnement/…` ↔ `en/services/support/…`).
-4. `pages` : `about`, `contact`, `legal_*` (statut `draft` + `banners_pending`,
-   H-007).
-5. `publications` : les 3 « Exemple » (statut `draft`, `legacy_key` pour la
-   correspondance avec le frontend).
-6. `sectors` : 3 secteurs + 9 sous-catégories (`approved=false` tant que les
+1. Langues : `fr` (défaut, active), `en` (active).
+2. `content_nodes` : 2 familles → 10 domaines → 20 groupes → 94 prestations,
+   positions conservées 1..N par parent, `source_key` = id frontend
+   (`accompagnement`, `audit-externe`, `application-logicielle`…).
+3. `entity_translations` des nœuds : une ligne par (nœud, `fr`) et une par
+   (nœud, `en`), slugs identiques à ceux du frontend
+   (`fr/services/accompagnement/…` ↔ `en/services/support/…`) ; les 4 slugs
+   de prestations dupliqués sont contextualisés par le groupe parent
+   (doc 16 §7.2). Les 94 prestations reçoivent un `id` et un slug — ce que le
+   frontend actuel n'a pas.
+4. `pages` : 13 lignes — `home`, `services`, `interventions`, `sectors`,
+   `publications`, `about`, `locations`, `contact`, `legal_notice`,
+   `privacy`, `cookies`, `client_area`, `not_found` — avec `template`,
+   `is_in_nav`/`nav_position` (7 entrées de menu) et `is_system` pour
+   `home`, `not_found` et les 3 pages légales. Statut `draft` +
+   `banners_pending` pour les légaux (H-007).
+5. `section_types` : les 21 codes du catalogue (doc 16 §3.4), avec leurs
+   schémas.
+6. `page_sections` : 30 blocs — accueil 10 (hero, trust_bar, about_preview,
+   domains_grid, audit_grid, interventions_grid, sectors_grid, stats,
+   publications_grid, cta), services 5, interventions 2, à propos 5,
+   publications 1, localisations 2, contact 1, espace client 1, pages légales
+   3. Chaque bloc reçoit ses traductions FR/EN (`entity_type='page_section'`).
+7. `categories` : 6 (`governance`, `audit`, `finance`, `hr`, `it`, `legal`) ;
+   `publications` : les 3 « Exemple » (`source_key='pub-1..3'`, statut
+   `draft`).
+8. `intervention_types` : `recurrentes` / `ponctuelles` + traductions
+   (dont les phrases signature `home.signature.*`).
+9. `sectors` : 3 secteurs + 9 sous-catégories (`approved=false` tant que les
    descriptifs de `propositions-secteurs.md` ne sont pas validés).
-7. `site_settings` : `contact` (e-mail, tél fixe +221 33 814 51 24, tél mobile
-   +221 77 099 31 83, ville Dakar), `seo` (og image par défaut = logo).
+10. `offices` : le bureau siège `hq` (`is_headquarters=true`), alimenté par
+    `ORGANIZATION` (e-mail, tél fixe +221 33 814 51 24, tél mobile
+    +221 77 099 31 83, Dakar) + traductions FR/EN.
+11. `team_members` : le fondateur `fondateur` (`is_founder=true`), alimenté
+    par `home.founder` / `home.founderRole` ; biographie vide (à rédiger).
+12. `site_settings` : `identity` (nom légal, nom commercial, tagline),
+    `contact` (e-mail générique, réseaux), `ui_copy` (5 CTA partagés),
+    `cookies` (bandeau + 3 boutons + texte de personnalisation),
+    `features` (espace client, recherche, bandeau cookies), `seo`
+    (image OG par défaut = logo, robots, JSON-LD), `retention`.
+13. `redirects` : vide au seed (aucune URL historique).
 
 **Test de parité (doit s'exécuter en CI)** :
 
@@ -789,9 +1003,18 @@ Le seed créé à partir de `Frontend/src/data/content.data.ts` :
 | `COUNT(... 'domain')` | 10 |
 | `COUNT(... 'group')` | 20 |
 | `COUNT(... 'service')` | 94 |
-| slugs FR/EN vs `PAGE_SLUGS` | 100 % identiques |
+| slugs FR/EN des nœuds vs `PAGE_SLUGS` + slugs du frontend | 100 % identiques |
+| slugs de prestations uniques par langue | 94 / 94 (aucun doublon) |
+| `pages` / dont `is_in_nav` | 13 / 7 |
+| `section_types` / `page_sections` | 21 / 30 |
+| `page_sections` de l'accueil | 10 |
 | secteurs / sous-catégories | 3 / 9 |
-| publications « Exemple » importées | 3 (draft) |
+| `categories` / publications « Exemple » importées | 6 / 3 (draft) |
+| `offices` / dont siège | 1 / 1 |
+| `team_members` / dont fondateur | 1 / 1 |
+| clés i18n **éditoriales** (doc 15) couvertes par une cible en base | 124 / 124 |
+| clés i18n restantes après purge des clés mortes | 173 (FR = EN) |
+| `redirects` au seed | 0 |
 
 ## 7. DDL illustratif (extrait, non exécuté — aucun code applicatif)
 
@@ -811,20 +1034,96 @@ CREATE TABLE languages (
 
 CREATE TABLE entity_translations (
   id           UUID PRIMARY KEY,
-  entity_type  VARCHAR(32) NOT NULL,
+  entity_type  VARCHAR(32) NOT NULL CHECK (entity_type IN
+                 ('node','page','page_section','publication','category',
+                  'media','setting','interventiontype','sector','office',
+                  'team_member')),
   entity_id    UUID        NOT NULL,
   lang         VARCHAR(10) NOT NULL REFERENCES languages(code),
   slug         VARCHAR(180),
+  og_media_id  UUID        REFERENCES medias(id) ON DELETE SET NULL,
   status       VARCHAR(16) NOT NULL DEFAULT 'missing' CHECK (status IN
                  ('missing','draft','in_review','published','stale')),
   data         JSONB       NOT NULL DEFAULT '{}',
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  uq_trans UNIQUE (entity_type, entity_id, lang),
-  uq_slug  UNIQUE (entity_type, lang, slug)
+  uq_trans UNIQUE (entity_type, entity_id, lang)
 );
+CREATE UNIQUE INDEX uq_trans_slug ON entity_translations (entity_type, lang, slug)
+  WHERE slug IS NOT NULL;
 CREATE INDEX ix_trans_entity ON entity_translations (entity_type, entity_id);
 -- (full-text : voir la table miroir search_index, page 07 §2.2).
+
+CREATE TABLE section_types (
+  code                VARCHAR(40) PRIMARY KEY,
+  label               VARCHAR(80) NOT NULL,
+  config_schema       JSONB       NOT NULL,
+  translation_schema  JSONB       NOT NULL,
+  is_active           BOOLEAN     NOT NULL DEFAULT true
+);
+
+CREATE TABLE pages (
+  id              UUID PRIMARY KEY,
+  page_key        VARCHAR(40) NOT NULL UNIQUE,
+  template        VARCHAR(20) NOT NULL CHECK (template IN
+                    ('home','standard','legal','contact','coming_soon')),
+  source_key      VARCHAR(60),
+  is_in_nav       BOOLEAN     NOT NULL DEFAULT false,
+  nav_position    SMALLINT,
+  is_system       BOOLEAN     NOT NULL DEFAULT false,
+  status          VARCHAR(16) NOT NULL DEFAULT 'draft',
+  banners_pending BOOLEAN     NOT NULL DEFAULT false,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX uq_pages_source ON pages (source_key) WHERE source_key IS NOT NULL;
+
+CREATE TABLE page_sections (
+  id           UUID PRIMARY KEY,
+  page_id      UUID NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+  section_type VARCHAR(40) NOT NULL REFERENCES section_types(code) ON DELETE RESTRICT,
+  position     INT  NOT NULL,
+  is_active    BOOLEAN NOT NULL DEFAULT true,
+  config       JSONB   NOT NULL DEFAULT '{}',
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT uq_section_position UNIQUE (page_id, position)
+    DEFERRABLE INITIALLY DEFERRED
+);
+
+CREATE TABLE offices (
+  id              UUID PRIMARY KEY,
+  code            VARCHAR(40) NOT NULL UNIQUE,
+  source_key      VARCHAR(60),
+  is_headquarters BOOLEAN NOT NULL DEFAULT false,
+  is_active       BOOLEAN NOT NULL DEFAULT true,
+  position        INT     NOT NULL,
+  phone_fixed     VARCHAR(40),
+  phone_mobile    VARCHAR(40),
+  email           VARCHAR(255),
+  map_url         VARCHAR(500),
+  media_id        UUID REFERENCES medias(id) ON DELETE SET NULL,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX uq_office_hq ON offices (is_headquarters) WHERE is_headquarters;
+
+CREATE TABLE team_members (
+  id           UUID PRIMARY KEY,
+  code         VARCHAR(40) NOT NULL UNIQUE,
+  source_key   VARCHAR(60),
+  is_founder   BOOLEAN NOT NULL DEFAULT false,
+  is_active    BOOLEAN NOT NULL DEFAULT true,
+  position     INT     NOT NULL,
+  media_id     UUID REFERENCES medias(id) ON DELETE SET NULL,
+  email        VARCHAR(255),
+  linkedin_url VARCHAR(500),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX uq_team_founder ON team_members (is_founder) WHERE is_founder;
 ```
 
-**(le DDL ci-dessus illustre les invariants ; l'index full-text avec config par langue est détaillé en page 07, et la rédaction finale a lieu au backend, M6+).*
+*Le DDL ci-dessus illustre les invariants ; l'index full-text avec config par
+langue est détaillé en page 07, et la rédaction finale a lieu au backend
+(M6+).*
