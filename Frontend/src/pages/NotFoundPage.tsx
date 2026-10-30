@@ -12,7 +12,7 @@ export default function NotFoundPage() {
   const l = lang as Lang;
 
   return (
-    <Page title={`404 — ${t('notFound.title')}`}>
+    <Page title={`404 — ${t('notFound.title')}`} noindex>
       <section className="flex min-h-[65vh] items-center bg-abyss-gradient text-ivory">
         <div className="mx-auto max-w-xl px-5 text-center sm:px-8">
           <SpeedLines className="mx-auto h-5" />

@@ -12,8 +12,10 @@
     />
     <link rel="alternate" hreflang="fr" href="/fr/" />
     <link rel="alternate" hreflang="en" href="/en/" />
-    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/fraunces-600-latin.woff2" />
-    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/inter-400-latin.woff2" />
+    <!-- Pas de preload de police : la coquille HTML est vide (SPA), les polices ne
+         sont utilisées qu'après hydratation ; les précharger retardait le bundle JS
+         et déclenchait l'avertissement « preloaded but not used ». `font-display: swap`
+         gère l'affichage intermédiaire. -->
   </head>
   <body>
     <div id="root"></div>

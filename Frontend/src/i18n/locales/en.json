@@ -45,6 +45,7 @@
     "name": "Full name",
     "email": "Email address",
     "phone": "Phone",
+    "address": "Dakar, Senegal",
     "subject": "Subject",
     "message": "Message",
     "send": "Send message",

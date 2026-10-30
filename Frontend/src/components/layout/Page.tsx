@@ -12,10 +12,13 @@ import { isLang } from '@/i18n';
 export function Page({
   title,
   description,
+  noindex = false,
   children,
 }: {
   title: string;
   description?: string;
+  /** Page technique (404…) : exclue de l'indexation, sans canonical ni hreflang. */
+  noindex?: boolean;
   children: React.ReactNode;
 }) {
   const { i18n } = useTranslation();
@@ -47,8 +50,34 @@ export function Page({
     setMeta('og:alternate_locale', lang === 'en' ? 'fr_FR' : 'en_GB', 'property');
     setMeta('og:image', '/logo-og.png', 'property');
 
+    // Indexation : les pages techniques (404) sont explicitement exclues.
+    const setRobots = (content: string | null) => {
+      const existing = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
+      if (content === null) {
+        existing?.remove();
+        return;
+      }
+      const el = existing ?? document.createElement('meta');
+      el.name = 'robots';
+      el.content = content;
+      if (!existing) document.head.appendChild(el);
+    };
+
     // hreflang FR ↔ EN (translated slugs) + x-default + canonical
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const alternates = Array.from(
+      document.head.querySelectorAll<HTMLLinkElement>('link[rel="alternate"][hreflang]'),
+    );
+    const canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+
+    if (noindex) {
+      setRobots('noindex, follow');
+      alternates.forEach((el) => el.remove());
+      canonical?.remove();
+      return;
+    }
+
+    setRobots(null);
     const base = translatePath(location.pathname, lang === 'en' ? 'fr' : 'en');
     const [relFr, relEn] = lang === 'en' ? [base, location.pathname] : [location.pathname, base];
     for (const [hl, href] of [['fr', relFr], ['en', relEn], ['x-default', relFr]] as const) {
@@ -61,14 +90,14 @@ export function Page({
       }
       link.href = `${origin}${href}`;
     }
-    let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
-    if (!canonical) {
-      canonical = document.createElement('link');
-      canonical.rel = 'canonical';
-      document.head.appendChild(canonical);
+    let canonicalEl = canonical;
+    if (!canonicalEl) {
+      canonicalEl = document.createElement('link');
+      canonicalEl.rel = 'canonical';
+      document.head.appendChild(canonicalEl);
     }
-    canonical.href = `${origin}${location.pathname}`;
-  }, [title, description, i18n.language, location.pathname, lang]);
+    canonicalEl.href = `${origin}${location.pathname}`;
+  }, [title, description, noindex, i18n.language, location.pathname, lang]);
 
   return <>{children}</>;
 }

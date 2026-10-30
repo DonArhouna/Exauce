@@ -106,7 +106,7 @@ export default function ContactPage() {
 
           {/* Coordonnées */}
           <aside className="rounded-card bg-abyss-gradient p-8 text-ivory">
-            <h2 className="font-display text-display-md">EXAUCE Audit &amp; Conseils SAS</h2>
+            <h2 className="font-display text-display-md">{ORGANIZATION.name}</h2>
             <ul className="mt-6 space-y-4 text-sm text-white/75">
               <li>
                 <a href={`mailto:${ORGANIZATION.email}`} className="hover:text-turquoise-400">
@@ -115,7 +115,7 @@ export default function ContactPage() {
               </li>
               <li>{ORGANIZATION.phoneFixed}</li>
               <li>{ORGANIZATION.phoneMobile}</li>
-              <li>placeholder — adresse à compléter</li>
+              <li>{t('contact.address')}</li>
             </ul>
           </aside>
         </div>
