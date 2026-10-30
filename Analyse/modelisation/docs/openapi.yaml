@@ -3,21 +3,46 @@ info:
   title: EXAUCE Backend — Contrat API v1
   version: 1.0.0-M3
   description: >-
-    Contrat de référence pour le Backend (FastAPI + PostgreSQL) d'EXAUCE
-    Audit & Conseils SAS. Trois surfaces : public, espace client, back-office.
+    Contrat d'API de référence pour le Backend (FastAPI + PostgreSQL) d'EXAUCE
+    Audit & Conseils SAS.
+    Trois surfaces : public (/api/v1), espace client (/api/v1/client), back-office (/api/v1/admin).
     Chaque réponse de contenu est mono-langue avec repli explicite (is_fallback).
   contact:
     name: Projet EXAUCE
 servers:
   - url: /api/v1
-    description: Serveur unique (Docker Compose)
+    description: Serveur API v1
 tags:
   - name: public-content
+    description: Consultation publique du contenu du site (services, pages, secteurs, publications)
   - name: public-search
+    description: Recherche plein texte
   - name: public-contact
+    description: Formulaire de contact et capture de leads
   - name: client
-  - name: admin
+    description: Espace client (v2)
+  - name: admin-auth
+    description: Authentification back-office
+  - name: admin-content
+    description: Gestion éditoriale des services et publications
+  - name: admin-pages
+    description: Gestion des pages et des sections typées
+  - name: admin-media
+    description: Médiathèque
+  - name: admin-settings
+    description: Paramètres du site et SEO
+  - name: admin-leads
+    description: Gestion des demandes de contact
+  - name: admin-users
+    description: Gestion des utilisateurs et rôles
+  - name: admin-audit
+    description: Journal d'audit et conformité
+
 paths:
+  # =========================================================================
+  # 1. SURFACES PUBLIQUES
+  # =========================================================================
+
   /services-tree:
     get:
       operationId: getServicesTree
@@ -37,11 +62,31 @@ paths:
               schema: {$ref: '#/components/schemas/ServicesTree'}
         '304': {description: 'Non modifié (ETag)'}
         '404': {$ref: '#/components/responses/Eproblem'}
+
+  /familles/{slug}:
+    get:
+      operationId: getFamily
+      tags: [public-content]
+      summary: Détail d'une famille de services avec liste de ses domaines
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: {type: string, pattern: '^[a-z0-9-]+$'}
+        - $ref: '#/components/parameters/lang'
+      responses:
+        '200':
+          description: Famille publiée
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Family'}
+        '404': {$ref: '#/components/responses/Eproblem'}
+
   /domains/{slug}:
     get:
       operationId: getDomain
       tags: [public-content]
-      summary: Détail d'un domaine avec groupes et prestations
+      summary: Détail d'un domaine avec groupes et prestations (EF-102)
       parameters:
         - name: slug
           in: path
@@ -55,11 +100,76 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/DomainDetail'}
         '404': {$ref: '#/components/responses/Eproblem'}
+
+  /sectors:
+    get:
+      operationId: listSectors
+      tags: [public-content]
+      summary: Univers et sous-catégories de clientèle (EF-104)
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        '200':
+          description: Liste des secteurs approuvés
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Sector'}
+
+  /intervention-types:
+    get:
+      operationId: listInterventionTypes
+      tags: [public-content]
+      summary: Types d'intervention (récurrentes et ponctuelles - EF-103)
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        '200':
+          description: Types d'intervention
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/InterventionType'}
+
+  /offices:
+    get:
+      operationId: listOffices
+      tags: [public-content]
+      summary: Bureaux et implantations du cabinet (EF-106)
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        '200':
+          description: Liste des bureaux actifs
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Office'}
+
+  /team:
+    get:
+      operationId: listTeam
+      tags: [public-content]
+      summary: Équipe et fondateur (EF-107)
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        '200':
+          description: Membres de l'équipe
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/TeamMember'}
+
   /publications:
     get:
       operationId: listPublications
       tags: [public-content]
-      summary: Publications publiées (paginées au curseur)
+      summary: Publications publiées (paginées au curseur - EF-105)
       parameters:
         - $ref: '#/components/parameters/lang'
         - name: cursor
@@ -83,11 +193,12 @@ paths:
                     type: array
                     items: {$ref: '#/components/schemas/PublicationSummary'}
                   next_cursor: {type: string, nullable: true}
+
   /publications/{slug}:
     get:
       operationId: getPublication
       tags: [public-content]
-      summary: Détail d'une publication publiée
+      summary: Détail d'une publication publiée (EF-105)
       parameters:
         - name: slug
           in: path
@@ -101,11 +212,12 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/PublicationDetail'}
         '404': {$ref: '#/components/responses/Eproblem'}
+
   /pages/{key}:
     get:
       operationId: getPage
       tags: [public-content]
-      summary: Page éditoriale (about, contact, légaux avec bandeau)
+      summary: Page éditoriale avec ses sections typées (EF-107, EF-108)
       parameters:
         - name: key
           in: path
@@ -114,27 +226,29 @@ paths:
         - $ref: '#/components/parameters/lang'
       responses:
         '200':
-          description: Page
+          description: Page et ses sections
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/Page'}
+              schema: {$ref: '#/components/schemas/PageDetail'}
         '404': {$ref: '#/components/responses/Eproblem'}
+
   /settings/public:
     get:
       operationId: getPublicSettings
       tags: [public-content]
-      summary: Coordonnées et SEO publics (modifiables au back-office)
+      summary: Coordonnées, identité et SEO publics (EF-106)
       responses:
         '200':
           description: Paramètres publics
           content:
             application/json:
               schema: {$ref: '#/components/schemas/PublicSettings'}
+
   /languages/active:
     get:
       operationId: listActiveLanguages
       tags: [public-content]
-      summary: Langues actives (sélecteur de langue du frontend)
+      summary: Langues actives pour le sélecteur du frontend (EF-602)
       responses:
         '200':
           description: Langues actives
@@ -143,11 +257,12 @@ paths:
               schema:
                 type: array
                 items: {$ref: '#/components/schemas/Language'}
+
   /search:
     get:
       operationId: search
       tags: [public-search]
-      summary: Recherche plein texte, indexée par langue
+      summary: Recherche plein texte indexée par langue (EF-201..204)
       parameters:
         - name: q
           in: query
@@ -156,7 +271,7 @@ paths:
         - $ref: '#/components/parameters/lang'
       responses:
         '200':
-          description: Résultats (éventuellement vides, jamais 5xx)
+          description: Résultats de recherche
           content:
             application/json:
               schema:
@@ -166,11 +281,12 @@ paths:
                     type: array
                     items: {$ref: '#/components/schemas/SearchHit'}
                   message: {type: string}
+
   /contact:
     post:
       operationId: submitContact
       tags: [public-contact]
-      summary: Soumission du formulaire de contact (idempotent)
+      summary: Soumission du formulaire de contact (EF-301..303)
       parameters:
         - $ref: '#/components/parameters/idempotencyKey'
       requestBody:
@@ -178,17 +294,9 @@ paths:
         content:
           application/json:
             schema: {$ref: '#/components/schemas/ContactRequest'}
-            example:
-              name: Awa Diop
-              email: awa@example.com
-              subject: Demande d'audit
-              message: Bonjour…
-              lang: fr
-              honeypot: ''
-              elapsed_ms: 8400
       responses:
         '202':
-          description: Lead enregistré
+          description: Demande enregistrée
           content:
             application/json:
               schema:
@@ -199,11 +307,28 @@ paths:
         '409': {$ref: '#/components/responses/Eproblem'}
         '422': {$ref: '#/components/responses/Eproblem'}
         '429': {$ref: '#/components/responses/Eproblem'}
+
+  /sitemap.xml:
+    get:
+      operationId: getSitemapXml
+      tags: [public-content]
+      summary: Sitemap XML dynamique multi-langue (EF-701)
+      responses:
+        '200':
+          description: Flux XML du sitemap
+          content:
+            application/xml:
+              schema: {type: string}
+
+  # =========================================================================
+  # 2. ESPACE CLIENT (v2)
+  # =========================================================================
+
   /client/auth/activate:
     post:
       operationId: activateClientAccount
       tags: [client]
-      summary: Activation du compte via le lien d'invitation (v2)
+      summary: Activation de compte client via invitation signée (EF-401)
       requestBody:
         required: true
         content:
@@ -218,33 +343,47 @@ paths:
       responses:
         '200': {description: 'Compte activé, session créée'}
         '410': {$ref: '#/components/responses/Eproblem'}
+
   /client/auth/login:
     post:
       operationId: clientLogin
       tags: [client]
-      summary: Connexion espace client (MFA en deux étapes si activé)
+      summary: Connexion espace client (EF-402)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: {type: string, format: email}
+                password: {type: string, format: password}
+                totp_code: {type: string}
       responses:
-        '200': {description: 'Session créée, ou mfa_required'}
+        '200': {description: 'Session créée ou mfa_required'}
         '401': {$ref: '#/components/responses/Eproblem'}
+
   /client/documents:
     get:
       operationId: listClientDocuments
       tags: [client]
-      summary: Documents de mon compte (contrôle d'appartenance strict)
+      summary: Documents du compte client connecté (EF-403)
       responses:
         '200':
-          description: Liste
+          description: Liste des documents
           content:
             application/json:
               schema:
                 type: array
                 items: {$ref: '#/components/schemas/ClientDocument'}
         '401': {$ref: '#/components/responses/Eproblem'}
+
   /client/documents/{id}/download:
     get:
       operationId: downloadClientDocument
       tags: [client]
-      summary: Téléchargement (URL courte signée, anti-IDOR, audit)
+      summary: Téléchargement sécurisé d'un document client (EF-403)
       parameters:
         - name: id
           in: path
@@ -252,24 +391,41 @@ paths:
           schema: {type: string, format: uuid}
       responses:
         '200':
-          description: Flux du fichier
+          description: Flux du document
           content:
-            application/pdf: {schema: {type: string, format: binary}}
+            application/octet-stream: {schema: {type: string, format: binary}}
         '403': {$ref: '#/components/responses/Eproblem'}
         '404': {$ref: '#/components/responses/Eproblem'}
+
+  # =========================================================================
+  # 3. BACK-OFFICE (ADMIN)
+  # =========================================================================
+
   /admin/auth/login:
     post:
       operationId: adminLogin
-      tags: [admin]
-      summary: Connexion back-office (2 étapes si MFA)
+      tags: [admin-auth]
+      summary: Connexion back-office (Argon2id + TOTP, EF-501, ENF-301)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: {type: string, format: email}
+                password: {type: string, format: password}
+                totp_code: {type: string}
       responses:
-        '200': {description: 'Session ou mfa_required'}
+        '200': {description: 'Session créée'}
         '401': {$ref: '#/components/responses/Eproblem'}
+
   /admin/content/tree:
     get:
       operationId: adminGetTree
-      tags: [admin]
-      summary: Arbre des services (toutes langues, y compris drafts)
+      tags: [admin-content]
+      summary: Arbre des services complet (tous statuts et langues, EF-508)
       parameters:
         - $ref: '#/components/parameters/allLangs'
       responses:
@@ -280,8 +436,8 @@ paths:
               schema: {$ref: '#/components/schemas/ServicesTree'}
     post:
       operationId: adminCreateNode
-      tags: [admin]
-      summary: Création d'un nœud (famille/domaine/groupe/prestation)
+      tags: [admin-content]
+      summary: Création d'un nœud dans l'arborescence (EF-508)
       x-permission: [tree, create, default]
       requestBody:
         required: true
@@ -291,36 +447,64 @@ paths:
       responses:
         '201': {description: 'Nœud créé'}
         '403': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/tree/{id}/move:
+    post:
+      operationId: adminMoveNode
+      tags: [admin-content]
+      summary: Déplacement d'un nœud vers un nouveau parent (EF-508)
+      x-permission: [tree, move, default]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [new_parent_id]
+              properties:
+                new_parent_id: {type: string, format: uuid, nullable: true}
+                position: {type: integer}
+      responses:
+        '200': {description: 'Nœud déplacé'}
+        '400': {$ref: '#/components/responses/Eproblem'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+
   /admin/content/{type}/{id}/publish:
     post:
       operationId: adminPublishContent
-      tags: [admin]
-      summary: Publication (statut approuvé requis ; invalide cache + sitemap)
+      tags: [admin-content]
+      summary: Publication d'un contenu (EF-506)
       x-permission: [content, publish, default]
       parameters:
         - name: type
           in: path
           required: true
-          schema: {type: string, enum: [node, page, publication]}
+          schema: {type: string, enum: [node, page, publication, page_section, office, team_member]}
         - name: id
           in: path
           required: true
           schema: {type: string, format: uuid}
       responses:
-        '200': {description: 'Publié'}
+        '200': {description: 'Contenu publié'}
         '403': {$ref: '#/components/responses/Eproblem'}
         '409': {$ref: '#/components/responses/Eproblem'}
+
   /admin/content/{type}/{id}/translation/{lang}:
     put:
       operationId: adminPutTranslation
-      tags: [admin]
-      summary: Écriture d'une traduction (permission par langue)
+      tags: [admin-content]
+      summary: Écriture ou mise à jour d'une traduction avec verrou optimiste (EF-505, EF-601)
       x-permission: [content, edit, lang]
       parameters:
         - name: type
           in: path
           required: true
-          schema: {type: string, enum: [node, page, publication, category, media, setting, sector, interventiontype]}
+          schema: {type: string, enum: [node, page, page_section, publication, category, media, setting, sector, interventiontype, office, team_member]}
         - name: id
           in: path
           required: true
@@ -329,34 +513,768 @@ paths:
           in: path
           required: true
           schema: {type: string, minLength: 2, maxLength: 10}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data]
+              properties:
+                slug: {type: string}
+                og_media_id: {type: string, format: uuid, nullable: true}
+                status: {type: string, enum: [draft, in_review, published]}
+                expected_version: {type: integer}
+                data:
+                  type: object
+                  additionalProperties: true
       responses:
         '200': {description: 'Traduction enregistrée'}
         '403': {$ref: '#/components/responses/Eproblem'}
         '409': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/content/{type}/{id}/versions:
+    get:
+      operationId: adminListVersions
+      tags: [admin-content]
+      summary: Historique des versions et révisions d'une entité (EF-505)
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema: {type: string}
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - $ref: '#/components/parameters/lang'
+      responses:
+        '200':
+          description: Liste des révisions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/ContentVersion'}
+
+  /admin/content/{type}/{id}/restore/{version_id}:
+    post:
+      operationId: adminRestoreVersion
+      tags: [admin-content]
+      summary: Restauration d'une version antérieure (EF-505)
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema: {type: string}
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - name: version_id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200': {description: 'Version restaurée avec succès'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/pages:
+    get:
+      operationId: adminListPages
+      tags: [admin-pages]
+      summary: Liste des 11 pages éditoriales (EF-501)
+      responses:
+        '200':
+          description: Liste des pages
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/PageSummary'}
+
+  /admin/pages/{id}:
+    get:
+      operationId: adminGetPage
+      tags: [admin-pages]
+      summary: Détail complet d'une page avec ses sections ordonnées (EF-501)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Détail page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PageDetail'}
+    patch:
+      operationId: adminUpdatePage
+      tags: [admin-pages]
+      summary: Mise à jour des paramètres de la page (navigation, gabarit, statut)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                is_in_nav: {type: boolean}
+                nav_position: {type: integer, nullable: true}
+                status: {type: string}
+                banners_pending: {type: boolean}
+      responses:
+        '200': {description: 'Page mise à jour'}
+
+  /admin/pages/{id}/sections:
+    post:
+      operationId: adminAddSection
+      tags: [admin-pages]
+      summary: Ajout d'une section typée sur une page
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SectionUpsert'}
+      responses:
+        '201':
+          description: Section créée
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Section'}
+
+  /admin/sections/{id}:
+    patch:
+      operationId: adminUpdateSection
+      tags: [admin-pages]
+      summary: Mise à jour d'une section (ordre position, activation, config JSON)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                position: {type: integer}
+                is_active: {type: boolean}
+                config: {type: object}
+      responses:
+        '200': {description: 'Section mise à jour'}
+    delete:
+      operationId: adminDeleteSection
+      tags: [admin-pages]
+      summary: Suppression d'une section
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '204': {description: 'Section supprimée'}
+
+  /admin/sectors:
+    get:
+      operationId: adminListSectors
+      tags: [admin-content]
+      summary: Liste complète des secteurs et sous-catégories (EF-104)
+      responses:
+        '200':
+          description: Liste
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Sector'}
+    post:
+      operationId: adminCreateSector
+      tags: [admin-content]
+      summary: Création d'un secteur ou sous-catégorie
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SectorUpsert'}
+      responses:
+        '201': {description: 'Secteur créé'}
+
+  /admin/sectors/{id}:
+    patch:
+      operationId: adminUpdateSector
+      tags: [admin-content]
+      summary: Mise à jour d'un secteur (validation approuvée par le cabinet)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                approved: {type: boolean}
+                position: {type: integer}
+      responses:
+        '200': {description: 'Mis à jour'}
+    delete:
+      operationId: adminDeleteSector
+      tags: [admin-content]
+      summary: Suppression d'un secteur
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '204': {description: 'Supprimé'}
+
+  /admin/intervention-types:
+    get:
+      operationId: adminListInterventionTypes
+      tags: [admin-content]
+      summary: Liste des modes d'intervention (EF-103)
+      responses:
+        '200':
+          description: Liste
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/InterventionType'}
+
+  /admin/intervention-types/{id}:
+    patch:
+      operationId: adminUpdateInterventionType
+      tags: [admin-content]
+      summary: Mise à jour d'un type d'intervention
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sort_order: {type: integer}
+      responses:
+        '200': {description: 'Mis à jour'}
+
+  /admin/offices:
+    get:
+      operationId: adminListOffices
+      tags: [admin-settings]
+      summary: Gestion des bureaux et implantations (EF-106)
+      responses:
+        '200':
+          description: Liste
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Office'}
+    post:
+      operationId: adminCreateOffice
+      tags: [admin-settings]
+      summary: Création d'un nouveau bureau
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/OfficeUpsert'}
+      responses:
+        '201': {description: 'Bureau créé'}
+
+  /admin/offices/{id}:
+    patch:
+      operationId: adminUpdateOffice
+      tags: [admin-settings]
+      summary: Modification des coordonnées d'un bureau
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/OfficeUpsert'}
+      responses:
+        '200': {description: 'Bureau mis à jour'}
+    delete:
+      operationId: adminDeleteOffice
+      tags: [admin-settings]
+      summary: Suppression d'un bureau (refusée pour le siège sans successeur)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '204': {description: 'Bureau supprimé'}
+        '400': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/team:
+    get:
+      operationId: adminListTeam
+      tags: [admin-settings]
+      summary: Gestion des membres de l'équipe et fondateur (EF-107)
+      responses:
+        '200':
+          description: Liste
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/TeamMember'}
+    post:
+      operationId: adminCreateTeamMember
+      tags: [admin-settings]
+      summary: Ajout d'un membre d'équipe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/TeamMemberUpsert'}
+      responses:
+        '201': {description: 'Membre créé'}
+
+  /admin/team/{id}:
+    patch:
+      operationId: adminUpdateTeamMember
+      tags: [admin-settings]
+      summary: Mise à jour d'un membre d'équipe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/TeamMemberUpsert'}
+      responses:
+        '200': {description: 'Mis à jour'}
+    delete:
+      operationId: adminDeleteTeamMember
+      tags: [admin-settings]
+      summary: Suppression d'un membre d'équipe (refusée pour le fondateur)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '204': {description: 'Supprimé'}
+        '400': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/settings:
+    get:
+      operationId: adminListSettings
+      tags: [admin-settings]
+      summary: Liste des groupes de paramètres (EF-510)
+      responses:
+        '200':
+          description: Groupes de configuration
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/SiteSettingGroup'}
+
+  /admin/settings/{group_key}:
+    get:
+      operationId: adminGetSettingGroup
+      tags: [admin-settings]
+      summary: Lecture des réglages d'un groupe spécifique
+      parameters:
+        - name: group_key
+          in: path
+          required: true
+          schema: {type: string, enum: [identity, contact, cookies, ui_copy, features, seo, retention]}
+      responses:
+        '200':
+          description: Paramètres du groupe
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SiteSettingGroup'}
+    put:
+      operationId: adminUpdateSettingGroup
+      tags: [admin-settings]
+      summary: Enregistrement des réglages d'un groupe
+      parameters:
+        - name: group_key
+          in: path
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200': {description: 'Réglages enregistrés'}
+
+  /admin/media:
+    get:
+      operationId: adminListMedia
+      tags: [admin-media]
+      summary: Médiathèque — liste paginée avec filtres et recherche (EF-801..803)
+      parameters:
+        - name: kind
+          in: query
+          schema: {type: string, enum: [image, pdf, document]}
+        - name: search
+          in: query
+          schema: {type: string}
+        - name: limit
+          in: query
+          schema: {type: integer, default: 20}
+        - name: offset
+          in: query
+          schema: {type: integer, default: 0}
+      responses:
+        '200':
+          description: Liste des médias
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: {$ref: '#/components/schemas/MediaItem'}
+                  total: {type: integer}
+
+  /admin/media/upload:
+    post:
+      operationId: adminUploadMedia
+      tags: [admin-media]
+      summary: Téléversement sécurisé de fichier (magic bytes, ClamAV, EF-801)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: {type: string, format: binary}
+                kind: {type: string, enum: [image, pdf, document]}
+      responses:
+        '201':
+          description: Média enregistré
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MediaItem'}
+        '415': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/media/{id}:
+    get:
+      operationId: adminGetMedia
+      tags: [admin-media]
+      summary: Métadonnées et références d'usage d'un média
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Média
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MediaItem'}
+    delete:
+      operationId: adminDeleteMedia
+      tags: [admin-media]
+      summary: Suppression d'un média (refusée si référencé dans un contenu - SC-542)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '204': {description: 'Média supprimé'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/redirects:
+    get:
+      operationId: adminListRedirects
+      tags: [admin-settings]
+      summary: Liste des redirections 301/302 (EF-511, EF-704)
+      responses:
+        '200':
+          description: Liste
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/RedirectItem'}
+    post:
+      operationId: adminCreateRedirect
+      tags: [admin-settings]
+      summary: Création manuelle d'une redirection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RedirectCreate'}
+      responses:
+        '201': {description: 'Redirection créée'}
+
+  /admin/redirects/{id}:
+    delete:
+      operationId: adminDeleteRedirect
+      tags: [admin-settings]
+      summary: Suppression d'une redirection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '204': {description: 'Redirection supprimée'}
+
+  /admin/users:
+    get:
+      operationId: adminListUsers
+      tags: [admin-users]
+      summary: Liste des comptes utilisateurs du back-office (EF-513)
+      responses:
+        '200':
+          description: Liste
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/AdminUser'}
+    post:
+      operationId: adminCreateUser
+      tags: [admin-users]
+      summary: Création d'un utilisateur back-office
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AdminUserCreate'}
+      responses:
+        '201': {description: 'Utilisateur créé'}
+
+  /admin/users/{id}:
+    get:
+      operationId: adminGetUser
+      tags: [admin-users]
+      summary: Fiche d'un utilisateur
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Fiche
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminUser'}
+    patch:
+      operationId: adminUpdateUser
+      tags: [admin-users]
+      summary: Mise à jour des rôles ou du profil utilisateur
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AdminUserUpdate'}
+      responses:
+        '200': {description: 'Mis à jour'}
+
+  /admin/users/{id}/deactivate:
+    post:
+      operationId: adminDeactivateUser
+      tags: [admin-users]
+      summary: Désactivation immédiate d'un compte (révocation des sessions)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200': {description: 'Compte désactivé'}
+
+  /admin/roles:
+    get:
+      operationId: adminListRoles
+      tags: [admin-users]
+      summary: Rôles back-office et permissions associées (EF-502)
+      responses:
+        '200':
+          description: Rôles
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Role'}
+
+  /admin/permissions:
+    get:
+      operationId: adminListPermissions
+      tags: [admin-users]
+      summary: Registre fermé des modules et actions de permission
+      responses:
+        '200':
+          description: Permissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Permission'}
+
   /admin/leads:
     get:
       operationId: adminListLeads
-      tags: [admin]
-      summary: Liste paginée des leads
-      x-permission: [leads, view, default]
+      tags: [admin-leads]
+      summary: Liste paginée et filtrable des leads reçus (EF-304)
+      parameters:
+        - name: status
+          in: query
+          schema: {type: string, enum: [new, in_progress, waiting, done, rejected, anonymized]}
+        - name: limit
+          in: query
+          schema: {type: integer, default: 20}
+        - name: offset
+          in: query
+          schema: {type: integer, default: 0}
       responses:
-        '200': {description: 'Liste'}
+        '200':
+          description: Liste
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: {$ref: '#/components/schemas/LeadDetail'}
+                  total: {type: integer}
+
+  /admin/leads/{id}/status:
+    patch:
+      operationId: adminUpdateLeadStatus
+      tags: [admin-leads]
+      summary: Transition de statut d'un lead avec traçabilité d'audit (EF-304)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LeadStatusUpdate'}
+      responses:
+        '200': {description: 'Statut mis à jour'}
+
+  /admin/leads/{id}/notes:
+    post:
+      operationId: adminAddLeadNote
+      tags: [admin-leads]
+      summary: Ajout d'une note interne sur un lead
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LeadNoteCreate'}
+      responses:
+        '201': {description: 'Note ajoutée'}
+
+  /admin/leads/export.csv:
+    get:
+      operationId: adminExportLeadsCsv
+      tags: [admin-leads]
+      summary: Export CSV des leads (droit requis, journalisé dans l'audit - EF-305)
+      responses:
+        '200':
+          description: Fichier CSV
+          content:
+            text/csv:
+              schema: {type: string}
+
   /admin/audit:
     get:
       operationId: adminAuditLog
-      tags: [admin]
-      summary: Journal d'audit (lecture ; append-only côté service)
-      x-permission: [audit, view, default]
+      tags: [admin-audit]
+      summary: Journal d'audit append-only immuable (EF-901)
+      parameters:
+        - name: entity_type
+          in: query
+          schema: {type: string}
+        - name: limit
+          in: query
+          schema: {type: integer, default: 50}
+        - name: offset
+          in: query
+          schema: {type: integer, default: 0}
       responses:
-        '200': {description: 'Entrées audit'}
+        '200':
+          description: Entrées audit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: {$ref: '#/components/schemas/AuditEntry'}
+                  total: {type: integer}
+
+# =========================================================================
+# 4. COMPOSANTS (PARAMÈTRES, RÉPONSES, SCHÉMAS)
+# =========================================================================
+
 components:
   parameters:
     lang:
       name: lang
       in: query
-      required: false
-      description: Code BCP-47 ; sinon Accept-Language ; sinon langue par défaut
-      schema: {type: string}
+      description: BCP-47 (fr, en)
+      schema: {type: string, pattern: '^[a-z]{2}(-[A-Z]{2})?$'}
     allLangs:
       name: all_langs
       in: query
@@ -369,14 +1287,15 @@ components:
       name: Idempotency-Key
       in: header
       required: true
-      description: Clé d'idempotence (24 h), rejouée sans doublon
       schema: {type: string, format: uuid}
+
   responses:
     Eproblem:
-      description: Erreur standard RFC 9457
+      description: RFC 7807 (problem+json)
       content:
         application/problem+json:
           schema: {$ref: '#/components/schemas/Problem'}
+
   schemas:
     Problem:
       type: object
@@ -385,15 +1304,17 @@ components:
         type: {type: string}
         title: {type: string}
         status: {type: integer}
-        code: {type: string, description: Code stable (catalogue page 08)}
+        code: {type: string, description: Code d'erreur stable}
         detail: {type: string}
         correlation_id: {type: string}
+
     Localized:
       type: object
-      description: Champ traduit avec repli explicite (ADR-001)
+      description: Valeur localisée avec statut de repli explicite
       properties:
         value: {type: string}
         is_fallback: {type: boolean}
+
     SearchHit:
       type: object
       properties:
@@ -404,6 +1325,7 @@ components:
         href: {type: string}
         rank: {type: number}
         is_fallback: {type: boolean}
+
     Language:
       type: object
       properties:
@@ -411,6 +1333,7 @@ components:
         label: {type: string}
         direction: {type: string, enum: [ltr, rtl]}
         is_default: {type: boolean}
+
     ServicesTree:
       type: object
       properties:
@@ -422,30 +1345,34 @@ components:
         fallback:
           type: object
           nullable: true
-          description: "Cible de repli si la langue manque (H-009) : {lang, href}"
         families:
           type: array
           items: {$ref: '#/components/schemas/Family'}
+
     Family:
       type: object
       properties:
         id: {type: string, format: uuid}
         slug: {type: string}
         title: {type: string}
+        tagline: {type: string, nullable: true}
         is_fallback: {type: boolean}
         domains:
           type: array
           items: {$ref: '#/components/schemas/Domain'}
+
     Domain:
       type: object
       properties:
         id: {type: string, format: uuid}
         slug: {type: string}
         title: {type: string}
+        intro: {type: string, nullable: true}
         is_fallback: {type: boolean}
         groups:
           type: array
           items: {$ref: '#/components/schemas/Group'}
+
     Group:
       type: object
       properties:
@@ -455,7 +1382,16 @@ components:
         is_fallback: {type: boolean}
         services:
           type: array
-          items: {type: string}
+          items: {$ref: '#/components/schemas/PrestationItem'}
+
+    PrestationItem:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        slug: {type: string}
+        title: {type: string}
+        is_fallback: {type: boolean}
+
     DomainDetail:
       type: object
       properties:
@@ -463,39 +1399,190 @@ components:
         slug: {type: string}
         title: {type: string}
         intro: {$ref: '#/components/schemas/Localized'}
-        prev: {type: string, nullable: true}
-        next: {type: string, nullable: true}
+        prev:
+          type: object
+          nullable: true
+          properties:
+            slug: {type: string}
+            title: {type: string}
+        next:
+          type: object
+          nullable: true
+          properties:
+            slug: {type: string}
+            title: {type: string}
         groups:
           type: array
           items: {$ref: '#/components/schemas/Group'}
+
+    Sector:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        code: {type: string}
+        kind: {type: string, enum: [sector, subcategory]}
+        slug: {type: string}
+        title: {type: string}
+        intro: {type: string, nullable: true}
+        approved: {type: boolean}
+        subcategories:
+          type: array
+          items: {$ref: '#/components/schemas/Sector'}
+
+    SectorUpsert:
+      type: object
+      required: [code, kind]
+      properties:
+        code: {type: string}
+        kind: {type: string, enum: [sector, subcategory]}
+        parent_id: {type: string, format: uuid, nullable: true}
+        position: {type: integer}
+        approved: {type: boolean}
+
+    InterventionType:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        code: {type: string}
+        slug: {type: string}
+        title: {type: string}
+        intro: {type: string}
+        signature: {type: string}
+        sort_order: {type: integer}
+
+    Office:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        code: {type: string}
+        is_headquarters: {type: boolean}
+        is_active: {type: boolean}
+        phone_fixed: {type: string, nullable: true}
+        phone_mobile: {type: string, nullable: true}
+        email: {type: string, nullable: true}
+        map_url: {type: string, nullable: true}
+        name: {type: string}
+        address_lines:
+          type: array
+          items: {type: string}
+        city: {type: string}
+
+    OfficeUpsert:
+      type: object
+      required: [code]
+      properties:
+        code: {type: string}
+        is_headquarters: {type: boolean}
+        is_active: {type: boolean}
+        position: {type: integer}
+        phone_fixed: {type: string, nullable: true}
+        phone_mobile: {type: string, nullable: true}
+        email: {type: string, nullable: true}
+        map_url: {type: string, nullable: true}
+        media_id: {type: string, format: uuid, nullable: true}
+
+    TeamMember:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        code: {type: string}
+        is_founder: {type: boolean}
+        is_active: {type: boolean}
+        full_name: {type: string}
+        role: {type: string}
+        bio: {type: string, nullable: true}
+        photo_url: {type: string, nullable: true}
+        email: {type: string, nullable: true}
+        linkedin_url: {type: string, nullable: true}
+
+    TeamMemberUpsert:
+      type: object
+      required: [code]
+      properties:
+        code: {type: string}
+        is_founder: {type: boolean}
+        is_active: {type: boolean}
+        position: {type: integer}
+        media_id: {type: string, format: uuid, nullable: true}
+        email: {type: string, nullable: true}
+        linkedin_url: {type: string, nullable: true}
+
     PublicationSummary:
       type: object
       properties:
         id: {type: string, format: uuid}
         slug: {type: string}
         title: {type: string}
+        excerpt: {type: string, nullable: true}
+        category_code: {type: string}
         published_at: {type: string, format: date-time}
+        cover_url: {type: string, nullable: true}
         is_fallback: {type: boolean}
+
     PublicationDetail:
       allOf:
         - $ref: '#/components/schemas/PublicationSummary'
         - type: object
           properties:
-            intro: {$ref: '#/components/schemas/Localized'}
             body: {$ref: '#/components/schemas/Localized'}
-            cover: {type: string, nullable: true}
-    Page:
+            author_name: {type: string, nullable: true}
+
+    PageSummary:
       type: object
       properties:
-        key: {type: string}
+        id: {type: string, format: uuid}
+        page_key: {type: string}
+        template: {type: string}
+        is_in_nav: {type: boolean}
+        nav_position: {type: integer, nullable: true}
+        is_system: {type: boolean}
+        status: {type: string}
+
+    PageDetail:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        page_key: {type: string}
+        template: {type: string}
+        is_in_nav: {type: boolean}
+        nav_position: {type: integer, nullable: true}
+        is_system: {type: boolean}
+        status: {type: string}
+        banners_pending: {type: boolean}
         title: {$ref: '#/components/schemas/Localized'}
-        body: {$ref: '#/components/schemas/Localized'}
-        banner_pending: {type: boolean, description: Bandeau "à compléter par le cabinet" (H-007)}
+        sections:
+          type: array
+          items: {$ref: '#/components/schemas/Section'}
+
+    Section:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        section_type: {type: string}
+        source_key: {type: string, nullable: true}
+        position: {type: integer}
+        is_active: {type: boolean}
+        config: {type: object}
+        data:
+          type: object
+          description: Données traduites de la section (hero, stats, CTA...)
+
+    SectionUpsert:
+      type: object
+      required: [section_type, position]
+      properties:
+        section_type: {type: string}
+        source_key: {type: string, nullable: true}
+        position: {type: integer}
+        is_active: {type: boolean, default: true}
+        config: {type: object}
+
     PublicSettings:
       type: object
-      description: Coordonnées éditables au back-office (EF-106)
+      description: Coordonnées et SEO publics (EF-106)
       properties:
-        name: {type: string}
+        legal_name: {type: string}
+        tagline: {type: string}
         email: {type: string, format: email}
         phone_fixed: {type: string}
         phone_mobile: {type: string}
@@ -504,6 +1591,165 @@ components:
         socials:
           type: object
           additionalProperties: {type: string}
+        seo_default:
+          type: object
+          properties:
+            og_image: {type: string}
+            robots: {type: string}
+
+    SiteSettingGroup:
+      type: object
+      properties:
+        group_key: {type: string}
+        settings:
+          type: object
+          additionalProperties: true
+
+    MediaItem:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        kind: {type: string, enum: [image, pdf, document]}
+        storage_key: {type: string}
+        url: {type: string}
+        mime: {type: string}
+        size_bytes: {type: integer}
+        status: {type: string, enum: [active, replaced, deleted]}
+        alt: {type: string, nullable: true}
+        caption: {type: string, nullable: true}
+        created_at: {type: string, format: date-time}
+
+    ContentVersion:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        entity_type: {type: string}
+        entity_id: {type: string, format: uuid}
+        lang: {type: string}
+        version_num: {type: integer}
+        author_name: {type: string, nullable: true}
+        created_at: {type: string, format: date-time}
+        data: {type: object}
+
+    RedirectItem:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        old_path: {type: string}
+        target_path: {type: string}
+        status_code: {type: integer, enum: [301, 302]}
+        auto_generated: {type: boolean}
+        created_at: {type: string, format: date-time}
+
+    RedirectCreate:
+      type: object
+      required: [old_path, target_path]
+      properties:
+        old_path: {type: string}
+        target_path: {type: string}
+        status_code: {type: integer, enum: [301, 302], default: 301}
+
+    AdminUser:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        email: {type: string, format: email}
+        display_name: {type: string}
+        is_active: {type: boolean}
+        default_lang: {type: string}
+        roles:
+          type: array
+          items: {type: string}
+        last_login_at: {type: string, format: date-time, nullable: true}
+
+    AdminUserCreate:
+      type: object
+      required: [email, password, display_name]
+      properties:
+        email: {type: string, format: email}
+        password: {type: string, format: password, minLength: 12}
+        display_name: {type: string}
+        default_lang: {type: string, default: fr}
+        role_codes:
+          type: array
+          items: {type: string}
+
+    AdminUserUpdate:
+      type: object
+      properties:
+        display_name: {type: string}
+        default_lang: {type: string}
+        role_codes:
+          type: array
+          items: {type: string}
+
+    Role:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        code: {type: string}
+        label: {type: string}
+        permissions:
+          type: array
+          items: {$ref: '#/components/schemas/Permission'}
+
+    Permission:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        module: {type: string}
+        action: {type: string}
+        lang: {type: string, nullable: true}
+
+    LeadDetail:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        email: {type: string, format: email}
+        phone: {type: string, nullable: true}
+        subject: {type: string}
+        message: {type: string}
+        lang: {type: string}
+        status: {type: string, enum: [new, in_progress, waiting, done, rejected, anonymized]}
+        assigned_to: {type: string, nullable: true}
+        created_at: {type: string, format: date-time}
+        notes:
+          type: array
+          items:
+            type: object
+            properties:
+              id: {type: string, format: uuid}
+              author_name: {type: string}
+              note: {type: string}
+              created_at: {type: string, format: date-time}
+
+    LeadStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status: {type: string, enum: [new, in_progress, waiting, done, rejected, anonymized]}
+        note: {type: string}
+
+    LeadNoteCreate:
+      type: object
+      required: [note]
+      properties:
+        note: {type: string}
+        internal: {type: boolean, default: true}
+
+    AuditEntry:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        at: {type: string, format: date-time}
+        actor_type: {type: string, enum: [user, system]}
+        actor_name: {type: string, nullable: true}
+        action: {type: string}
+        entity_type: {type: string}
+        entity_id: {type: string, format: uuid, nullable: true}
+        ip: {type: string, nullable: true}
+
     ContactRequest:
       type: object
       required: [name, email, subject, message]
@@ -516,6 +1762,7 @@ components:
         lang: {type: string}
         honeypot: {type: string, description: Doit rester vide (chasse au bot)}
         elapsed_ms: {type: integer, description: Délai de rédaction (anti-bot)}
+
     ClientDocument:
       type: object
       properties:
@@ -524,6 +1771,7 @@ components:
         mime: {type: string}
         size_bytes: {type: integer}
         created_at: {type: string, format: date-time}
+
     NodeUpsert:
       type: object
       required: [node_type]
