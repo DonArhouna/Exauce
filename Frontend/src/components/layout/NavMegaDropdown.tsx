@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { NavLink } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { SpeedLines } from '../ui/SpeedLines';
@@ -14,7 +14,9 @@ interface NavMegaDropdownProps {
 
 /**
  * Composant factorisé de méga-menu / popup déroulant au survol :
- * - Utilisé pour Services et Publications
+ * - Utilisé pour Services et Publications sans régression
+ * - Détection et anti-collision automatique avec le viewport (marge ≥ 16 px)
+ * - Largeur plafonnée à calc(100vw - 2rem) pour éviter tout débordement horizontal
  * - Délais doux d'ouverture/fermeture (150ms anti-flicker)
  * - Navigation accessible au clavier (focus, Tab, fermeture via Échap avec restitution du focus)
  * - ARIA aria-expanded et aria-haspopup
@@ -26,10 +28,12 @@ export function NavMegaDropdown({
   columns,
 }: NavMegaDropdownProps) {
   const [open, setOpen] = useState(false);
+  const [popupLeft, setPopupLeft] = useState<number | null>(null);
   const timeoutRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
   const triggerRef = useRef<HTMLAnchorElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const clearTimer = () => {
     if (timeoutRef.current !== null) {
@@ -79,6 +83,50 @@ export function NavMegaDropdown({
     }
   };
 
+  // Calcul du décalage pour garantir un affichage 100% dans le viewport avec marge ≥ 16px
+  const clampHorizontalPosition = useCallback(() => {
+    if (!containerRef.current) return;
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const triggerRect = triggerRef.current
+      ? triggerRef.current.getBoundingClientRect()
+      : containerRect;
+    const viewportWidth = window.innerWidth;
+    const margin = 16;
+    const popupWidth = dropdownRef.current?.offsetWidth || 672;
+    const effectiveWidth = Math.min(popupWidth, Math.max(300, viewportWidth - 2 * margin));
+
+    // Centrage initial sur le déclencheur
+    let targetViewportLeft = triggerRect.left + triggerRect.width / 2 - effectiveWidth / 2;
+
+    // Collision à droite : décale vers la gauche
+    if (targetViewportLeft + effectiveWidth > viewportWidth - margin) {
+      targetViewportLeft = viewportWidth - margin - effectiveWidth;
+    }
+
+    // Collision à gauche : décale vers la droite
+    if (targetViewportLeft < margin) {
+      targetViewportLeft = margin;
+    }
+
+    // Décalage relatif au container parent (position: relative)
+    const relativeLeft = targetViewportLeft - containerRect.left;
+    setPopupLeft(relativeLeft);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setPopupLeft(null);
+      return;
+    }
+    clampHorizontalPosition();
+    window.addEventListener('resize', clampHorizontalPosition);
+    window.addEventListener('scroll', clampHorizontalPosition, { passive: true });
+    return () => {
+      window.removeEventListener('resize', clampHorizontalPosition);
+      window.removeEventListener('scroll', clampHorizontalPosition);
+    };
+  }, [open, clampHorizontalPosition]);
+
   useEffect(() => {
     if (!open) return;
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -126,11 +174,15 @@ export function NavMegaDropdown({
       <AnimatePresence>
         {open && (
           <motion.div
+            ref={dropdownRef}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.18 }}
-            className="absolute left-1/2 top-full w-[42rem] max-w-[85vw] -translate-x-1/2 pt-2"
+            style={{
+              left: popupLeft !== null ? `${popupLeft}px` : 0,
+            }}
+            className="absolute top-full w-[42rem] max-w-[calc(100vw-2rem)] pt-2"
           >
             <div className="overflow-hidden rounded-card border border-ink/8 bg-white p-6 shadow-cardHover">
               <div className="mb-4 flex items-center gap-3">
@@ -176,4 +228,3 @@ export function NavMegaDropdown({
     </div>
   );
 }
-

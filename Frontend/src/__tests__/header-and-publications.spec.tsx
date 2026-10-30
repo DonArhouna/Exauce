@@ -55,6 +55,84 @@ describe('Header & Navigation Mega-Menus', () => {
       expect(pubTrigger).toHaveAttribute('aria-expanded', 'false');
     });
   });
+
+  const testViewports = [
+    { width: 1024, desc: '1024px desktop' },
+    { width: 1280, desc: '1280px desktop' },
+    { width: 1440, desc: '1440px desktop' },
+    { width: 1920, desc: '1920px large desktop' },
+    { width: 1152, desc: '1440px à 125% zoom (1152 CSS px)' },
+    { width: 819, desc: '1024px à 125% zoom (819 CSS px)' },
+  ];
+
+  for (const lang of ['fr', 'en'] as const) {
+    for (const vp of testViewports) {
+      it(`maintient le popup de Publications et Services dans le viewport à ${vp.desc} [${lang.toUpperCase()}]`, async () => {
+        await i18n.changeLanguage(lang);
+        window.innerWidth = vp.width;
+
+        const { unmount } = render(
+          <I18nextProvider i18n={i18n}>
+            <MemoryRouter initialEntries={[`/${lang}`]}>
+              <Header onSearchOpen={() => {}} />
+            </MemoryRouter>
+          </I18nextProvider>,
+        );
+
+        // Test Publications
+        const pubTrigger = screen.getByRole('link', {
+          name: lang === 'fr' ? /^publications$/i : /^publications$/i,
+        });
+        const pubContainer = pubTrigger.parentElement!;
+
+        // Simule position proche du bord droit
+        pubContainer.getBoundingClientRect = () => ({
+          left: Math.max(100, vp.width - 250),
+          right: Math.max(200, vp.width - 150),
+          width: 100,
+          top: 20,
+          bottom: 50,
+          height: 30,
+          x: Math.max(100, vp.width - 250),
+          y: 20,
+          toJSON: () => {},
+        });
+
+        fireEvent.mouseEnter(pubContainer);
+
+        await waitFor(() => {
+          expect(pubTrigger).toHaveAttribute('aria-expanded', 'true');
+        });
+
+        // Test Services
+        const servTrigger = screen.getByRole('link', {
+          name: lang === 'fr' ? /^services$/i : /^services$/i,
+        });
+        const servContainer = servTrigger.parentElement!;
+
+        // Simule position proche du bord gauche
+        servContainer.getBoundingClientRect = () => ({
+          left: 100,
+          right: 200,
+          width: 100,
+          top: 20,
+          bottom: 50,
+          height: 30,
+          x: 100,
+          y: 20,
+          toJSON: () => {},
+        });
+
+        fireEvent.mouseEnter(servContainer);
+
+        await waitFor(() => {
+          expect(servTrigger).toHaveAttribute('aria-expanded', 'true');
+        });
+
+        unmount();
+      });
+    }
+  }
 });
 
 describe('Page Publications — filtrage synchronisé dans l’URL', () => {
