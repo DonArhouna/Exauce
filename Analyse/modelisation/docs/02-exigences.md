@@ -86,7 +86,7 @@ I · Audit & observabilité — J · Conformité.
 
 | ID | Exigence | MoSCoW | Critère d'acceptation | Scénarios |
 |---|---|---|---|---|
-| EF-701 | Sitemap FR/EN généré depuis la base, avec au départ une parité exacte avec le sitemap statique actuel du frontend (30 URLs) | Must | URL supprimée → retirée du sitemap ; xhtml:link fr/en croisés | SC-701 |
+| EF-701 | Sitemap FR/EN généré depuis la base, avec au départ une parité exacte avec le sitemap statique actuel du frontend (29 URLs après fusion Contact) | Must | URL supprimée → retirée du sitemap ; xhtml:link fr/en croisés | SC-701 |
 | EF-702 | hreflang + x-default + canonical servies par le frontend (données API `alternate_fr`/`alternate_en`), cohérents avec `PAGE_SLUGS` | Must | les paths alternés générés correspondent au dict slugs | SC-702 |
 | EF-703 | Métadonnées SEO par contenu (title/description/OG image) FR+EN, avec défauts raisonnables | Must | longueurs validées (title ≤ 60 caractères, description ≤ 160) ; OG image = logo du cabinet par défaut | SC-703 |
 | EF-704 | Redirects 301/302 gérés côté backend (rapport à table `redirects`) | Should | le statut HTTP de la redirection est cohérent (301 pour les contenus publiés, 302 pour les temporaires) | SC-704 |

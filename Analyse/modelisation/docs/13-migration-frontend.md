@@ -16,25 +16,24 @@
 
 | Fichier / export | Nature aujourd'hui | Consommé par | Cible |
 |---|---|---|---|
-| `src/data/content.data.ts` → `ORGANIZATION` (5 champs) | constantes codées en dur | `Footer`, `UtilityBar`, `ContactPage`, `LocationsPage`, `ContactCtaSection`, `ComingSoonPage`, `HomePage` (JSON-LD) | `offices` (siège) + `site_settings` groupe `identity` |
+| `src/data/content.data.ts` → `ORGANIZATION` (5 champs) | constantes codées en dur | `Footer`, `UtilityBar`, `ContactPage`, `ContactCtaSection`, `ComingSoonPage`, `HomePage` (JSON-LD) | `offices` (siège) + `site_settings` groupe `identity` |
 | `src/data/content.data.ts` → `SERVICES` | 2 familles / 10 domaines / 20 groupes / **94 prestations** | `routes.ts`, `ServicesIndexPage`, `ServiceDomainPage`, `DomainsSection`, `StatsSection`, `SearchOverlay`, sitemap | `content_nodes` + `entity_translations` |
 | `src/data/content.data.ts` → `SECTORS` | 3 univers + 9 sous-catégories | `SectorsPage`, `SectorsSection`, `SearchOverlay`, sitemap | `sectors` |
 | `src/data/content.data.ts` → `INTERVENTIONS` | 2 volets (`recurrentes`, `ponctuelles`) | `InterventionsPage`, `InterventionsSection`, `SearchOverlay`, sitemap | `intervention_types` + sections `interventions_compare` |
 | `src/data/content.data.ts` → `PUBLICATIONS_MOCK` | 3 publications « Exemple » (`pub-1..3`) | `PublicationsPage`, `PublicationDetailPage`, `PublicationsSection`, `SearchOverlay`, sitemap | `publications` + `categories` + `entity_translations` |
-| `src/lib/routes.ts` → `PAGE_SLUGS` | 10 clés de routes statiques | tous les liens, `translatePath`, fil d'Ariane, sitemap | `pages` (11 lignes) + slugs en base |
+| `src/lib/routes.ts` → `PAGE_SLUGS` | 9 clés de routes statiques (fusion Contact) | tous les liens, `translatePath`, fil d'Ariane, sitemap | `pages` (10 lignes) + slugs en base |
 | `src/lib/routes.ts` → `ALL_DOMAINS`, `domainNeighbors` | ordre global déduit du tableau `SERVICES` | navigation précédent/suivant d'un domaine | ordre `content_nodes.position` renvoyé par l'API |
-| `src/i18n/locales/{fr,en}.json` | **182 clés** par langue | toute l'interface | 124 en base, 44 UI, 5 techniques, 9 supprimées ([15](15-inventaire-contenu.md)) |
+| `src/i18n/locales/{fr,en}.json` | **184 clés** par langue | toute l'interface | 125 en base, 45 UI, 5 techniques, 9 supprimées ([15](15-inventaire-contenu.md)) |
 | `src/services/api/api.ts` | 4 fonctions **mockées** | publications, contact, espace client | appels HTTP `/api/v1` |
 | `src/services/api/client.ts` | `API_URL = VITE_API_URL ?? 'http://localhost:8000/api'` | rien d'autre aujourd'hui | `…/api/v1` |
-| `scripts/generate-sitemap.mjs` | **30 URLs** générées depuis des tables **dupliquées** | `public/sitemap.xml` | `GET /api/v1/sitemap.xml` (EF-701) |
+| `scripts/generate-sitemap.mjs` | **29 URLs** générées depuis des tables **dupliquées** | `public/sitemap.xml` | `GET /api/v1/sitemap.xml` (EF-701) |
 | `src/components/layout/SearchOverlay.tsx` | recherche **locale par sous-chaîne** sur les titres | header | `GET /api/v1/search` (FTS, EF-201…204) |
 | `src/components/layout/Page.tsx` | title, description, OG, canonical, hreflang | toutes les pages | métadonnées servies par l'API + rendu SEO ([17](17-seo-rendu.md)) |
 
-Le frontend ne contient **aucune** donnée de bureau en dehors de
-`ORGANIZATION` : `LocationsPage` déclare localement un tableau `OFFICES`
-d'une seule entrée (`siege-dakar`), sans adresse. Le nom du fondateur et son
-rôle sont dans `i18n` (`home.founder`, `home.founderRole`), sa biographie est
-un texte « à venir ».
+Le frontend regroupe les données de bureau dans `content.data.ts` (`OFFICES`,
+1 entrée `siege-dakar`) et `ORGANIZATION`, alimentant la page `ContactPage`
+(section « Nos implantations »). Le nom du fondateur et son rôle sont dans `i18n`
+(`home.founder`, `home.founderRole`), sa biographie est un texte « à venir ».
 
 ## 1. Correspondance champ à champ
 
@@ -128,14 +127,14 @@ en trois URLs est une option SEO, pas un acquis (Q-102).
 | `sectors` | `secteurs` | `sectors` | `sectors` | `standard` | ✅ 3 |
 | `publications` | `publications` | `publications` | `publications` | `standard` | ✅ 4 |
 | `about` | `a-propos` | `about-us` | `about` | `standard` | ✅ 5 |
-| `locations` | `localisations` | `locations` | `locations` | `standard` | ✅ 6 |
 | `legal` | `mentions-legales` | `legal-notice` | `legal_notice` | `legal` | footer |
 | `clientArea` | `espace-client` | `customer-area` | `client_area` | `coming_soon` | bandeau |
-| `contact` | `contact` | `contact` | `contact` | `contact` | ✅ 7 |
+| `contact` | `contact` | `contact` | `contact` | `contact` | ✅ 6 |
 | — | — | — | `not_found` | `coming_soon` | — |
 
-Total : **11 pages**, dont **7 dans le menu**. `home` est la seule page dont
+Total : **10 pages**, dont **7 dans le menu** (avec `home`). `home` est la seule page dont
 le slug est vide (`''`) ; `not_found` n'a pas de slug ni d'entrée sitemap.
+L'ancienne route `locations` a été fusionnée dans `contact` avec redirection 301.
 
 Les pages de détail ne sont **pas** dans `pages` : les familles, domaines et
 prestations sont des `content_nodes` (`/{lang}/services/{famille}[/{domaine}]`),
@@ -148,9 +147,9 @@ deux préfixes) :
 |---|---|---|---|
 | `secteurs` | `sectors` | `sectors` | `secteurs` |
 | `a-propos` | `about-us` | `about-us` | `a-propos` |
-| `localisations` | `locations` | `locations` | `localisations` |
 | `mentions-legales` | `legal-notice` | `legal-notice` | `mentions-legales` |
 | `espace-client` | `customer-area` | `customer-area` | `espace-client` |
+| `contact` (301) | `locations` (→ contact#implantations) | `contact` (301) | `localisations` (→ contact#implantations) |
 
 Ces alias produisent aujourd'hui des **doublons indexables** : `Page.tsx`
 pose un canonical qui pointe vers `location.pathname`, donc chaque alias
@@ -195,14 +194,14 @@ Points de vigilance déjà identifiés :
 Un seul fondateur (`is_founder=true`, index partiel). La section
 `founder_card` ne stocke **ni** le nom **ni** la biographie : source unique.
 
-### 1.9 Bureaux et localisations
+### 1.9 Bureaux et localisations (section Implantations de Contact)
 
 | Source | Cible |
 |---|---|
-| `LocationsPage` : tableau local `OFFICES` (1 entrée `siege-dakar`) | `offices` (code `hq`, `is_headquarters=true`) |
+| `content.data.ts` : tableau `OFFICES` (1 entrée `siege-dakar`) | `offices` (code `hq`, `is_headquarters=true`) |
 | `name` (`Siège — Dakar (Sénégal)`) | `entity_translations(office, hq).name` |
 | `city` | `… .city` |
-| `locations.addressesComing` | texte de repli de la section `offices_grid` (`empty_text`) |
+| `contact.addressesComing` | texte de repli de la section `offices_grid` (`empty_text`) |
 | contacts de la colonne de droite (`ORGANIZATION`) | champs du bureau `hq` |
 | — | `address_lines`, `region`, `hours`, `map_url`, `media_id` : **vides** (à fournir) |
 
@@ -284,7 +283,7 @@ bureaux, équipe, publications, secteurs, types d'intervention ;
   ceux du frontend (les alias d'URL existants sont traités en Q-103).
 
 Les volumes attendus (test de parité 06 §6) : 2 / 10 / 20 / 94 nœuds,
-**11 pages** (7 dans le menu), 21 types de sections, **30 blocs**, 6
+**10 pages** (7 dans le menu), 21 types de sections, **29 blocs**, 6
 catégories, 3 publications, 3 + 9 secteurs, 1 bureau, 1 fondateur.
 
 ## 5. Parité et tests (CI bloquante — SC-580)
@@ -294,14 +293,14 @@ catégories, 3 publications, 3 + 9 secteurs, 1 bureau, 1 fondateur.
 | 1 | familles / domaines / groupes / prestations | 2 / 10 / 20 / 94 |
 | 2 | chaque nœud a un slug FR **et** EN | 100 % |
 | 3 | slugs de prestations uniques par langue | 94 / 94 |
-| 4 | pages / pages dans le menu | 11 / 7 |
+| 4 | pages / pages dans le menu | 10 / 7 |
 | 5 | blocs de la page d'accueil | 10 |
 | 6 | blocs `legal_document` de `legal_notice` | 3 |
 | 7 | secteurs / sous-catégories | 3 / 9 |
 | 8 | catégories / publications importées | 6 / 3 (`draft`) |
-| 9 | clés i18n éditoriales couvertes par une cible | 124 / 124 |
-| 10 | clés i18n après purge des 9 mortes | 173 (FR = EN) |
-| 11 | URLs du sitemap avant / après | 30 / 30 (hors exclusions Q-103/Q-104) |
+| 9 | clés i18n éditoriales couvertes par une cible | 125 / 125 |
+| 10 | clés i18n après purge des 9 mortes | 175 (FR = EN) |
+| 11 | URLs du sitemap avant / après | 29 / 29 (hors exclusions Q-103/Q-104) |
 | 12 | chaque URL connue du frontend répond 200 (pas de 404 de régression) | 100 % |
 | 13 | canonical = URL canonique, jamais un alias | 100 % |
 | 14 | hreflang FR/EN + `x-default` sur chaque page indexable | 100 % |
@@ -319,13 +318,12 @@ devenir des invariants de l'API.
   régulière. C'est une **seconde source de vérité** : elle est supprimée à la
   bascule au profit de `GET /api/v1/sitemap.xml` (EF-701), une entrée par
   (URL, langue) avec `xhtml:link` croisés.
-- **Comptage actuel** : 10 pages statiques + 2 familles + 10 domaines +
-  2 interventions + 3 secteurs + 3 publications = **30 URLs**. À la cible :
-  9 pages indexables (hors `not_found` et `client_area`) + 12 + 2 + 3 + 3
-  = **29 URLs** si l'espace client est exclu (Q-103) ; 30 si l'on conserve
-  l'état actuel.
+- **Comptage actuel** : 9 pages statiques + 2 familles + 10 domaines +
+  2 interventions + 3 secteurs + 3 publications = **29 URLs** (après fusion de Localisations dans Contact). À la cible :
+  8 pages indexables (si `client_area` exclu en noindex Q-103) + 12 + 2 + 3 + 3
+  = **28 URLs**, ou **29 URLs** si l'espace client est conservé au sitemap.
 - **Publications** : les 3 fiches sont `draft` mais présentes dans le sitemap
-  et affichées. Si l'API applique le statut, le sitemap tombe à 26 URLs et la
+  et affichées. Si l'API applique le statut, le sitemap tombe à 26 URLs (ou 25) et la
   page publications se vide : décision Q-104 avant le seed, pas après.
 - **Alias** : les 5 paires FR/EN rendues sous les deux préfixes créent des
   doublons ; cible = 301 vers le slug canonique (Q-103).

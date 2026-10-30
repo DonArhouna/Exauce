@@ -387,8 +387,8 @@ erDiagram
 ```
 
 *Figure 7 : `site_settings` porte l'identité et les réglages ; les
-coordonnées **par bureau** vivent dans `offices` (EF-106, page localisations
-et pied de page), la fiche du fondateur et l'équipe dans `team_members`
+coordonnées **par bureau** vivent dans `offices` (EF-106, section implantations
+de la page contact et pied de page), la fiche du fondateur et l'équipe dans `team_members`
 (accueil + « À propos »). L'image OG par langue est portée par
 `entity_translations.og_media_id` (figure 1), avec repli sur
 `site_settings` groupe `seo`.*
@@ -561,7 +561,7 @@ et les règles contradictoires.
 | Colonne | Type | Contraintes | Description |
 |---|---|---|---|
 | id | UUID | PK | — |
-| page_key | VARCHAR(40) | NN, UQ | Registre fermé : `home`, `services`, `interventions`, `sectors`, `publications`, `about`, `locations`, `legal_notice`, `contact`, `client_area`, `not_found` (11 pages ; les 3 textes légaux sont des sections de `legal_notice`) |
+| page_key | VARCHAR(40) | NN, UQ | Registre fermé : `home`, `services`, `interventions`, `sectors`, `publications`, `about`, `legal_notice`, `contact`, `client_area`, `not_found` (10 pages ; les 3 textes légaux sont des sections de `legal_notice`, la page `contact` fusionne formulaire et implantations géographiques) |
 | template | VARCHAR(20) | NN, ck home/standard/legal/contact/coming_soon | Gabarit de rendu attendu par le frontend |
 | source_key | VARCHAR(60) | `NULL`, UQ partiel | Clé de migration (idempotence du seed) |
 | is_in_nav | BOOLEAN | NN, def false | Présence dans le menu principal |
@@ -966,18 +966,18 @@ bureaux, équipe, publications, secteurs, types d'intervention).
    de prestations dupliqués sont contextualisés par le groupe parent
    (doc 16 §7.2). Les 94 prestations reçoivent un `id` et un slug — ce que le
    frontend actuel n'a pas.
-4. `pages` : 11 lignes — `home`, `services`, `interventions`, `sectors`,
-   `publications`, `about`, `locations`, `contact`, `legal_notice`,
+4. `pages` : 10 lignes — `home`, `services`, `interventions`, `sectors`,
+   `publications`, `about`, `contact`, `legal_notice`,
    `client_area`, `not_found` — avec `template`,
    `is_in_nav`/`nav_position` (7 entrées de menu) et `is_system` pour
    `home`, `not_found` et `legal_notice`. Statut `draft` +
    `banners_pending` pour la page légale (H-007).
 5. `section_types` : les 21 codes du catalogue (doc 16 §3.4), avec leurs
    schémas.
-6. `page_sections` : 30 blocs — accueil 10 (hero, trust_bar, about_preview,
+6. `page_sections` : 29 blocs — accueil 10 (hero, trust_bar, about_preview,
    domains_grid, audit_grid, interventions_grid, sectors_grid, stats,
    publications_grid, cta), services 5, interventions 2, à propos 5,
-   publications 1, localisations 2, contact 1, espace client 1, page légale
+   publications 1, contact 2 (`contact_form`, `offices_grid`), espace client 1, page légale
    3 (mentions, confidentialité, cookies). Chaque bloc porte un `source_key`
    (`hero`, `mentions`…) et ses traductions FR/EN (`entity_type='page_section'`).
 7. `categories` : 6 (`governance`, `audit`, `finance`, `hr`, `it`, `legal`) ;

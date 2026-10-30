@@ -26,7 +26,7 @@ Pour résoudre ce constat, deux options d'architecture sont envisageables.
 
 ### 2.1 Principe et fonctionnement
 Lors de la publication ou du déploiement en production, un script de prérendu automatisé (ex. `@prerenderer/rollup` ou script Vite SSG) parcourt la liste des **30 URLs publiques** déclarées par l'API :
-- 11 pages institutionnelles (accueil, services, interventions, secteurs, publications, à propos, localisations, contact, mentions légales, etc.) en FR et EN ;
+- 10 pages institutionnelles (accueil, services, interventions, secteurs, publications, à propos, contact unifié, mentions légales, etc.) en FR et EN ;
 - 10 domaines d'intervention ;
 - 3 publications d'exemple ;
 - 2 types d'intervention.
@@ -106,3 +106,4 @@ Chaque requête HTTP arrivant sur le domaine public est interceptée par un serv
 👉 **Décision attendue de votre part** :
 1. Validez-vous l'**Option A** (Prérendu au build / SSG) avec régénération en tâche de fond ?
 2. Ou souhaitez-vous engager l'**Option B** (SSR Node.js runtime) malgré le surcoût de complexité et d'infrastructure ?
+

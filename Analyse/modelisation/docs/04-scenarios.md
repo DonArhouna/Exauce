@@ -22,7 +22,7 @@
 | SC-112 | Page légale non validée (H-007) | `banners_pending=true` | page servie **avec bandeau** « à compléter par le cabinet » | jusqu'aux RB-001 : sert quand même le bandeau (jamais libre) | EF-108, RB-1 | test de bandeau |
 | SC-120 | Consentement cookies | bandeau du frontend | préférence horodatée envoyée et stockée (`consents`) | refus = aucune mesure d'audience | EF-109, EF-1002 | API test |
 | SC-130 | Changement de langue sur page sans équivalent | page inexistante en EN | la réponse expose `fallback: {lang, href}` (H-009) => le lien amène au parent de rubrique | jamais de 404 directe sur ce bouton | EF-603, H-009 | E2E |
-| SC-140 | SSL/robots/sitemap dynamique | sitemap généré | `sitemap.xml` 30 URLs × hreflang, robots.txt correct généré | contenu retiré → absent du sitemap | EF-701, système | test sitemap |
+| SC-140 | SSL/robots/sitemap dynamique | sitemap généré | `sitemap.xml` 29 URLs × hreflang (après fusion Contact), robots.txt correct généré | contenu retiré → absent du sitemap | EF-701, système | test sitemap |
 
 ### SC-150 Recherche
 

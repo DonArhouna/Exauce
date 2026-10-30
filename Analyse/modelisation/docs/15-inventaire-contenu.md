@@ -1,9 +1,9 @@
 # 15 · Inventaire du contenu éditable
 
 > 🟡 **Statut : M2 — à faire valider.**
-> Inventaire **exhaustif** des 183 clés i18n du frontend
+> Inventaire **exhaustif** des 184 clés i18n du frontend
 > (`Frontend/src/i18n/locales/fr.json` et `en.json`, symétrie vérifiée :
-> 183 = 183), avec pour chacune : son usage réel, sa classification
+> 184 = 184), avec pour chacune : son usage réel, sa classification
 > (éditorial / interface / technique / clé morte) et sa **cible** dans le
 > modèle de données. Le modèle est justifié en
 > [16 · Modèle éditorial](16-modele-editorial.md).
@@ -25,20 +25,19 @@
 | `i18n — technique` | reste dans le code / les templates (exception) |
 | `— (clé morte)` | supprimée du frontend, aucun équivalent en base |
 
-**Synthèse** : **125 clés éditoriales**, **44 clés d'interface**, **5 clés
-techniques**, **9 clés mortes** = **183** (183 = 183 entre FR et EN). Le
+**Synthèse** : **125 clés éditoriales**, **45 clés d'interface**, **5 clés
+techniques**, **9 clés mortes** = **184** (184 = 184 entre FR et EN). Le
 détail des exceptions est en §17.
 
-## 1. Navigation (`nav.*`) — 17 clés
+## 1. Navigation (`nav.*`) — 16 clés
 
 | Clé | Usage | Classe | Cible |
 |---|---|---|---|
 | `nav.home` | menu, fil d'Ariane | Éditorial | `pages.home.data.nav_label` |
-| `nav.locations` | menu, page localisations | Éditorial | `pages.locations.data.nav_label` |
 | `nav.services` | menu, mega-menu, fils | Éditorial | `pages.services.data.nav_label` |
 | `nav.interventions` | menu, page | Éditorial | `pages.interventions.data.nav_label` |
 | `nav.sectors` | menu, page | Éditorial | `pages.sectors.data.nav_label` |
-| `nav.publications` | menu, page | Éditorial | `pages.publications.data.nav_label` |
+| `nav.publications` | menu, mega-menu, page | Éditorial | `pages.publications.data.nav_label` |
 | `nav.about` | menu | Éditorial | `pages.about.data.nav_label` |
 | `nav.contact` | menu, footer, page | Éditorial | `pages.contact.data.nav_label` |
 | `nav.clientArea` | menu, barre utilitaire | Éditorial | `pages.client_area.data.nav_label` |
@@ -90,7 +89,7 @@ fermeture, langue) restent des libellés d'interface.*
 *La page 404 reste `noindex` (correctif frontend `bb3a5d1`) ; son texte est
 éditable, mais elle n'entre ni dans le sitemap ni dans la navigation.*
 
-## 5. Contact (`contact.*`) — 12 clés
+## 5. Contact (`contact.*`) — 22 clés
 
 | Clé | Usage | Classe | Cible |
 |---|---|---|---|
@@ -106,9 +105,19 @@ fermeture, langue) restent des libellés d'interface.*
 | `contact.error` | échec d'envoi | Technique | `i18n — technique` |
 | `contact.required` | validation « obligatoire » | Technique | `i18n — technique` |
 | `contact.invalidEmail` | validation e-mail | Technique | `i18n — technique` |
+| `contact.introText` | intro de la page contact | Éditorial | `pages.contact.data.intro` |
+| `contact.officeName` | libellé bureau principal | Éditorial | `offices.hq.data.name` |
+| `contact.fixed` | libellé fixe | UI | `i18n — UI` |
+| `contact.mobile` | libellé mobile | UI | `i18n — UI` |
+| `contact.viewOffices` | lien ancre « Voir nos implantations » | UI | `i18n — UI` |
+| `contact.officesTitle` | titre section implantations | Éditorial | `page_sections.contact.offices_grid.data.title` |
+| `contact.officesIntro` | intro section implantations | Éditorial | `page_sections.contact.offices_grid.data.intro` |
+| `contact.headquarters` | badge « Siège » | UI | `i18n — UI` |
+| `contact.addressesComing` | texte repli adresses | Éditorial | `page_sections.contact.offices_grid.data.empty_text` |
+| `contact.mapComing` | texte repli carte | Éditorial | `page_sections.contact.offices_grid.data.map_empty_text` |
 
-*`contact.address` et `contact.companyName` ont été ajoutés au frontend dans les correctifs ;
-la valeur cible est portée par le bureau siège et les réglages d'identité, pas par une chaîne i18n statique.*
+*La page Contact fusionne le formulaire de prise de contact et la section « Nos implantations »
+(issue de l'ancienne page Localisations). Les coordonnées spécifiques de chaque bureau viennent de `offices`.*
 
 ## 6. Espace client (`clientArea.*`) — 5 clés
 
@@ -270,21 +279,11 @@ calculées (7 domaines d'accompagnement, 3 domaines d'audit, 3 secteurs,
 couverture) vivent dans `publications` + `entity_translations`, pas dans ces
 clés qui ne sont que des libellés de liste.*
 
-## 13. Localisations (`locations.*`) — 8 clés
+## 13. Localisations (`locations.*`) — Fusionnée dans Contact (0 clé)
 
-| Clé | Usage | Classe | Cible |
-|---|---|---|---|
-| `locations.kicker` | en-tête de page | Éditorial | `page_sections.locations.header.data.kicker` |
-| `locations.introText` | intro de page | Éditorial | `page_sections.locations.header.data.intro` |
-| `locations.addressesComing` | état vide des adresses | Éditorial | `page_sections.locations.offices_grid.data.empty_text` |
-| `locations.mapComing` | état vide de la carte | Éditorial | `page_sections.locations.offices_grid.data.map_empty_text` |
-| `locations.phonesTitle` | libellé « téléphones » | UI | `i18n — UI` |
-| `locations.fixed` | libellé « fixe » | UI | `i18n — UI` |
-| `locations.mobile` | libellé « mobile » | UI | `i18n — UI` |
-| `locations.emailTitle` | libellé « e-mail » | UI | `i18n — UI` |
-
-*Les adresses, téléphones, e-mails et liens de carte viennent de `offices` ;
-les quatre libellés de champs restent des libellés d'interface.*
+*L'ancienne page dédiée `locations` et ses 8 clés `locations.*` ont été supprimées et fusionnées
+dans la page unifiée Contact (`contact.*`, §5) et dans la table `offices` (implantations du cabinet).
+Les redirections 301 gèrent l'historique d'URL `/localisations` et `/locations` vers `/contact#implantations`.*
 
 ## 14. Mentions légales et cookies (`legal.*`) — 11 clés
 
@@ -330,29 +329,29 @@ dans le modèle.
 
 | Catégorie | Nombre | Où vit le texte |
 |---|---|---|
-| Libellés d'interface | 44 | `fr.json` / `en.json` |
+| Libellés d'interface | 45 | `fr.json` / `en.json` |
 | Messages techniques | 5 | code backend, `fr.json` pour les messages génériques |
 | Clés mortes à supprimer | 9 | nulle part |
-| **Total des exceptions** | **58** | |
+| **Total des exceptions** | **59** | |
 | Mémoire : clés éditoriales | 125 | base PostgreSQL |
-| **Total général** | **183** | |
+| **Total général** | **184** | |
 
-### 17.1 Libellés d'interface (44 clés)
+### 17.1 Libellés d'interface (45 clés)
 
 `nav.search`, `nav.searchLabel`, `nav.searchPlaceholder`, `nav.noResults`,
 `nav.searchHint`, `nav.menu`, `nav.close`, `nav.language`,
 `common.placeholder`, `common.allRightsReserved`, `common.skipToContent`,
 `home.founderPhotoPlaceholder`, `contact.name`, `contact.email`,
 `contact.phone`, `contact.subject`, `contact.message`, `contact.send`,
-`contact.success`, `clientArea.username`, `clientArea.password`,
+`contact.success`, `contact.fixed`, `contact.mobile`, `contact.viewOffices`,
+`contact.headquarters`, `clientArea.username`, `clientArea.password`,
 `clientArea.login`, `services.prevDomain`, `services.nextDomain`,
 `services.otherDomains`, `services.onThisPage`, `services.prestations`,
 `publications.filterAll`, `publications.searchPlaceholder`,
 `publications.empty`, `publications.loading`, `publications.loadMore`,
 `publications.sampleBadge`, `publications.readingTime`,
 `publications.byAuthor`, `publications.relatedTitle`,
-`publications.bodyComing`, `locations.phonesTitle`, `locations.fixed`,
-`locations.mobile`, `locations.emailTitle`, `clientAreaStates.loading`,
+`publications.bodyComing`, `clientAreaStates.loading`,
 `clientAreaStates.forgot`, `clientAreaStates.forgotDetail`.
 
 ### 17.2 Messages techniques (5 clés)

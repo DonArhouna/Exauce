@@ -146,8 +146,8 @@ nouveau bloc. Les blocs typés évitent les deux écueils.
   `is_fallback`.
 - `pages` : chaque page publique est une ligne (`page_key` stable), soit
   `home`, `services`, `interventions`, `sectors`, `publications`, `about`,
-  `locations`, `legal_notice`, `contact`, `client_area`, `not_found`
-  (**11 pages**). Le frontend actuel ne sert qu'**une** URL légale : les
+  `legal_notice`, `contact`, `client_area`, `not_found`
+  (**10 pages**). La page `contact` regroupe le formulaire et la section « Nos implantations » (fusion de l'ancienne page Localisations). Le frontend actuel ne sert qu'**une** URL légale : les
   mentions, la confidentialité et les cookies sont **trois sections**
   `legal_document` de `legal_notice`, pas trois pages. Éclater ces textes en
   trois URLs indexables reste une option (Q-102, doc 13). Les pages
@@ -188,8 +188,8 @@ libellés sont en i18n back-office. Il est semé par migration et peut être
 | `steps` | à propos | `kicker`, `items[].title`, `items[].text` |
 | `founder_card` | accueil, à propos | `kicker`, `empty_text` |
 | `interventions_compare` | interventions | `title`, `head_label`, `caption`, `rows[].label`, `rows[].recurring`, `rows[].oneoff` |
-| `contact_form` | contact | `intro`, `success_text` |
-| `offices_grid` | localisations | `title`, `intro`, `empty_text` |
+| `contact_form` | contact (position 1) | `intro`, `success_text` |
+| `offices_grid` | contact (section implantations, position 2) | `title`, `intro`, `empty_text` |
 | `legal_document` | mentions, confidentialité, cookies | `body`, `banner_text` |
 | `coming_soon` | espace client | `title`, `text`, `cta_label` |
 
@@ -197,23 +197,25 @@ libellés sont en i18n back-office. Il est semé par migration et peut être
 `section_types.translation_schema` (migration initiale), puis figés par les
 tests de contrat du back-office.*
 
-## 4. `offices` — bureaux et localisations
+## 4. `offices` — bureaux et implantations (page Contact)
 
 ### 4.1 Pourquoi une table dédiée
 
-La page « Localisations » et le pied de page affichent aujourd'hui des
-placeholders. Les coordonnées sont dans `ORGANIZATION` (frontend), avec **un
-seul** point de contact. Or :
+La page « Contact » réunit désormais le formulaire et la section « Nos implantations »
+(fusion de l'ancienne vue Localisations). Les coordonnées globales (raison sociale,
+e-mail générique) restent dans `site_settings` (groupe `identity` et `contact`), et les
+textes du formulaire dans `page_sections` (`contact_form`). En revanche, les bureaux physiques
+nécessitent une table dédiée `offices` car :
 
-- le cabinet peut ouvrir plusieurs bureaux (Dakar, autre région, etc.) ;
+- le cabinet peut ouvrir plusieurs bureaux (Dakar, autre région, international) ;
 - chaque bureau a sa propre adresse, ses téléphones, son e-mail, sa carte,
   éventuellement une photo et des horaires ;
 - chaque bureau doit être traduit FR/EN et activable/désactivable ;
-- le bureau « siège » doit être identifiable pour le contact et le footer.
+- le bureau « siège » doit être identifiable pour le contact et le footer (`is_headquarters=true`).
 
 Un tableau JSONB dans `site_settings` ne permet ni l'ordre, ni l'activation,
-ni la traduction par bureau, ni les références média. Une table dédiée est
-donc justifiée.
+ni la traduction par bureau, ni les références média. La table dédiée `offices`
+alimente ainsi la section `offices_grid` de la page `contact` ainsi que le footer.
 
 ### 4.2 Structure
 
@@ -231,8 +233,8 @@ actif, le frontend affiche le texte de repli de la section (`empty_text`).
 
 | Option | Verdict |
 |---|---|
-| `site_settings` groupe `contact` (adresse unique) | conservée pour l'identité globale (nom légal, e-mail générique, réseaux), insuffisante pour plusieurs bureaux |
-| `offices` (retenue) | ordre, activation, traduction, média, siège, réutilisation contact/footer/localisations |
+| `site_settings` groupe `contact` (adresse unique) | conservée pour l'identité globale (nom légal, e-mail générique, réseaux, notification), insuffisante pour plusieurs bureaux |
+| `offices` (retenue) | ordre, activation, traduction, média, siège, alimentation de la section implantations de Contact et du footer |
 
 ## 5. `team_members` — fondateur et équipe
 

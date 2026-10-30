@@ -10,7 +10,7 @@
 
 | Entité | Traduisible | Champs concernés | Détail |
 |---|---|---|---|
-| Pages (home, about, contact, localisations, légaux…) | ✅ | title, intro, body, slug, SEO, libellé de navigation | H-007 : légaux « à compléter » par bandeau par langue |
+| Pages (home, about, contact, légaux…) | ✅ | title, intro, body, slug, SEO, libellé de navigation | H-007 : légaux « à compléter » par bandeau par langue |
 | Blocs de page (`page_sections`) | ✅ | textes de la section : kicker, titre, corps, libellés de CTA, items (`items[].title/text`) | `entity_type='page_section'` ; `config` reste non traduit (doc 16 §3) |
 | Bureaux (`offices`) | ✅ | name, address_lines, city, region, hours, notes, photo_alt | `entity_type='office'` ; téléphones/e-mail/carte non traduits |
 | Équipe et fondateur (`team_members`) | ✅ | full_name, role, bio, photo_alt | `entity_type='team_member'` |
