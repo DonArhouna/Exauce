@@ -25,39 +25,35 @@
 *Figure 1 : matrice STRIDE synthétique ; chaque cellule correspond à une
 mesure concrète mise en œuvre (endpoints 08, tables 06).*
 
-## 2. Topologie domaines/sous-domaines et cookies (ADR-009)
+## 2. Topologie sous-domaines, cookies et CORS (ADR-009 révisé - Point 6 validé)
 
-```admonition success title="ADR-009 · Même origine via reverse proxy (www unifie tout)"
-**Contexte** : trois applications cohabitent (frontend public, espace
-client, back-office) ; l'authentification repose sur des cookies (ADR-004)
-qui doivent protégés contre les fuites entre sous-domaines ; le CORS doit
-rester minimal ; le développement local doit être simple.
+```admonition success title="ADR-009 · Topologie sous-domaines (api. et admin.) + CORS credentials + CSRF"
+**Contexte** : Les applications sont réparties sur des sous-domaines distincts :
+- `exauceac.com` (site public prérendu Nginx SSG)
+- `admin.exauceac.com` (Back-office SPA React)
+- `api.exauceac.com` (Backend FastAPI)
 
-**Options** :
-- *O1 — mêmes origines via reverse proxy* : `exauceac.com` (frontend),
-  `exauceac.com/admin` (back-office), `exauceac.com/api/…` (API) —
-  tout est même origine ;
-- *O2 — sous-domaines* : `www`, `admin`, `api` — il faut CORS + cookies
-  `Domain=.exauceac.com` (partagés entre sous-domaines = surface plus
-  large en cas de XSS, impossible d'utiliser le préfixe `__Host-`, CSRF
-  plus délicat à la frontière des origines) ;
-- *O3 — domaines distincts* — encore pire (cookies tiers, SameSite=None).
+**Spécification stricte des Cookies de session (`session_id`)** :
+- `Domain: .exauceac.com` en production (avec le point initial pour être partagé entre `admin.exauceac.com` et `api.exauceac.com`) ; en développement local, `Domain` est omis (host-only sur `localhost`).
+- `HttpOnly: true` (inaccessible au code JS client, protection absolue contre le vol par XSS).
+- `Secure: true` (émis et transmis exclusivement sur HTTPS en production).
+- `SameSite: Lax` (transmis entre les sous-domaines du même eTLD+1 `exauceac.com` tout en bloquant les requêtes inter-sites hostiles).
+- Durée : idle 30 min / vie max 8 h, révocation immédiate en base (`user_sessions.revoked_at`).
 
-**Décision : O1 (recommandation retenue)** — reverse proxy (Traefik ou
-Caddy, page 11) qui route `/api/**` vers FastAPI et `/admin` vers la SPA
-back-office :
-- cookies `Secure`, `HttpOnly`, `SameSite=Lax`, **`__Host-` prefix**,
-  `Domain` omis (host-only) — la portée la plus étroite possible ;
-- **aucun CORS à configurer** (même origine) — une seule politique à
-  maintenir ;
-- CSRF double-submit inchangé (le cookie CSRF et l'en-tête sont
-  origin-native) ;
-- développement local : `localhost:5173` (Vite) proxifie `/api` et
-  `/admin` vers le compose (configuration dev fournie).
+**Configuration CORS FastAPI (Backend)** :
+- `allow_credentials=True` impératif pour autoriser le passage des cookies de session.
+- `allow_origins=["https://admin.exauceac.com", "https://exauceac.com"]` (et en local `["http://localhost:5173", "http://localhost:5174", "http://localhost:8080"]`).
+- **Interdiction absolue du wildcard `*`** : la présence de `*` avec `allow_credentials=True` est strictement rejetée par le standard W3C et les navigateurs.
 
-**Conséquences** : le H-STS `includeSubDomains` est sûr (pas de
-sous-domaine hostile) ; le déploiement exige une entrée Traefik par
-service interne, invisible de l'extérieur.
+**Protection CSRF par double-envoi (`X-CSRF-Token`)** :
+- Lors de l'authentification, le backend génère un jeton CSRF cryptographique et l'envoie dans un cookie lisible non-HttpOnly (`csrf_token`) ainsi que dans la réponse de login.
+- Toute requête mutante (`POST`, `PUT`, `PATCH`, `DELETE`) vers `/admin/**` doit obligatoirement présenter l'en-tête `X-CSRF-Token` correspondant au jeton de session.
+
+**Test CSRF obligatoire au Sprint 1 (Backend - `tests/test_csrf.py`)** :
+Un test d'intégration automatisé est exigé dès le sprint initial pour valider le middleware :
+1. *Absence d'en-tête* : Requête `POST /api/v1/admin/content/...` avec cookie `session_id` valide mais sans en-tête `X-CSRF-Token` $\rightarrow$ assertion `HTTP 403 Forbidden` (`code="CSRF_TOKEN_MISSING"`).
+2. *En-tête invalide/forgé* : Requête avec en-tête falsifié `X-CSRF-Token: invalid-value` $\rightarrow$ assertion `HTTP 403 Forbidden` (`code="CSRF_TOKEN_MISMATCH"`).
+3. *Cas nominal* : Requête avec cookie et en-tête CSRF synchronisés $\rightarrow$ assertion `HTTP 200` ou `202`.
 ```
 
 ## 2. Authentification
