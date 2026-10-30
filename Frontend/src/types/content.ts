@@ -95,10 +95,14 @@ export interface Publication {
 /** Implantation (bureau) — prêt pour plusieurs sites, adresses à venir. */
 export interface Location {
   id: string;
+  isHeadquarters?: boolean;
   /** nom du site — placeholder tant que non fourni */
   name: LocalizedText | null;
   addressLines?: string[];
   city?: LocalizedText;
   mapUrl?: string;
+  phoneFixed?: string;
+  phoneMobile?: string;
+  email?: string;
 }
 

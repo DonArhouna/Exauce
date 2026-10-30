@@ -1,4 +1,4 @@
-import type { InterventionType, Publication, Sector, ServiceFamily } from '@/types/content';
+import type { InterventionType, Location, Publication, Sector, ServiceFamily } from '@/types/content';
 
 /**
  * ORGANISATION — informations stables du cabinet (docx, niveau 1).
@@ -11,6 +11,21 @@ export const ORGANIZATION = {
   phoneMobile: '+221 77 099 31 83',
   city: 'Dakar',
 } as const;
+
+/**
+ * BUREAUX & IMPLANTATIONS — prêt pour plusieurs implantations (siège Dakar en premier).
+ */
+export const OFFICES: Location[] = [
+  {
+    id: 'siege-dakar',
+    isHeadquarters: true,
+    name: { fr: 'Siège — Dakar (Sénégal)', en: 'Head Office — Dakar (Senegal)' },
+    city: { fr: 'Dakar', en: 'Dakar' },
+    phoneFixed: '+221 33 814 51 24',
+    phoneMobile: '+221 77 099 31 83',
+    email: 'contact@exauceac.com',
+  },
+];
 
 /**
  * SERVICES — familles (niveau 2), domaines (niveau 3), groupes de prestations (niveau 4).

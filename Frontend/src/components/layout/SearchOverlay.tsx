@@ -9,7 +9,6 @@ import { PAGE_SLUGS, pagePath } from '@/lib/routes';
 type PageKey = keyof typeof PAGE_SLUGS;
 const PAGE_HREFS = (l: Lang): Record<keyof typeof PAGE_SLUGS, string> => ({
   home: `/${l}`,
-  locations: pagePath(l, 'locations'),
   services: pagePath(l, 'services'),
   interventions: pagePath(l, 'interventions'),
   sectors: pagePath(l, 'sectors'),

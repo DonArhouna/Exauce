@@ -17,7 +17,6 @@ const InterventionsPage = lazy(() => import('@/pages/InterventionsPage'));
 const SectorsPage = lazy(() => import('@/pages/SectorsPage'));
 const PublicationsPage = lazy(() => import('@/pages/PublicationsPage'));
 const AboutPage = lazy(() => import('@/pages/AboutPage'));
-const LocationsPage = lazy(() => import('@/pages/LocationsPage'));
 const ContactPage = lazy(() => import('@/pages/ContactPage'));
 const ClientAreaPage = lazy(() => import('@/pages/ClientAreaPage'));
 const LegalPage = lazy(() => import('@/pages/LegalPage'));
@@ -63,6 +62,12 @@ function TranslatedRedirect() {
   return <NotFoundPage />;
 }
 
+/** Redirection 301/replace : ancienne page Localisations -> Contact (avec ancre #implantations). */
+function LocationsRedirect() {
+  const { lang = 'fr' } = useParams();
+  return <Navigate to={`/${lang}/contact#implantations`} replace />;
+}
+
 /** Racine : redirige / vers /fr, valide le préfixe de langue. */
 export default function App() {
   return (
@@ -93,8 +98,9 @@ export default function App() {
                 <Route path="legal-notice" element={<LegalPage />} />
                 <Route path="a-propos" element={<AboutPage />} />
                 <Route path="about-us" element={<AboutPage />} />
-                <Route path="localisations" element={<LocationsPage />} />
-                <Route path="locations" element={<LocationsPage />} />
+                {/* Redirection 301/replace : ancienne page Localisations -> Contact */}
+                <Route path="localisations" element={<LocationsRedirect />} />
+                <Route path="locations" element={<LocationsRedirect />} />
                 {/* Redirection 301/replace : URL dans la mauvaise langue → équivalent traduit */}
                 <Route path="*" element={<TranslatedRedirect />} />
               </Routes>

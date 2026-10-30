@@ -16,7 +16,6 @@ const PAGES = [
   ['secteurs', 'sectors'],
   ['publications', 'publications'],
   ['a-propos', 'about-us'],
-  ['localisations', 'locations'],
   ['mentions-legales', 'legal-notice'],
   ['espace-client', 'customer-area'],
   ['contact', 'contact'],

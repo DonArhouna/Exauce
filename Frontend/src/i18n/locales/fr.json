@@ -1,7 +1,6 @@
 {
   "nav": {
     "home": "Accueil",
-    "locations": "Localisations",
     "services": "Services",
     "interventions": "Interventions",
     "sectors": "Secteurs",
@@ -53,7 +52,17 @@
     "success": "Votre message a bien été envoyé. Nous vous répondrons dans les meilleurs délais.",
     "error": "Une erreur est survenue lors de l’envoi. Merci de réessayer.",
     "required": "Champ obligatoire",
-    "invalidEmail": "Adresse e-mail invalide"
+    "invalidEmail": "Adresse e-mail invalide",
+    "introText": "Nos implantations et coordonnées directes.",
+    "officeName": "Siège principal",
+    "fixed": "Fixe",
+    "mobile": "Mobile",
+    "viewOffices": "Voir nos implantations",
+    "officesTitle": "Nos implantations",
+    "officesIntro": "Le cabinet EXAUCE intervient auprès des entreprises et institutions avec son siège à Dakar et un rayonnement sous-régional.",
+    "headquarters": "Siège",
+    "addressesComing": "Adresses physiques du cabinet — contenu à venir, à valider par le cabinet.",
+    "mapComing": "Carte statique — la carte interactive sera activée dès validation des adresses."
   },
   "clientArea": {
     "title": "Espace Client",
@@ -184,16 +193,6 @@
     "byAuthor": "Par",
     "relatedTitle": "Publications liées",
     "bodyComing": "Le corps de l'article sera disponible lors du branchement des contenus réels. Cet exemple ne comporte pas encore de texte de lecture."
-  },
-  "locations": {
-    "kicker": "Localisations",
-    "introText": "Nos implantations et coordonnées.",
-    "addressesComing": "Adresses physiques du cabinet — contenu à venir, à valider par le cabinet.",
-    "mapComing": "Carte Statique — la carte interactive sera activée dès validation des adresses.",
-    "phonesTitle": "Téléphone",
-    "fixed": "Fixe",
-    "mobile": "Mobile",
-    "emailTitle": "E-mail"
   },
   "legal": {
     "mentions": "Mentions légales",

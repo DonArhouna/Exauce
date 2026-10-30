@@ -21,8 +21,8 @@ export function useNavItems(lang: Lang) {
     { key: 'interventions', label: t('nav.interventions'), href: pageHref(lang, 'interventions') },
     { key: 'sectors', label: t('nav.sectors'), href: pageHref(lang, 'sectors') },
     { key: 'publications', label: t('nav.publications'), href: pageHref(lang, 'publications') },
-    { key: 'locations', label: t('nav.locations'), href: pageHref(lang, 'locations') },
     { key: 'about', label: t('nav.about'), href: pageHref(lang, 'about') },
+    { key: 'contact', label: t('nav.contact'), href: pageHref(lang, 'contact') },
   ];
 }
 

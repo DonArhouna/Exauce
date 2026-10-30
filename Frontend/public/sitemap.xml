@@ -33,11 +33,6 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/about-us" />
   </url>
   <url>
-    <loc>https://www.exauceac.com/fr/localisations</loc>
-    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/localisations" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/locations" />
-  </url>
-  <url>
     <loc>https://www.exauceac.com/fr/mentions-legales</loc>
     <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/mentions-legales" />
     <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/legal-notice" />

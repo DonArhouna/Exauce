@@ -42,11 +42,6 @@ export function Footer() {
                 </li>
               ))}
               <li>
-                <Link to={`/${lang}/contact`} className="text-white/70 hover:text-turquoise-400">
-                  {t('nav.contact')}
-                </Link>
-              </li>
-              <li>
                 <Link to={pagePath(lang as Lang, 'legal')} className="text-white/70 hover:text-turquoise-400">
                   {t('legal.mentions')}
                 </Link>

@@ -77,7 +77,6 @@ export const PAGE_SLUGS = {
   sectors: { fr: 'secteurs', en: 'sectors' },
   publications: { fr: 'publications', en: 'publications' },
   about: { fr: 'a-propos', en: 'about-us' },
-  locations: { fr: 'localisations', en: 'locations' },
   legal: { fr: 'mentions-legales', en: 'legal-notice' },
   clientArea: { fr: 'espace-client', en: 'customer-area' },
   contact: { fr: 'contact', en: 'contact' },
