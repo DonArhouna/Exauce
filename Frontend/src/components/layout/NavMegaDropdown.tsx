@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { NavLink } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { SpeedLines } from '../ui/SpeedLines';
@@ -27,6 +27,7 @@ export function NavMegaDropdown({
 }: NavMegaDropdownProps) {
   const [open, setOpen] = useState(false);
   const timeoutRef = useRef<number | null>(null);
+  const isClosingRef = useRef(false);
   const triggerRef = useRef<HTMLAnchorElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -37,7 +38,18 @@ export function NavMegaDropdown({
     }
   };
 
+  const closeDropdown = useCallback(() => {
+    clearTimer();
+    isClosingRef.current = true;
+    setOpen(false);
+    triggerRef.current?.focus();
+    window.setTimeout(() => {
+      isClosingRef.current = false;
+    }, 50);
+  }, []);
+
   const handleMouseEnter = () => {
+    if (isClosingRef.current) return;
     clearTimer();
     setOpen(true);
   };
@@ -50,6 +62,7 @@ export function NavMegaDropdown({
   };
 
   const handleFocus = () => {
+    if (isClosingRef.current) return;
     clearTimer();
     setOpen(true);
   };
@@ -60,12 +73,24 @@ export function NavMegaDropdown({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
-      setOpen(false);
-      triggerRef.current?.focus();
+      closeDropdown();
     }
   };
+
+  useEffect(() => {
+    if (!open) return;
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeDropdown();
+      }
+    };
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, [open, closeDropdown]);
 
   useEffect(() => {
     return () => {
