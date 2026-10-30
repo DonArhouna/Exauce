@@ -25,13 +25,24 @@ d'intégration avec une **vraie base PostgreSQL**, pas un double simulé.*
 | Unitaire backend | pytest | règles métier pures | slug unique, `MAX_TREE_DEPTH`, transitions de workflow |
 | Unitaire frontend / back-office | vitest | utilitaires et composants | conversion de slug, dates locales, complétude i18n |
 | Intégration | pytest + PostgreSQL (conteneur éphémère, fixtures) | service / endpoint | CRUD contenus + versions, publication → cache + sitemap, FTS par langue |
-| Contrat API | suite générée depuis `openapi.yaml` | chaque endpoint | conformité requête/réponse, `x-permission` respectée |
+| Contrat API automatisé (Point 8) | **Schemathesis** (Property-Based) + Spectral | chaque endpoint de `openapi.yaml` | Fuzzing exhaustif d'API : conformité stricte des schémas de réponse, absence de crash 500 sur entrées limites, respect des en-têtes obligatoires (`Idempotency-Key`), RFC 7807 (SC-141) |
 | Autorisations | matrice générée (rôle × endpoint) | RBAC complet | l'éditeur ne publie pas, le client A ne lit pas le document de B (SC-510, SC-404) |
 | Sécurité | pip-audit, trivy, tests ciblés | attaque simulée | XSS dans le contenu riche (SC-524), IDOR, brute force (SC-501) |
 | E2E | Playwright (bureau + mobile) | parcours cœur | visite → recherche → contact ; édition → relecture → publication |
 | Accessibilité | axe-core (Playwright) | pages publiques + back-office | contraste ≥ 4,5:1, navigation clavier, étiquettes de champs |
 | Performance | k6 | lecture seule | P95 sous cible (page 11 §10) |
 | Migration / parité | script dédié en CI | seed | `content.data.ts` ↔ base : 2/10/20/94 + slugs FR/EN (page 13) |
+
+### 2.1 Tests de contrat d'API avec Schemathesis (Point 8 validé)
+
+Pour dépasser la simple vérification syntaxique de Spectral et garantir que l'application FastAPI respecte son contrat en conditions réelles :
+- **Outil** : `schemathesis` exécuté en test d'intégration via le runner ASGI in-memory (`--app app.main:app`), sans dépendance réseau.
+- **Principe** : Fuzzing basé sur les propriétés (Hypothesis). Schemathesis génère automatiquement des centaines de requêtes aléatoires valides et limites pour chaque endpoint défini dans `openapi.yaml`.
+- **Contrôles automatisés vérifiés** :
+  1. `not_a_server_error` : aucune entrée, même malformée ou volumineuse, ne doit déclencher une erreur HTTP 500 inattendue.
+  2. `status_code_conformance` : tous les codes de réponse renvoyés doivent être déclarés dans `openapi.yaml` (200, 202, 404, 409, 422, 429).
+  3. `content_type_conformance` : les en-têtes `Content-Type` renvoyés doivent correspondre au schéma (`application/json` ou `application/problem+json`).
+  4. `response_schema_conformance` : chaque payload de réponse doit valider rigoureusement le schéma JSON Schema de l'OpenAPI.
 
 ## 3. Environnements de test
 

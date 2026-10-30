@@ -127,3 +127,11 @@ procédure de construction, à négocier avec la disponibilité du fondateur.*
 | 8 | Copie anonymisée en pré-production vérifiée | page 12 §3 |
 | 9 | Mot de passe/MFA du fondateur initialisés + codes de récupération | page 09 §2 |
 | 10 | Sitemap comparé avant/après bascule (aucune URL perdue) | page 13 §6 |
+
+## 9. Registre des dettes techniques connues (Point 7 validé)
+
+| Sujet | Statut | Cause & Impact | Traitement prévu |
+|---|---|---|---|
+| **Validation automatisée des 44 diagrammes Mermaid** | ⚠️ **Non vérifié par outil CLI automatisé** | L'outil `mermaid-cli` (`mmdc`) requiert Chromium (`chrome-headless-shell`), absent sous sandbox Windows. Les 44 diagrammes ont été relus et validés manuellement mais n'ont pas fait l'objet d'un rendu CLI automatisé. | Exécution du linter `mmdc` dans le conteneur Docker CI dédié disposant de Chromium headless. |
+| **Descriptifs des sous-secteurs (EF-104)** | ⚠️ `approved=false` | Les propositions de textes de `propositions-secteurs.md` sont en attente de relecture juridique/métier par le cabinet. | Validation finale par le cabinet avant publication publique en production. |
+| **Validation dynamique du contrat d'API (Point 8 validé)** | 🟢 Cadré pour le Sprint 1 | Le lint statique Spectral (0 erreur) valide la forme du document `openapi.yaml`. Il doit être complété par du fuzzing dynamique des endpoints FastAPI en runtime. | Ajout de **Schemathesis** (Property-Based Testing ASGI in-memory) dès le Sprint 1 du Backend (`tests/test_contract_schemathesis.py`). |
