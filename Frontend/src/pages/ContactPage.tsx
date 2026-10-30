@@ -106,7 +106,7 @@ export default function ContactPage() {
 
           {/* Coordonnées */}
           <aside className="rounded-card bg-abyss-gradient p-8 text-ivory">
-            <h2 className="font-display text-display-md">{ORGANIZATION.name}</h2>
+            <h2 className="font-display text-display-md">{t('contact.companyName', ORGANIZATION.name)}</h2>
             <ul className="mt-6 space-y-4 text-sm text-white/75">
               <li>
                 <a href={`mailto:${ORGANIZATION.email}`} className="hover:text-turquoise-400">
