@@ -328,19 +328,21 @@ Règles : publication possible uniquement quand la traduction est
 `published` ; la désactivation d'une langue ne supprime rien (les lignes
 demeurent, l'API bascule en fallback explicite).
 
-## 5. Slugs, URLs, hreflang, sitemap
+## 5. Slugs, URLs, hreflang, sitemap (Décisions Q-101 et Q-102 actées)
 
 - **Slug par langue**, unique par (entity_type, lang) — cf.
   `entity_translations.uq_trans_slug` (page 06). `slug` n'est `NULL` que pour
-  les entités sans URL publique (`page_section`, `setting`).
+  les entités sans URL publique (`page_section`, `setting`, et les prestations individuelles en option S1).
+- **Statut des 94 prestations (Décision Q-101 · Option S1 confirmée)** :
+  Les prestations sont présentées sous forme de liste structurée sur la page de leur domaine parent (ancre `#groupe`). Elles n'ont **pas d'URL publique propre ni de redirection 301** (un fragment `#` n'étant jamais envoyé au serveur HTTP). La mention « slugs de prestations modifiables avec redirection 301 automatique » est formellement retirée : seules les familles et les 10 domaines possèdent des slugs publics avec gestion de redirections 301.
+- **Pages légales (Décision Q-102 · Option L1 confirmée)** :
+  Une seule URL canonique (`/fr/mentions-legales` et `/en/legal-notice`) regroupant les mentions légales, la politique de confidentialité et la gestion des cookies sous forme de 3 blocs de sections `legal_document`.
 - **Génération** (règle complète : doc 16 §7) : normalisation NFD,
   minuscules, caractères non `[a-z0-9]` → `-`, compression des tirets ;
   en cas de collision, contextualisation par le **groupe parent**, puis par
-  le **domaine**, puis suffixe `-2`, `-3`. Les 94 prestations — aujourd'hui
-  sans identifiant ni slug — en reçoivent un ; les trois libellés dupliqués
-  (13 + 2 + 2 occurrences) sont désambiguïsés par le groupe.
+  le **domaine**, puis suffixe `-2`, `-3`.
 - **Éditabilité** : le slug est éditable par langue au back-office ; il ne
-  peut pas être vide pour une entité publiée. Le slug EN est généré depuis le
+  peut pas être vide pour une entité publiée disposant d'une URL. Le slug EN est généré depuis le
   libellé EN et reste indépendant du slug FR.
 - **Cohérence avec le frontend** : la table `PAGE_SLUGS` du frontend
   (`routes.ts`) reste la source des chemins d'URL, le backend s'aligne
@@ -351,11 +353,11 @@ demeurent, l'API bascule en fallback explicite).
   (SC-604). Un déplacement de nœud peut changer l'URL sans changer le slug :
   la redirection est créée de la même façon. La cible est mise à jour à
   chaque re-changement (pas de chaîne de redirections).
-- **hreflang / x-default / canonical** : servis par le frontend à partir
-  des alternates de l'API (`alternate_fr`, `alternate_en`, …) — x-default = `fr`.
-- **Sitemap** généré par le backend (EF-701), une entrée par (URL, langue),
-  `xhtml:link` croisé, parité avec le 30 URLs statiques actuels au jour de
-  la bascule.
+- **hreflang / x-default / canonical & URLs filtrées `?category=` (Point 4 validé)** :
+  - Les balises sont servies à partir des alternates de l'API (`alternate_fr`, `alternate_en`) — x-default = `fr`.
+  - Pour les URLs filtrées par catégorie (ex. `/fr/publications?category=audit`), la balise canonical pointe **toujours** vers la page racine sans filtre (`/fr/publications`).
+- **Sitemap dynamique (Point 5 validé)** :
+  Généré par le backend (EF-701), il référence **exactement 29 URLs canoniques** avec `xhtml:link` croisés (les URLs avec `?category=` en sont exclues).
 - **Changement de langue sur page sans équivalent** : des comportements sont prévus : l'API ne renvoie que des alternates existants (voir texte
   ci-dessous).
 

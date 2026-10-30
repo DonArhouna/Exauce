@@ -315,10 +315,17 @@ devenir des invariants de l'API.
   régulière. C'est une **seconde source de vérité** : elle est supprimée à la
   bascule au profit de `GET /api/v1/sitemap.xml` (EF-701), une entrée par
   (URL, langue) avec `xhtml:link` croisés.
-- **Comptage actuel** : 9 pages statiques + 2 familles + 10 domaines +
-  2 interventions + 3 secteurs + 3 publications = **29 URLs** (après fusion de Localisations dans Contact). À la cible :
-  8 pages indexables (si `client_area` exclu en noindex Q-103) + 12 + 2 + 3 + 3
-  = **28 URLs**, ou **29 URLs** si l'espace client est conservé au sitemap.
+- **Comptage unique et définitif du sitemap (Point 5 validé)** :
+  Le sitemap XML dynamique (EF-701) compte **exactement 29 URLs** canoniques (chacune déclarée avec ses liens bilingues `xhtml:link` FR et EN croisés) :
+  - **9 pages statiques** : Accueil (`/`), Services (`/services`), Interventions (`/interventions`), Secteurs (`/secteurs`), Publications (`/publications`), À propos (`/a-propos`), Contact (`/contact`), Mentions légales (`/mentions-legales`), Espace client (`/espace-client` avec section d'attente).
+  - **2 familles de services** : `/services/accompagnement`, `/services/audit-externe`.
+  - **10 domaines de services** (7 accompagnement + 3 audit).
+  - **2 modes d'intervention** : `/interventions/recurrentes`, `/interventions/ponctuelles`.
+  - **3 univers de secteurs** : `/secteurs/public`, `/secteurs/prive`, `/secteurs/non-gouvernemental`.
+  - **3 publications** d'exemple (en dev/démo).
+  **Total immuable = 9 + 2 + 10 + 2 + 3 + 3 = 29 URLs**.
+- **URLs de filtrage `?category=` (Point 4 validé)** :
+  Les URLs filtrées (ex. `/{lang}/publications?category=audit`) ne figurent **jamais** dans le sitemap XML et portent systématiquement une balise canonique pointant vers la page racine sans paramètre (`<link rel="canonical" href="https://exauceac.com/{lang}/publications" />`) pour préserver le budget de crawl et éviter tout duplicate content.
 - **Publications** : les 3 fiches sont `draft` mais présentes dans le sitemap
   et affichées. Si l'API applique le statut, le sitemap tombe à 26 URLs (ou 25) et la
   page publications se vide : décision Q-104 avant le seed, pas après.

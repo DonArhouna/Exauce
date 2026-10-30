@@ -317,20 +317,11 @@ La liste exhaustive des 13 occurrences figure dans le document 15 (§4).
 - Un slug peut être identique entre FR et EN (ex. `public`, `contact`) ;
   l'unicité est par langue.
 
-### 7.4 Question ouverte : URL d'une prestation
+### 7.4 Arbitrage acté : URL d'une prestation (Décision Q-101 · Option S1 validée)
 
-Deux cibles sont possibles :
-
-| Option | URL | Avantages | Coûts |
-|---|---|---|---|
-| **S1 · ancre stable** | `/{lang}/services/{famille}/{domaine}#{groupe}/{prestation}` | aucun nouveau gabarit ; deep-link et recherche fonctionnent | un fragment n'est **pas** envoyé au serveur : une redirection HTTP 301 sur changement de slug est impossible ; le slug ne sert qu'au deep-link |
-| **S2 · page prestation dédiée** | `/{lang}/services/{famille}/{domaine}/{groupe}/{prestation}` | URL indexable, 301 possible, SEO par prestation, partage propre | 94 pages supplémentaires (×2 langues), nouveau gabarit, plus de maillage et de tests |
-
-La demande « slug unique + redirection automatique » n'est **pleinement
-cohérente qu'avec S2**. S1 reste acceptable si le slug est compris comme un
-identifiant de deep-link, sans promesse de redirection. **Décision à
-prendre** (Q-101, document 18). Le modèle de données est identique dans les
-deux cas ; seule l'exposition des routes change.
+- **Option S1 (Ancre stable)** est **officiellement retenue** : `/{lang}/services/{famille}/{domaine}#{groupe}`.
+- Les 94 prestations sont consultées au sein de la vue de leur domaine parent. Elles n'ont **ni URL canonique autonome, ni slug public, ni redirection 301 côté serveur** (les fragments d'ancre `#` n'étant jamais transmis au serveur HTTP).
+- La mention de « slugs de prestations modifiables avec redirection automatique » est **formellement supprimée**. Seuls les 10 domaines et 2 familles de services possèdent des slugs publics enregistrés dans la table `redirects`.
 
 ## 8. SEO — où vivent les métadonnées
 
