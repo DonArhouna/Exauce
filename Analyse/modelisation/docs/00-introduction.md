@@ -14,8 +14,8 @@ La suite du projet ajoute :
    les secteurs, les publications, les leads et l'i18n.
 
 Le site **public existe déjà** (React + Vite, Phase 1-4 validées) ; il
-consommera l'API conformément à [`Frontend/docs/api-contract.md`](https://)
-et arrêtera ses données mockées.
+consommera l'API conformément au contrat OpenAPI ([openapi.yaml](openapi.yaml))
+et à la documentation [08 · API](08-api.md), en remplacement de ses données mockées.
 
 ## Objectifs
 

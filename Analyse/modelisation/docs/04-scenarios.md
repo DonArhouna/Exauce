@@ -109,8 +109,12 @@
 |---|---|---|---|---|---|---|
 | SC-801 | Upload malveillant | polyglot déguisé en .png | magic bytes + ClamAV ⇒ 415 | | EF-801 | security |
 | SC-802 | Suppression d'un média référencé | usage en base | refus accompagné de la liste des contenus qui l'utilisent | | EF-509 | API |
+| SC-803 | Génération automatique des miniatures WebP | upload d'une image PNG/JPEG | variantes WebP créées automatiquement dans media_variants | conversion échouée ⇒ log + retry | EF-803 | API test |
 | SC-810 | Téléchargement document client | URL signée < 5 min | stream contrôlé + re-vérification d'appartenance + audit | | EF-403 | security |
 | SC-820 | E-mail outbox en échec récurrent | SMTP down prolongé | `abandoned` + alerte admin | | EF-306/903 | integration |
+| SC-901 | Journalisation immuable des actions d'administration | action d'écriture par un utilisateur | entrée append-only insérée dans audit_log avec acteur, action, avant/après | suppression/altération interdite | EF-901 | API test |
+| SC-902 | Contrôle de santé système (/health) | sonde de surveillance périodique | GET /health renvoie 200 {status: "healthy", db: "ok"} en < 100 ms | dégradation DB renvoie 503 unhealthy | EF-902 | integration |
+| SC-903 | Alerte administrateur sur défaillance critique | échec sauvegarde ou saturation disque | e-mail critique envoyé aux super_admins via canal de secours | | EF-903 | integration |
 
 
 ## 2 bis. Scénarios complémentaires (croisage exigé → SC, cf. §10)
@@ -130,14 +134,14 @@
 | SC-806 | Fuite de jeton / cookie de session | session compromise (vol, poste public) | révocation immédiate (par l'utilisateur ou l'admin) ; rotation à chaque login/MFA ; cookies HttpOnly non lisibles en JS | anomalie (changement d'IP fort) → invalidation prudente | ADR-004 | security |
 | SC-606 | Langue désactivée avec contenu existant | EN désactivée alors que des traductions EN sont publiées | les URLs EN → 301 vers l'équivalent FR (L4, page 07) ; **aucune donnée supprimée** : réactivation = contenu intact ; cache/sitemap régénérés sans EN | — | EF-602, R-FB | intégration |
 
-### SC-900 Conformité (À VALIDER JURIDIQUEMENT)
+### SC-900 / SC-1000 Conformité (À VALIDER JURIDIQUEMENT)
 
 | ID | Nom | Flux | Liens |
 |---|---|---|---|
-| SC-1001 | Registre des traitements | doc + tables consents/leads/audit fournisse les enums sources | EF-1001 |
+| SC-1001 | Registre des traitements | doc + tables consents/leads/audit fournissent les enums sources | EF-1001 |
 | SC-1002 | Consentement horodaté/révocable | enregistrement `consents`, révocation au bandeau | EF-1002 |
 | SC-1003 | Accès/rectification/effacement/portabilité | workflows back-office sous SLA 30 j, journalisés | EF-1003 |
-| SC-1004 | Journalisation des accès données clients | chaque consulté/téléchargé audité (§4 p09) | EF-403/US-014 |
+| SC-1004 | Rétention et purge automatique CDP/RGPD | échéance de rétention atteinte (leads 3 ans, logs 1 an) → purge / anonymisation automatique | EF-1004 |
 
 
 

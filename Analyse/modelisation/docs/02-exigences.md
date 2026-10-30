@@ -1,6 +1,6 @@
 # 02 · Exigences
 
-> 🟢 **M1 : rédigée.** Chaque exigence a : un identifiant, une priorité MoSCoW
+> 🟡 **Statut : M1 — à faire valider.** Chaque exigence a : un identifiant, une priorité MoSCoW
 > (Must/Should/Could/Won't), un **critère d'acceptation mesurable**, et au
 > moins un scénario lié (page [04](04-scenarios.md), complété au M4).
 
@@ -19,7 +19,7 @@ I · Audit & observabilité — J · Conformité.
 | EF-105 | Publications : liste filtrable (catégorie, recherche), tri par date, détail par slug **par langue** ; ne servir que `status = published` | Must | un article `draft` n'est jamais servi publiquement (404) ; le slug demandé dans la « mauvaise » langue renvoie un **301 vers le slug canonique** de cette langue | SC-105…107 |
 | EF-106 | Coordonnées du cabinet (tél. fixe/mobile, e-mail, ville, adresse postale, réseaux) servies par l'API et **modifiables au back-office** | Must | aucune coordonnée en dur dans le frontend ; modification visible après invalidation du cache ≤ 60 s | SC-110 |
 | EF-107 | Contenu de la page « À propos » (intro, fondateur, manière de travailler, valeurs) éditable | Should | blocs éditables séquentiels, versionnés | SC-111 |
-| EF-108 | Pages légales (mentions, confidentialité, cookies) servies comme contenus, marquées « à compléter par le cabinet » tant que non validées | Must | statut `draft` par défaut → non servies ou servies avec bannière selon paramètre (H-007 : servies avec band) | SC-112 |
+| EF-108 | Pages légales (mentions, confidentialité, cookies) servies comme contenus, marquées « à compléter par le cabinet » tant que non validées | Must | statut `draft` par défaut → non servies ou servies avec bannière selon paramètre (H-007 : servies avec bandeau) | SC-112 |
 | EF-109 | Consentement cookies : préférence horodatée enregistrée côté serveur | Should | aligné avec le bandeau du frontend ; aucune mesure d'audience avant consentement | SC-120 |
 
 ## B · Recherche
@@ -114,6 +114,7 @@ I · Audit & observabilité — J · Conformité.
 | EF-1001 | Registre des traitements (leads, clients, consentements, audit) en paramètre documenté | Must | doc 09 mis à jour + pages repository datées | SC-1001 |
 | EF-1002 | Consentements horodatés et référencés (cookies, traitements) | Must | consentement révocable l'état persiste | SC-1002 |
 | EF-1003 | Droits CDP/RGPD : accès, rectification, effacement, portabilité → workflows back-office | Must | chaque droit déclenché, engagé et clos sous SLA (30 jours) | SC-1003 |
+| EF-1004 | Politique de rétention et purge automatique des données personnelles (leads anonymisés après 3 ans, sessions et logs après 1 an, cookies 13 mois) | Must | job de purge périodique vérifié, conservation conforme CDP / loi n° 2008-12 | SC-1004 |
 
 ## Non fonctionnelles (ENF-)
 
