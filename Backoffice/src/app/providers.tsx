@@ -2,8 +2,9 @@ import { useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastProvider } from '@/components/ui/ToastProvider';
 import { AuthProvider } from '@/services/auth/AuthProvider';
+import { EditionLanguageProvider } from '@/services/edition/EditionLanguageProvider';
 
-/** Providers globaux : données serveur, toasts, session. */
+/** Providers globaux : données serveur, toasts, session, langue d'édition. */
 export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
     () =>
@@ -21,7 +22,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        <AuthProvider>{children}</AuthProvider>
+        <EditionLanguageProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </EditionLanguageProvider>
       </ToastProvider>
     </QueryClientProvider>
   );

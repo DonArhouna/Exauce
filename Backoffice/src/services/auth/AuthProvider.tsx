@@ -44,16 +44,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => setUnauthorizedHandler(null);
   }, [queryClient]);
 
-  const login = useCallback(async (input: AdminLoginRequest) => {
-    const response = await adminLogin(input);
-    if (response.status === 'authenticated') {
-      setUser(response.user);
-      setStatus('authenticated');
-      setSessionExpired(false);
-      queryClient.clear();
-    }
-    return response;
-  }, [queryClient]);
+  const login = useCallback(
+    async (input: AdminLoginRequest) => {
+      const response = await adminLogin(input);
+      if (response.status === 'authenticated') {
+        setUser(response.user);
+        setStatus('authenticated');
+        setSessionExpired(false);
+        queryClient.clear();
+      }
+      return response;
+    },
+    [queryClient],
+  );
 
   const activate = useCallback(
     async (input: AdminActivateRequest) => {
@@ -69,11 +72,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     try {
       await adminLogout();
+      setSessionExpired(false);
+    } catch {
+      // Un 401 a déjà marqué la session expirée ; la purge locale suffit.
     } finally {
       setCsrfToken(null);
       setUser(null);
       setStatus('unauthenticated');
-      setSessionExpired(false);
       queryClient.clear();
     }
   }, [queryClient]);

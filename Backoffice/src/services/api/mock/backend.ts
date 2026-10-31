@@ -1,4 +1,9 @@
-import type { AdminActivateRequest, AdminLoginRequest, AdminPasswordChangeRequest, AdminPasswordResetRequest } from '../types';
+import type {
+  AdminActivateRequest,
+  AdminLoginRequest,
+  AdminPasswordChangeRequest,
+  AdminPasswordResetRequest,
+} from '../types';
 import {
   DEMO,
   endSession,
@@ -6,8 +11,15 @@ import {
   findAccountById,
   findPendingAccount,
   getAttempts,
+  getMockPublicationJobs,
+  getMockPublicationStatus,
   getSession,
+  listMockNotifications,
+  markMockNotificationRead,
   startSession,
+  triggerMockPublication,
+  type MockAccount,
+  type MockSession,
 } from './db';
 
 export interface MockRequest {
@@ -57,11 +69,27 @@ function rateLimited(seconds: number): MockResponse {
   };
 }
 
-function requireSessionAndCsrf(request: MockRequest): MockResponse | null {
+function currentAccount(): { session: MockSession; account: MockAccount } | null {
   const session = getSession();
-  if (!session) return problem(401, 'SESSION_EXPIRED', 'Session expirée');
+  if (!session) return null;
+  const account = findAccountById(session.userId);
+  if (!account || !account.user.is_active) return null;
+  return { session, account };
+}
+
+function can(account: MockAccount, module: string, action: string): boolean {
+  return account.user.permissions.some(
+    (permission) => permission.module === module && permission.action === action,
+  );
+}
+
+function requireSessionAndCsrf(request: MockRequest): MockResponse | null {
+  const current = currentAccount();
+  if (!current) return problem(401, 'SESSION_EXPIRED', 'Session expirée');
   if (!request.csrfToken) return problem(403, 'CSRF_TOKEN_MISSING', 'Jeton CSRF absent');
-  if (request.csrfToken !== session.csrf) return problem(403, 'CSRF_TOKEN_MISMATCH', 'Jeton CSRF invalide');
+  if (request.csrfToken !== current.session.csrf) {
+    return problem(403, 'CSRF_TOKEN_MISMATCH', 'Jeton CSRF invalide');
+  }
   return null;
 }
 
@@ -172,24 +200,85 @@ function changePassword(request: MockRequest): MockResponse {
   const failure = requireSessionAndCsrf(request);
   if (failure) return failure;
   const payload = (request.body ?? {}) as AdminPasswordChangeRequest;
-  const session = getSession();
-  const account = session ? findAccountById(session.userId) : undefined;
-  if (!account) return problem(401, 'SESSION_EXPIRED', 'Session expirée');
-  if (account.password !== payload.current_password) {
+  const current = currentAccount();
+  if (!current) return problem(401, 'SESSION_EXPIRED', 'Session expirée');
+  if (current.account.password !== payload.current_password) {
     return problem(401, 'UNAUTHENTICATED', 'Mot de passe actuel incorrect');
   }
   if (!payload.new_password || payload.new_password.length < 14) {
     return problem(422, 'VALIDATION_ERROR', 'Mot de passe trop court');
   }
-  account.password = payload.new_password;
-  account.user.must_reset_password = false;
+  current.account.password = payload.new_password;
+  current.account.user.must_reset_password = false;
   return { status: 204 };
+}
+
+function publicationStatus(): MockResponse {
+  const current = currentAccount();
+  if (!current) return problem(401, 'SESSION_EXPIRED', 'Session expirée');
+  if (!can(current.account, 'pages', 'view')) return problem(403, 'FORBIDDEN', 'Permission insuffisante');
+  return { status: 200, body: getMockPublicationStatus() };
+}
+
+function publicationJobs(request: MockRequest): MockResponse {
+  const current = currentAccount();
+  if (!current) return problem(401, 'SESSION_EXPIRED', 'Session expirée');
+  const limit = Number(request.query.limit ?? 20);
+  const offset = Number(request.query.offset ?? 0);
+  const all = getMockPublicationJobs();
+  return {
+    status: 200,
+    body: { items: all.slice(offset, offset + limit), total: all.length },
+  };
+}
+
+function triggerPublication(request: MockRequest): MockResponse {
+  const failure = requireSessionAndCsrf(request);
+  if (failure) return failure;
+  const current = currentAccount();
+  if (!current) return problem(401, 'SESSION_EXPIRED', 'Session expirée');
+  if (!can(current.account, 'pages', 'publish')) {
+    return problem(403, 'FORBIDDEN', 'Permission insuffisante');
+  }
+  const job = triggerMockPublication();
+  if (!job) return problem(409, 'CONFLICT', 'Une publication est déjà en cours');
+  return { status: 202, body: job };
+}
+
+function notifications(request: MockRequest): MockResponse {
+  const current = currentAccount();
+  if (!current) return problem(401, 'SESSION_EXPIRED', 'Session expirée');
+  if (!can(current.account, 'leads', 'view')) {
+    return problem(403, 'FORBIDDEN', 'Permission insuffisante');
+  }
+  const unreadOnly = request.query.unread_only === true || request.query.unread_only === 'true';
+  const limit = Number(request.query.limit ?? 20);
+  return { status: 200, body: listMockNotifications(unreadOnly, limit) };
+}
+
+function readNotification(request: MockRequest, id: string): MockResponse {
+  const failure = requireSessionAndCsrf(request);
+  if (failure) return failure;
+  const current = currentAccount();
+  if (!current) return problem(401, 'SESSION_EXPIRED', 'Session expirée');
+  if (!can(current.account, 'leads', 'view')) {
+    return problem(403, 'FORBIDDEN', 'Permission insuffisante');
+  }
+  return markMockNotificationRead(id) ? { status: 204 } : problem(404, 'CONTENT_NOT_FOUND', 'Notification inconnue');
 }
 
 /** Routeur du backend mock : toute route non couverte renvoie 501. */
 export async function mockRequest(request: MockRequest): Promise<MockResponse> {
   await delay();
   const route = `${request.method} ${request.path}`;
+
+  if (route === 'POST /admin/publication-jobs') return triggerPublication(request);
+  if (route === 'GET /admin/publication-jobs/current') return publicationStatus();
+
+  const notificationRead = request.path.match(/^\/admin\/notifications\/([^/]+)\/read$/);
+  if (request.method === 'POST' && notificationRead) {
+    return readNotification(request, notificationRead[1]);
+  }
 
   switch (route) {
     case 'POST /admin/auth/login':
@@ -206,6 +295,10 @@ export async function mockRequest(request: MockRequest): Promise<MockResponse> {
       return activate(request);
     case 'POST /admin/auth/password-change':
       return changePassword(request);
+    case 'GET /admin/publication-jobs':
+      return publicationJobs(request);
+    case 'GET /admin/notifications':
+      return notifications(request);
     default:
       return problem(501, 'NOT_IMPLEMENTED', `Route non couverte par le mock : ${route}`);
   }

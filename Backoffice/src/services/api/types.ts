@@ -16,6 +16,7 @@ export type AdminPasswordForgotRequest = Schemas['AdminPasswordForgotRequest'];
 export type AdminPasswordResetRequest = Schemas['AdminPasswordResetRequest'];
 export type AdminPasswordChangeRequest = Schemas['AdminPasswordChangeRequest'];
 export type PublicationJob = Schemas['PublicationJob'];
+export type PublicationJobList = Schemas['PublicationJobList'];
 export type PublicationSiteStatus = Schemas['PublicationSiteStatus'];
 export type AdminDashboard = Schemas['AdminDashboard'];
 export type AdminNotification = Schemas['AdminNotification'];
