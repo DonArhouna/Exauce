@@ -1,0 +1,264 @@
+{
+  "app": {
+    "name": "EXAUCE",
+    "tagline": "Audit & Conseils",
+    "title": "EXAUCE back office",
+    "skipToContent": "Skip to main content"
+  },
+  "common": {
+    "loading": "Loading…",
+    "retry": "Try again",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "close": "Close",
+    "search": "Search",
+    "clear": "Clear",
+    "required": "This field is required",
+    "optional": "optional",
+    "seeAll": "See all",
+    "back": "Back",
+    "email": "Email",
+    "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "empty": "No items",
+    "refresh": "Refresh",
+    "menu": "Menu",
+    "unknownError": "An unexpected error occurred."
+  },
+  "language": {
+    "interface": "Interface language",
+    "edition": "Editing language",
+    "fr": "Français",
+    "en": "English"
+  },
+  "nav": {
+    "mainNavigation": "Main navigation",
+    "collapse": "Collapse navigation",
+    "expand": "Expand navigation",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "userMenu": "User menu",
+    "notifications": "Notifications",
+    "groups": {
+      "pilotage": "Overview",
+      "content": "Content",
+      "relations": "Relationships",
+      "media": "Media",
+      "site": "Site",
+      "administration": "Administration"
+    },
+    "dashboard": "Dashboard",
+    "services": "Services",
+    "pages": "Pages and sections",
+    "sectors": "Sectors",
+    "interventions": "Interventions",
+    "publications": "Publications",
+    "offices": "Offices",
+    "team": "Team",
+    "leads": "Contact requests",
+    "media": "Media library",
+    "redirects": "Redirects",
+    "versions": "Versions and restore",
+    "publishing": "Publishing",
+    "users": "Users",
+    "roles": "Roles and permissions",
+    "settings": "Site settings",
+    "audit": "Audit log"
+  },
+  "breadcrumb": {
+    "label": "Breadcrumb",
+    "home": "Home"
+  },
+  "search": {
+    "open": "Search",
+    "title": "Global search",
+    "placeholder": "Search a page, a content item…",
+    "hint": "Ctrl/Cmd + K to open · Esc to close",
+    "navigation": "Navigation",
+    "noResults": "No results.",
+    "contentSoon": "Content search will be available soon.",
+    "resultCount": "{{count}} result(s)"
+  },
+  "publication": {
+    "label": "Publishing status",
+    "upToDate": "Up to date",
+    "pendingChanges": "Pending changes",
+    "building": "Build in progress",
+    "failed": "Build failed",
+    "lastSuccess": "Last publication: {{date}}",
+    "never": "No successful publication yet",
+    "publish": "Publish",
+    "publishing": "Publishing…",
+    "confirmTitle": "Publish the site?",
+    "confirmText": "The modified content will go live and the sitemap will be regenerated.",
+    "confirm": "Start publishing",
+    "success": "Publication started.",
+    "conflict": "A publication is already running.",
+    "queued": "Queued",
+    "buildingStep": "Step {{step}} of {{total}}",
+    "triggeredBy": "Triggered by {{name}}"
+  },
+  "auth": {
+    "loginTitle": "Sign in",
+    "loginSubtitle": "Access the firm’s back office.",
+    "email": "Email address",
+    "emailPlaceholder": "name@exauceac.com",
+    "password": "Password",
+    "passwordPlaceholder": "Your password",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "forgot": "Forgot your password?",
+    "mfaTitle": "Two-step verification",
+    "mfaSubtitle": "Enter the 6-digit code from your authenticator app.",
+    "mfaCode": "Verification code",
+    "mfaSubmit": "Verify",
+    "mfaBack": "Back to credentials",
+    "forgotTitle": "Forgot password",
+    "forgotSubtitle": "Enter your email address: if an account exists, a reset link will be sent.",
+    "forgotSubmit": "Send the link",
+    "forgotSent": "If an active account matches this address, an email has just been sent.",
+    "resetTitle": "New password",
+    "resetSubtitle": "Choose a password of at least 14 characters.",
+    "resetSubmit": "Set password",
+    "resetSuccess": "Password updated. You can now sign in.",
+    "activateTitle": "Account activation",
+    "activateSubtitle": "Your account was created without a password. Set one to access the back office.",
+    "activateSubmit": "Activate my account",
+    "activateSuccess": "Account activated. Welcome.",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "passwordHint": "At least 14 characters.",
+    "invalidCredentials": "Incorrect email or password.",
+    "rateLimited": "Too many attempts. Try again in {{seconds}} seconds.",
+    "rateLimitedGeneric": "Too many attempts. Please wait before trying again.",
+    "sessionExpired": "Your session has expired. Sign in to continue.",
+    "mfaRequired": "A verification code is required.",
+    "mfaInvalid": "Invalid verification code.",
+    "tokenExpired": "This link has expired or was already used. Request a new one.",
+    "accountDisabled": "This account is disabled. Contact an administrator.",
+    "csrf": "Your security token has expired. Reload the page and try again.",
+    "genericError": "Sign-in failed. Please try again.",
+    "activateError": "Activation failed. Check the link you received.",
+    "resetError": "Password reset failed. Check the link you received.",
+    "forgotError": "The request could not be sent. Please try again.",
+    "missingToken": "Incomplete link: the token is missing.",
+    "backToLogin": "Back to sign in",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Overview of content and requests",
+    "refresh": "Refresh",
+    "blockError": "This block could not be loaded.",
+    "leads": {
+      "title": "Contact requests",
+      "recent": "Latest requests",
+      "newCount": "{{count}} new",
+      "empty": "No requests yet.",
+      "viewAll": "All requests"
+    },
+    "publications": {
+      "title": "Publications",
+      "draft": "Drafts",
+      "inReview": "In review",
+      "empty": "No publication in progress.",
+      "viewAll": "View publications"
+    },
+    "content": {
+      "title": "Unpublished changes",
+      "value": "{{count}} item(s)",
+      "hint": "Modified since the last successful publication.",
+      "empty": "All content is published."
+    },
+    "build": {
+      "title": "Latest build",
+      "status": "Status",
+      "lastSuccess": "Last successful publication",
+      "never": "Never published",
+      "failed": "The latest build failed.",
+      "queued": "Queued",
+      "triggeredBy": "Triggered by {{name}}"
+    },
+    "activity": {
+      "title": "Recent activity",
+      "empty": "No recent activity.",
+      "viewAll": "Open the audit log",
+      "by": "by {{name}}"
+    },
+    "i18n": {
+      "title": "Translation completeness",
+      "value": "{{value}}%",
+      "missing": "{{count}} field(s) to translate"
+    },
+    "shortcuts": {
+      "title": "Shortcuts",
+      "newPublication": "New publication",
+      "editHome": "Edit home page",
+      "addOffice": "Add an office"
+    }
+  },
+  "comingSoon": {
+    "title": "Coming soon",
+    "text": "This screen is being built. It will be enabled in a future phase.",
+    "backToDashboard": "Back to dashboard"
+  },
+  "errors": {
+    "title": "An error occurred",
+    "forbiddenTitle": "Access denied",
+    "forbiddenText": "Your role does not allow access to this page.",
+    "notFoundTitle": "Page not found",
+    "notFoundText": "The requested page does not exist or has moved.",
+    "network": "The server cannot be reached. Check your connection.",
+    "server": "The server encountered an error. Please try again later.",
+    "backToDashboard": "Back to dashboard"
+  },
+  "validation": {
+    "email": "Enter a valid email address.",
+    "required": "This field is required.",
+    "passwordMin": "The password must be at least 14 characters long.",
+    "passwordMismatch": "The two passwords do not match.",
+    "maxLength": "This field is too long."
+  },
+  "userMenu": {
+    "signedInAs": "Signed in as {{name}}",
+    "profile": "My profile",
+    "changePassword": "Change password",
+    "preferences": "Preferences",
+    "logout": "Sign out",
+    "logoutError": "Sign-out failed. Please try again."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications.",
+    "unreadCount": "{{count}} unread",
+    "markAllRead": "Mark all as read",
+    "markRead": "Mark as read",
+    "leadNew": "New contact request: {{title}}",
+    "viewLeads": "View requests"
+  },
+  "leads": {
+    "status": {
+      "new": "New",
+      "in_progress": "In progress",
+      "waiting": "Waiting",
+      "done": "Done",
+      "rejected": "Rejected",
+      "anonymized": "Anonymised"
+    }
+  },
+  "audit": {
+    "system": "System",
+    "actions": {
+      "auth.login": "signed in",
+      "content.update": "updated content",
+      "content.publish": "published content",
+      "publication.trigger": "started a publication",
+      "lead.status": "changed a request status",
+      "user.create": "created a user",
+      "settings.update": "updated settings"
+    }
+  }
+}

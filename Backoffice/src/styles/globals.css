@@ -1,0 +1,58 @@
+@import './fonts.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design tokens EXAUCE (repris du Frontend) ─────────────────── */
+:root {
+  --color-turquoise: 78 185 174;
+  --color-turquoise-deep: 18 159 164;
+  --color-ink: 12 15 17;
+  --color-abyss: 15 47 51;
+  --color-ivory: 247 249 248;
+  --color-champagne: 201 169 106;
+
+  /* Repères de mise en page du back-office */
+  --bo-navbar-height: 4.5rem;
+  --bo-sidebar-width: 17rem;
+  --bo-sidebar-collapsed-width: 5.25rem;
+  --bo-gutter: 1.5rem;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+  }
+  ::selection {
+    @apply bg-turquoise-500/30;
+  }
+  /* Focus visible accessible et homogène */
+  :focus-visible {
+    @apply outline-none ring-2 ring-turquoise-600 ring-offset-2 ring-offset-white rounded-sm;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Traits de vitesse signature (logo, titres) */
+  .speed-lines {
+    background-image: repeating-linear-gradient(
+      -12deg,
+      transparent 0 4px,
+      theme('colors.turquoise.500') 4px 8px
+    );
+  }
+}

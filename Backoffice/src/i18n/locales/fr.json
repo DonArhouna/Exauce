@@ -1,0 +1,264 @@
+{
+  "app": {
+    "name": "EXAUCE",
+    "tagline": "Audit & Conseils",
+    "title": "Back-office EXAUCE",
+    "skipToContent": "Aller au contenu principal"
+  },
+  "common": {
+    "loading": "Chargement…",
+    "retry": "Réessayer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "save": "Enregistrer",
+    "close": "Fermer",
+    "search": "Rechercher",
+    "clear": "Effacer",
+    "required": "Champ obligatoire",
+    "optional": "facultatif",
+    "seeAll": "Tout voir",
+    "back": "Retour",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
+    "empty": "Aucun élément",
+    "refresh": "Actualiser",
+    "menu": "Menu",
+    "unknownError": "Une erreur inattendue est survenue."
+  },
+  "language": {
+    "interface": "Langue de l’interface",
+    "edition": "Langue d’édition",
+    "fr": "Français",
+    "en": "English"
+  },
+  "nav": {
+    "mainNavigation": "Navigation principale",
+    "collapse": "Replier la navigation",
+    "expand": "Déplier la navigation",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu",
+    "userMenu": "Menu utilisateur",
+    "notifications": "Notifications",
+    "groups": {
+      "pilotage": "Pilotage",
+      "content": "Contenu",
+      "relations": "Relations",
+      "media": "Médias",
+      "site": "Site",
+      "administration": "Administration"
+    },
+    "dashboard": "Tableau de bord",
+    "services": "Services",
+    "pages": "Pages et sections",
+    "sectors": "Secteurs",
+    "interventions": "Interventions",
+    "publications": "Publications",
+    "offices": "Bureaux",
+    "team": "Équipe",
+    "leads": "Demandes de contact",
+    "media": "Médiathèque",
+    "redirects": "Redirections",
+    "versions": "Versions et restauration",
+    "publishing": "Publication",
+    "users": "Utilisateurs",
+    "roles": "Rôles et permissions",
+    "settings": "Paramètres du site",
+    "audit": "Journal d’audit"
+  },
+  "breadcrumb": {
+    "label": "Fil d’Ariane",
+    "home": "Accueil"
+  },
+  "search": {
+    "open": "Rechercher",
+    "title": "Recherche globale",
+    "placeholder": "Rechercher une page, un contenu…",
+    "hint": "Ctrl/Cmd + K pour ouvrir · Échap pour fermer",
+    "navigation": "Navigation",
+    "noResults": "Aucun résultat.",
+    "contentSoon": "La recherche de contenu sera bientôt disponible.",
+    "resultCount": "{{count}} résultat(s)"
+  },
+  "publication": {
+    "label": "État de publication",
+    "upToDate": "À jour",
+    "pendingChanges": "Modifications en attente",
+    "building": "Build en cours",
+    "failed": "Échec du build",
+    "lastSuccess": "Dernière publication : {{date}}",
+    "never": "Aucune publication réussie",
+    "publish": "Publier",
+    "publishing": "Publication…",
+    "confirmTitle": "Publier le site ?",
+    "confirmText": "Le contenu modifié sera rendu public et le sitemap régénéré.",
+    "confirm": "Lancer la publication",
+    "success": "Publication lancée.",
+    "conflict": "Une publication est déjà en cours.",
+    "queued": "En file d’attente",
+    "buildingStep": "Étape {{step}} sur {{total}}",
+    "triggeredBy": "Déclenchée par {{name}}"
+  },
+  "auth": {
+    "loginTitle": "Connexion",
+    "loginSubtitle": "Accédez au back-office du cabinet.",
+    "email": "Adresse e-mail",
+    "emailPlaceholder": "nom@exauceac.com",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "Votre mot de passe",
+    "submit": "Se connecter",
+    "submitting": "Connexion…",
+    "forgot": "Mot de passe oublié ?",
+    "mfaTitle": "Vérification en deux étapes",
+    "mfaSubtitle": "Saisissez le code à 6 chiffres de votre application d’authentification.",
+    "mfaCode": "Code de vérification",
+    "mfaSubmit": "Vérifier",
+    "mfaBack": "Revenir aux identifiants",
+    "forgotTitle": "Mot de passe oublié",
+    "forgotSubtitle": "Indiquez votre adresse e-mail : si un compte existe, un lien de réinitialisation sera envoyé.",
+    "forgotSubmit": "Envoyer le lien",
+    "forgotSent": "Si un compte actif correspond à cette adresse, un e-mail vient d’être envoyé.",
+    "resetTitle": "Nouveau mot de passe",
+    "resetSubtitle": "Choisissez un mot de passe d’au moins 14 caractères.",
+    "resetSubmit": "Définir le mot de passe",
+    "resetSuccess": "Mot de passe mis à jour. Vous pouvez vous connecter.",
+    "activateTitle": "Activation du compte",
+    "activateSubtitle": "Votre compte a été créé sans mot de passe. Définissez-le pour accéder au back-office.",
+    "activateSubmit": "Activer mon compte",
+    "activateSuccess": "Compte activé. Bienvenue.",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "passwordHint": "14 caractères minimum.",
+    "invalidCredentials": "E-mail ou mot de passe incorrect.",
+    "rateLimited": "Trop de tentatives. Réessayez dans {{seconds}} secondes.",
+    "rateLimitedGeneric": "Trop de tentatives. Patientez avant de réessayer.",
+    "sessionExpired": "Votre session a expiré. Reconnectez-vous pour continuer.",
+    "mfaRequired": "Un code de vérification est requis.",
+    "mfaInvalid": "Code de vérification invalide.",
+    "tokenExpired": "Ce lien a expiré ou a déjà été utilisé. Demandez-en un nouveau.",
+    "accountDisabled": "Ce compte est désactivé. Contactez un administrateur.",
+    "csrf": "Votre jeton de sécurité a expiré. Rechargez la page et réessayez.",
+    "genericError": "La connexion a échoué. Réessayez.",
+    "activateError": "L’activation a échoué. Vérifiez le lien reçu.",
+    "resetError": "La réinitialisation a échoué. Vérifiez le lien reçu.",
+    "forgotError": "La demande n’a pas pu être envoyée. Réessayez.",
+    "missingToken": "Lien incomplet : le jeton est absent.",
+    "backToLogin": "Retour à la connexion",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe"
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "subtitle": "Vue d’ensemble du contenu et des demandes",
+    "refresh": "Actualiser",
+    "blockError": "Impossible de charger ce bloc.",
+    "leads": {
+      "title": "Demandes de contact",
+      "recent": "Dernières demandes",
+      "newCount": "{{count}} nouvelle(s)",
+      "empty": "Aucune demande pour l’instant.",
+      "viewAll": "Toutes les demandes"
+    },
+    "publications": {
+      "title": "Publications",
+      "draft": "Brouillons",
+      "inReview": "En revue",
+      "empty": "Aucune publication en cours.",
+      "viewAll": "Voir les publications"
+    },
+    "content": {
+      "title": "Contenus modifiés non publiés",
+      "value": "{{count}} contenu(s)",
+      "hint": "Modifiés depuis la dernière publication réussie.",
+      "empty": "Tout le contenu est publié."
+    },
+    "build": {
+      "title": "Dernier build",
+      "status": "État",
+      "lastSuccess": "Dernière publication réussie",
+      "never": "Jamais publié",
+      "failed": "Le dernier build a échoué.",
+      "queued": "En file d’attente",
+      "triggeredBy": "Déclenché par {{name}}"
+    },
+    "activity": {
+      "title": "Activité récente",
+      "empty": "Aucune activité récente.",
+      "viewAll": "Ouvrir le journal d’audit",
+      "by": "par {{name}}"
+    },
+    "i18n": {
+      "title": "Complétude des traductions",
+      "value": "{{value}} %",
+      "missing": "{{count}} champ(s) à traduire"
+    },
+    "shortcuts": {
+      "title": "Raccourcis",
+      "newPublication": "Nouvelle publication",
+      "editHome": "Modifier l’accueil",
+      "addOffice": "Ajouter un bureau"
+    }
+  },
+  "comingSoon": {
+    "title": "Bientôt disponible",
+    "text": "Cet écran est en cours de développement. Il sera activé dans une prochaine phase.",
+    "backToDashboard": "Retour au tableau de bord"
+  },
+  "errors": {
+    "title": "Une erreur est survenue",
+    "forbiddenTitle": "Accès refusé",
+    "forbiddenText": "Votre rôle ne permet pas d’accéder à cette page.",
+    "notFoundTitle": "Page introuvable",
+    "notFoundText": "La page demandée n’existe pas ou a été déplacée.",
+    "network": "Impossible de joindre le serveur. Vérifiez votre connexion.",
+    "server": "Le serveur a rencontré une erreur. Réessayez plus tard.",
+    "backToDashboard": "Retour au tableau de bord"
+  },
+  "validation": {
+    "email": "Saisissez une adresse e-mail valide.",
+    "required": "Ce champ est obligatoire.",
+    "passwordMin": "Le mot de passe doit contenir au moins 14 caractères.",
+    "passwordMismatch": "Les deux mots de passe ne correspondent pas.",
+    "maxLength": "Ce champ est trop long."
+  },
+  "userMenu": {
+    "signedInAs": "Connecté en tant que {{name}}",
+    "profile": "Mon profil",
+    "changePassword": "Changer le mot de passe",
+    "preferences": "Préférences",
+    "logout": "Se déconnecter",
+    "logoutError": "La déconnexion a échoué. Réessayez."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "Aucune notification.",
+    "unreadCount": "{{count}} non lue(s)",
+    "markAllRead": "Tout marquer comme lu",
+    "markRead": "Marquer comme lu",
+    "leadNew": "Nouvelle demande de contact : {{title}}",
+    "viewLeads": "Voir les demandes"
+  },
+  "leads": {
+    "status": {
+      "new": "Nouveau",
+      "in_progress": "En cours",
+      "waiting": "En attente",
+      "done": "Traité",
+      "rejected": "Rejeté",
+      "anonymized": "Anonymisé"
+    }
+  },
+  "audit": {
+    "system": "Système",
+    "actions": {
+      "auth.login": "s’est connecté",
+      "content.update": "a modifié un contenu",
+      "content.publish": "a publié un contenu",
+      "publication.trigger": "a lancé une publication",
+      "lead.status": "a changé le statut d’une demande",
+      "user.create": "a créé un utilisateur",
+      "settings.update": "a mis à jour les paramètres"
+    }
+  }
+}
