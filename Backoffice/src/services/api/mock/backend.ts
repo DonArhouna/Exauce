@@ -21,6 +21,7 @@ import {
   type MockAccount,
   type MockSession,
 } from './db';
+import { getMockDashboard } from './dashboard';
 
 export interface MockRequest {
   method: string;
@@ -213,6 +214,13 @@ function changePassword(request: MockRequest): MockResponse {
   return { status: 204 };
 }
 
+function dashboard(): MockResponse {
+  const current = currentAccount();
+  if (!current) return problem(401, 'SESSION_EXPIRED', 'Session expirée');
+  if (!can(current.account, 'audit', 'view')) return problem(403, 'FORBIDDEN', 'Permission insuffisante');
+  return { status: 200, body: getMockDashboard() };
+}
+
 function publicationStatus(): MockResponse {
   const current = currentAccount();
   if (!current) return problem(401, 'SESSION_EXPIRED', 'Session expirée');
@@ -295,6 +303,8 @@ export async function mockRequest(request: MockRequest): Promise<MockResponse> {
       return activate(request);
     case 'POST /admin/auth/password-change':
       return changePassword(request);
+    case 'GET /admin/reports/dashboard':
+      return dashboard();
     case 'GET /admin/publication-jobs':
       return publicationJobs(request);
     case 'GET /admin/notifications':

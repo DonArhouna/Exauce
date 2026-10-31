@@ -7,14 +7,11 @@ import ActivatePage from '@/features/auth/pages/ActivatePage';
 import ForgotPasswordPage from '@/features/auth/pages/ForgotPasswordPage';
 import LoginPage from '@/features/auth/pages/LoginPage';
 import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage';
+import DashboardPage from '@/features/dashboard/pages/DashboardPage';
 import { DASHBOARD_PATH } from '@/lib/navigation';
 import { RequireAuth, RequirePermission } from './guards';
 
-const EXTRA_ROUTES = [
-  { path: '/profil', module: undefined, action: undefined },
-  { path: '/mot-de-passe', module: undefined, action: undefined },
-  { path: '/preferences', module: undefined, action: undefined },
-];
+const EXTRA_ROUTES = ['/profil', '/mot-de-passe', '/preferences'];
 
 /** Table de routage : public, puis coque protégée. */
 export function AppRoutes() {
@@ -28,7 +25,14 @@ export function AppRoutes() {
 
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
-          <Route path={DASHBOARD_PATH} element={<ComingSoon />} />
+          <Route
+            path={DASHBOARD_PATH}
+            element={
+              <RequirePermission module="audit" action="view">
+                <DashboardPage />
+              </RequirePermission>
+            }
+          />
           {NAV_ITEMS.filter((item) => item.path !== DASHBOARD_PATH).map((item) => (
             <Route
               key={item.path}
@@ -44,8 +48,8 @@ export function AppRoutes() {
               }
             />
           ))}
-          {EXTRA_ROUTES.map((route) => (
-            <Route key={route.path} path={route.path} element={<ComingSoon />} />
+          {EXTRA_ROUTES.map((path) => (
+            <Route key={path} path={path} element={<ComingSoon />} />
           ))}
           <Route path="*" element={<NotFound />} />
         </Route>

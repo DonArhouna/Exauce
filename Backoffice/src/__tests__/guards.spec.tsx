@@ -25,7 +25,7 @@ describe('gardes de routes', () => {
   it('signale une session expirée après un 401 global', async () => {
     renderApp('/tableau-de-bord');
     await signIn('fondateur@exauceac.com', 'exauce-fondateur-2026');
-    await screen.findByRole('heading', { name: /bientôt disponible/i });
+    await screen.findByRole('heading', { name: /tableau de bord/i });
 
     expireMockSession();
     const user = userEvent.setup();

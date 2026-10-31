@@ -158,14 +158,20 @@
       "recent": "Latest requests",
       "newCount": "{{count}} new",
       "empty": "No requests yet.",
-      "viewAll": "All requests"
+      "viewAll": "All requests",
+      "pending": "awaiting review",
+      "name": "Requester",
+      "subject": "Subject",
+      "status": "Status",
+      "date": "Received"
     },
     "publications": {
       "title": "Publications",
       "draft": "Drafts",
       "inReview": "In review",
       "empty": "No publication in progress.",
-      "viewAll": "View publications"
+      "viewAll": "View publications",
+      "inReviewCount": "{{count}} in review"
     },
     "content": {
       "title": "Unpublished changes",

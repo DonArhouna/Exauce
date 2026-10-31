@@ -28,7 +28,7 @@ describe('connexion', () => {
     await user.type(screen.getByLabelText(/^mot de passe/i), 'exauce-fondateur-2026');
     await user.click(screen.getByRole('button', { name: /se connecter/i }));
 
-    expect(await screen.findByRole('heading', { name: /bientôt disponible/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /tableau de bord/i })).toBeInTheDocument();
   });
 
   it('refuse un mot de passe incorrect avec un message clair', async () => {

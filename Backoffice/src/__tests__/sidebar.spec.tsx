@@ -14,7 +14,7 @@ describe('sidebar', () => {
   it('masque les entrées non autorisées pour un éditeur', async () => {
     renderApp('/connexion');
     await signIn('editeur@exauceac.com', 'exauce-editeur-2026');
-    await screen.findByRole('heading', { name: /bientôt disponible/i });
+    await screen.findByRole('heading', { name: /tableau de bord/i });
 
     const nav = await sidebar();
     expect(within(nav).getByRole('link', { name: /services/i })).toBeInTheDocument();
@@ -26,7 +26,7 @@ describe('sidebar', () => {
   it('affiche toutes les entrées pour le fondateur et replie la navigation', async () => {
     renderApp('/connexion');
     const user = await signIn('fondateur@exauceac.com', 'exauce-fondateur-2026');
-    await screen.findByRole('heading', { name: /bientôt disponible/i });
+    await screen.findByRole('heading', { name: /tableau de bord/i });
 
     const nav = await sidebar();
     expect(within(nav).getByRole('link', { name: /utilisateurs/i })).toBeInTheDocument();

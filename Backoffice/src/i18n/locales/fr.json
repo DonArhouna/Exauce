@@ -158,14 +158,20 @@
       "recent": "Dernières demandes",
       "newCount": "{{count}} nouvelle(s)",
       "empty": "Aucune demande pour l’instant.",
-      "viewAll": "Toutes les demandes"
+      "viewAll": "Toutes les demandes",
+      "pending": "en attente de traitement",
+      "name": "Demandeur",
+      "subject": "Objet",
+      "status": "Statut",
+      "date": "Reçue le"
     },
     "publications": {
       "title": "Publications",
       "draft": "Brouillons",
       "inReview": "En revue",
       "empty": "Aucune publication en cours.",
-      "viewAll": "Voir les publications"
+      "viewAll": "Voir les publications",
+      "inReviewCount": "{{count}} en revue"
     },
     "content": {
       "title": "Contenus modifiés non publiés",
