@@ -37,11 +37,29 @@ tags:
     description: Gestion des utilisateurs et rôles
   - name: admin-audit
     description: Journal d'audit et conformité
+  - name: infra
+    description: Healthcheck et supervision (hors contrat applicatif)
 
 paths:
   # =========================================================================
   # 1. SURFACES PUBLIQUES
   # =========================================================================
+
+  /health:
+    get:
+      operationId: getHealth
+      tags: [infra]
+      summary: Santé de l'API (healthcheck Docker, supervision)
+      description: |
+        Endpoint d'infrastructure. Ne dépend pas de la base : sert à la
+        healthcheck Compose et à la supervision. Exclu du fuzzing de contrat
+        (lignes de base de Schemathesis).
+      responses:
+        '200':
+          description: Processus vivant
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/HealthStatus'}
 
   /services-tree:
     get:
@@ -1297,6 +1315,14 @@ components:
           schema: {$ref: '#/components/schemas/Problem'}
 
   schemas:
+    HealthStatus:
+      type: object
+      required: [status, version]
+      properties:
+        status: {type: string, enum: [ok]}
+        version: {type: string}
+        db: {type: string, enum: [up, down]}
+
     Problem:
       type: object
       required: [type, title, status, code]
