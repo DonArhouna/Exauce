@@ -11,14 +11,9 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.orm import DeclarativeBase
 
 from app.core.config import get_settings
-
-
-class Base(DeclarativeBase):
-    """Base de toutes les tables (types annotés : Mapped / mapped_column)."""
-
+from app.models.base import Base  # noqa: F401  (Base ré-exportée pour les migrations)
 
 _engine: AsyncEngine | None = None
 _session_factory: async_sessionmaker[AsyncSession] | None = None
