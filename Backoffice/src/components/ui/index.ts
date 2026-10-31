@@ -1,3 +1,4 @@
+export { Alert, type AlertTone } from './Alert';
 export { Badge, StatusPill, type BadgeTone } from './Badge';
 export { Button, type ButtonProps } from './Button';
 export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './Card';
