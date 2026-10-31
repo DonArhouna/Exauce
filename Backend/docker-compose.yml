@@ -1,0 +1,69 @@
+# Docker Compose de développement : API + PostgreSQL 16 + MailHog.
+# Aucun service cloud payant (page 11 §2, H-002).
+#
+# Usage :
+#   docker compose up --build
+#   docker compose exec api alembic upgrade head
+#   docker compose exec api python -m app.cli.seed --with-demo
+
+name: exauce-backend
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: exauce
+      POSTGRES_USER: exauce
+      POSTGRES_PASSWORD: exauce
+    ports:
+      - "5432:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U exauce -d exauce"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # IHM web
+
+  api:
+    build:
+      context: ..
+      dockerfile: Backend/Dockerfile
+    environment:
+      EXAUCE_ENV: dev
+      EXAUCE_SECRET_KEY: dev-only-insecure-secret-change-me-0123456789
+      EXAUCE_DATABASE_URL: postgresql+asyncpg://exauce:exauce@db:5432/exauce
+      EXAUCE_CORS_ORIGINS: http://localhost:5173,http://localhost:5174
+      EXAUCE_PUBLIC_BASE_URL: http://localhost:5173
+      EXAUCE_API_PUBLIC_BASE_URL: http://localhost:8000
+      EXAUCE_MAILHOG_HOST: mailhog
+      EXAUCE_MAILHOG_PORT: 1025
+      EXAUCE_CONTRACT_PATH: /app/contract/openapi.yaml
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./media:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request,sys; r=urllib.request.urlopen('http://localhost:8000/api/v1/health'); sys.exit(0 if b'\\\"db\\\": \\\"up\\\"' in r.read() else 1)\"",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+
+volumes:
+  dbdata:

@@ -1,0 +1,5 @@
+"""Dépendances partagées (probes, pagination, etc.)."""
+
+from __future__ import annotations
+
+__all__: list[str] = []

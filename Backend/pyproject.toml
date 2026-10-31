@@ -1,0 +1,74 @@
+[project]
+name = "exauce-backend"
+version = "0.1.0"
+description = "Backend du CMS EXAUCE Audit & Conseils (FastAPI + PostgreSQL)"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "sqlalchemy[asyncio]>=2.0.30",
+  "asyncpg>=0.29",
+  "alembic>=1.13",
+  "pydantic>=2.7",
+  "pydantic-settings>=2.3",
+  "email-validator>=2.1",
+  "argon2-cffi>=23.1",
+  "pyotp>=2.9",
+  "python-multipart>=0.0.9",
+  "itsdangerous>=2.2",
+  "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2",
+  "pytest-asyncio>=0.23",
+  "pytest-cov>=5.0",
+  "httpx>=0.27",
+  "types-PyYAML>=6.0",
+  "ruff>=0.5",
+  "mypy>=1.10",
+  "schemathesis>=3.30",
+  "asgi-lifespan>=2.1",
+  "time-machine>=2.14",
+]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = [".venv", "alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ASYNC", "C4", "PTH"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+check_untyped_defs = true
+warn_unused_ignores = true
+exclude = ["\\.venv", "alembic/versions"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = [
+  "error",
+  "ignore::DeprecationWarning:pkg_resources",
+]
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/cli/*"]

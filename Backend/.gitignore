@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Environnement local
+.env
+.env.*
+!.env.example
+
+# Fichiers de données
+*.db
+*.sqlite3
+media/
