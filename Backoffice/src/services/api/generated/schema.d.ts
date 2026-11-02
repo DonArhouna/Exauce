@@ -510,7 +510,13 @@ export interface paths {
         };
         /**
          * Agrégats du tableau de bord (EF-512)
-         * @description Widgets leads, publications, contenus non publiés, dernier build, audit récent, complétude i18n.
+         * @description Page d'accueil du back-office, accessible à **tout utilisateur
+         *     authentifié** : l'opération ne déclare volontairement aucune
+         *     `x-permission`. Le filtrage est fait par le serveur, widget par
+         *     widget (`leads:view`, `publications:view`, `pages:view`,
+         *     `settings:view`, `audit:view`) : un agrégat non autorisé est absent
+         *     de la réponse, le client n'a donc rien à masquer lui-même.
+         *     Seule l'absence de session produit un 401.
          */
         get: operations["adminDashboard"];
         put?: never;
@@ -649,6 +655,35 @@ export interface paths {
         get: operations["adminSearch"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/publications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Liste paginée des publications, tous statuts (EF-405)
+         * @description Vue éditoriale des publications (brouillon, en revue, planifiée,
+         *     publiée, archivée) dans une langue donnée. La pagination utilise un
+         *     curseur opaque `next_cursor` pour rester stable quand des éléments
+         *     sont ajoutés en tête de liste.
+         */
+        get: operations["adminListPublications"];
+        put?: never;
+        /**
+         * Création d'une publication en brouillon (EF-405)
+         * @description Crée la publication dans la langue demandée et renvoie son contenu
+         *     complet. L'en-tête `Idempotency-Key` protège des doublons lors d'une
+         *     reprise réseau : une clé déjà utilisée renvoie la publication créée.
+         */
+        post: operations["adminCreatePublication"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1196,6 +1231,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/leads/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Détail d'une demande et de ses notes internes (EF-304)
+         * @description Renvoie la demande complète pour l'écran de traitement, notes
+         *     internes incluses. Un lead anonymisé reste consultable mais sans
+         *     données personnelles, conformément à la politique de rétention.
+         */
+        get: operations["adminGetLead"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/leads/{id}/status": {
         parameters: {
             query?: never;
@@ -1467,6 +1524,22 @@ export interface components {
         PublicationDetail: components["schemas"]["PublicationSummary"] & {
             body?: components["schemas"]["Localized"];
             author_name?: string | null;
+        };
+        PublicationList: {
+            items: components["schemas"]["PublicationSummary"][];
+            next_cursor?: string | null;
+            total?: number;
+        };
+        PublicationCreate: {
+            slug: string;
+            title: string;
+            excerpt?: string | null;
+            category_code: string;
+            /** @enum {string} */
+            lang: "fr" | "en";
+            body: string;
+            /** Format: uuid */
+            cover_media_id?: string | null;
         };
         PageSummary: {
             /** Format: uuid */
@@ -2626,7 +2699,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Agrégats */
+            /** @description Agrégats filtrés selon les permissions de la session */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2636,7 +2709,6 @@ export interface operations {
                 };
             };
             401: components["responses"]["Eproblem"];
-            403: components["responses"]["Eproblem"];
         };
     };
     adminListPublicationJobs: {
@@ -2821,6 +2893,69 @@ export interface operations {
                 };
             };
             401: components["responses"]["Eproblem"];
+            422: components["responses"]["Eproblem"];
+        };
+    };
+    adminListPublications: {
+        parameters: {
+            query?: {
+                status?: "draft" | "in_review" | "scheduled" | "published" | "archived";
+                lang?: string;
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Page de publications */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicationList"];
+                };
+            };
+            401: components["responses"]["Eproblem"];
+            403: components["responses"]["Eproblem"];
+            422: components["responses"]["Eproblem"];
+        };
+    };
+    adminCreatePublication: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["idempotencyKey"];
+                /**
+                 * @description Nom figé. Doit égaler la valeur du cookie `csrf_token`.
+                 *     Obligatoire sur les mutations `/admin/**` (sauf login, forgot, reset, activate).
+                 */
+                "X-CSRF-Token": components["parameters"]["csrfHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicationCreate"];
+            };
+        };
+        responses: {
+            /** @description Publication créée */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicationDetail"];
+                };
+            };
+            401: components["responses"]["Eproblem"];
+            403: components["responses"]["Eproblem"];
+            409: components["responses"]["Eproblem"];
             422: components["responses"]["Eproblem"];
         };
     };
@@ -3867,6 +4002,31 @@ export interface operations {
                     };
                 };
             };
+        };
+    };
+    adminGetLead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Demande détaillée */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeadDetail"];
+                };
+            };
+            401: components["responses"]["Eproblem"];
+            403: components["responses"]["Eproblem"];
+            404: components["responses"]["Eproblem"];
         };
     };
     adminUpdateLeadStatus: {

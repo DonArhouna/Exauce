@@ -624,16 +624,23 @@ paths:
       operationId: adminDashboard
       tags: [admin-reports]
       summary: Agrégats du tableau de bord (EF-512)
-      description: Widgets leads, publications, contenus non publiés, dernier build, audit récent, complétude i18n.
-      x-permission: [audit, view, default]
+      description: |
+        Page d'accueil du back-office, accessible à **tout utilisateur
+        authentifié** : l'opération ne déclare volontairement aucune
+        `x-permission`. Le filtrage est fait par le serveur, widget par
+        widget (`leads:view`, `publications:view`, `pages:view`,
+        `settings:view`, `audit:view`) : un agrégat non autorisé est absent
+        de la réponse, le client n'a donc rien à masquer lui-même.
+        Seule l'absence de session produit un 401.
+      security:
+        - SessionCookie: []
       responses:
         '200':
-          description: Agrégats
+          description: Agrégats filtrés selon les permissions de la session
           content:
             application/json:
               schema: {$ref: '#/components/schemas/AdminDashboard'}
         '401': {$ref: '#/components/responses/Eproblem'}
-        '403': {$ref: '#/components/responses/Eproblem'}
 
   /admin/publication-jobs:
     get:
@@ -789,6 +796,7 @@ paths:
         - name: lang
           in: query
           schema: {type: string, pattern: '^[a-z]{2}(-[A-Z]{2})?$'}
+      x-permission: [pages, view, default]
       responses:
         '200':
           description: Stub v1 — recherche de contenu non disponible
@@ -798,6 +806,72 @@ paths:
         '401': {$ref: '#/components/responses/Eproblem'}
         '422': {$ref: '#/components/responses/Eproblem'}
 
+  /admin/publications:
+    get:
+      operationId: adminListPublications
+      tags: [admin-content]
+      summary: Liste paginée des publications, tous statuts (EF-405)
+      description: |
+        Vue éditoriale des publications (brouillon, en revue, planifiée,
+        publiée, archivée) dans une langue donnée. La pagination utilise un
+        curseur opaque `next_cursor` pour rester stable quand des éléments
+        sont ajoutés en tête de liste.
+      x-permission: [publications, view, default]
+      security:
+        - SessionCookie: []
+      parameters:
+        - name: status
+          in: query
+          schema: {type: string, enum: [draft, in_review, scheduled, published, archived]}
+        - name: lang
+          in: query
+          schema: {type: string, pattern: '^[a-z]{2}(-[A-Z]{2})?$'}
+        - name: cursor
+          in: query
+          schema: {type: string}
+        - name: limit
+          in: query
+          schema: {type: integer, default: 20, maximum: 100}
+      responses:
+        '200':
+          description: Page de publications
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PublicationList'}
+        '401': {$ref: '#/components/responses/Eproblem'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
+    post:
+      operationId: adminCreatePublication
+      tags: [admin-content]
+      summary: Création d'une publication en brouillon (EF-405)
+      description: |
+        Crée la publication dans la langue demandée et renvoie son contenu
+        complet. L'en-tête `Idempotency-Key` protège des doublons lors d'une
+        reprise réseau : une clé déjà utilisée renvoie la publication créée.
+      x-permission: [publications, create, default]
+      security:
+        - SessionCookie: []
+          CsrfHeader: []
+      parameters:
+        - $ref: '#/components/parameters/idempotencyKey'
+        - $ref: '#/components/parameters/csrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PublicationCreate'}
+      responses:
+        '201':
+          description: Publication créée
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PublicationDetail'}
+        '401': {$ref: '#/components/responses/Eproblem'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
+
   /admin/content/tree:
     get:
       operationId: adminGetTree
@@ -805,6 +879,7 @@ paths:
       summary: Arbre des services complet (tous statuts et langues, EF-508)
       parameters:
         - $ref: '#/components/parameters/allLangs'
+      x-permission: [tree, view, default]
       responses:
         '200':
           description: Arbre complet
@@ -925,6 +1000,7 @@ paths:
           required: true
           schema: {type: string, format: uuid}
         - $ref: '#/components/parameters/lang'
+      x-permission: [content, view, default]
       responses:
         '200':
           description: Liste des révisions
@@ -952,6 +1028,7 @@ paths:
           in: path
           required: true
           schema: {type: string, format: uuid}
+      x-permission: [content, edit, default]
       responses:
         '200': {description: 'Version restaurée avec succès'}
         '403': {$ref: '#/components/responses/Eproblem'}
@@ -961,6 +1038,7 @@ paths:
       operationId: adminListPages
       tags: [admin-pages]
       summary: Liste des 11 pages éditoriales (EF-501)
+      x-permission: [pages, view, default]
       responses:
         '200':
           description: Liste des pages
@@ -980,6 +1058,7 @@ paths:
           in: path
           required: true
           schema: {type: string, format: uuid}
+      x-permission: [pages, view, default]
       responses:
         '200':
           description: Détail page
@@ -1006,6 +1085,7 @@ paths:
                 nav_position: {type: integer, nullable: true}
                 status: {type: string}
                 banners_pending: {type: boolean}
+      x-permission: [pages, edit, default]
       responses:
         '200': {description: 'Page mise à jour'}
 
@@ -1024,6 +1104,7 @@ paths:
         content:
           application/json:
             schema: {$ref: '#/components/schemas/SectionUpsert'}
+      x-permission: [pages, edit, default]
       responses:
         '201':
           description: Section créée
@@ -1051,6 +1132,7 @@ paths:
                 position: {type: integer}
                 is_active: {type: boolean}
                 config: {type: object}
+      x-permission: [pages, edit, default]
       responses:
         '200': {description: 'Section mise à jour'}
     delete:
@@ -1062,6 +1144,7 @@ paths:
           in: path
           required: true
           schema: {type: string, format: uuid}
+      x-permission: [pages, delete, default]
       responses:
         '204': {description: 'Section supprimée'}
 
@@ -1070,6 +1153,7 @@ paths:
       operationId: adminListSectors
       tags: [admin-content]
       summary: Liste complète des secteurs et sous-catégories (EF-104)
+      x-permission: [pages, view, default]
       responses:
         '200':
           description: Liste
@@ -1087,6 +1171,7 @@ paths:
         content:
           application/json:
             schema: {$ref: '#/components/schemas/SectorUpsert'}
+      x-permission: [pages, create, default]
       responses:
         '201': {description: 'Secteur créé'}
 
@@ -1109,6 +1194,7 @@ paths:
               properties:
                 approved: {type: boolean}
                 position: {type: integer}
+      x-permission: [pages, edit, default]
       responses:
         '200': {description: 'Mis à jour'}
     delete:
@@ -1120,6 +1206,7 @@ paths:
           in: path
           required: true
           schema: {type: string, format: uuid}
+      x-permission: [pages, delete, default]
       responses:
         '204': {description: 'Supprimé'}
 
@@ -1128,6 +1215,7 @@ paths:
       operationId: adminListInterventionTypes
       tags: [admin-content]
       summary: Liste des modes d'intervention (EF-103)
+      x-permission: [pages, view, default]
       responses:
         '200':
           description: Liste
@@ -1155,6 +1243,7 @@ paths:
               type: object
               properties:
                 sort_order: {type: integer}
+      x-permission: [pages, edit, default]
       responses:
         '200': {description: 'Mis à jour'}
 
@@ -1163,6 +1252,7 @@ paths:
       operationId: adminListOffices
       tags: [admin-settings]
       summary: Gestion des bureaux et implantations (EF-106)
+      x-permission: [offices, view, default]
       responses:
         '200':
           description: Liste
@@ -1180,6 +1270,7 @@ paths:
         content:
           application/json:
             schema: {$ref: '#/components/schemas/OfficeUpsert'}
+      x-permission: [offices, create, default]
       responses:
         '201': {description: 'Bureau créé'}
 
@@ -1198,6 +1289,7 @@ paths:
         content:
           application/json:
             schema: {$ref: '#/components/schemas/OfficeUpsert'}
+      x-permission: [offices, edit, default]
       responses:
         '200': {description: 'Bureau mis à jour'}
     delete:
@@ -1209,6 +1301,7 @@ paths:
           in: path
           required: true
           schema: {type: string, format: uuid}
+      x-permission: [offices, delete, default]
       responses:
         '204': {description: 'Bureau supprimé'}
         '400': {$ref: '#/components/responses/Eproblem'}
@@ -1218,6 +1311,7 @@ paths:
       operationId: adminListTeam
       tags: [admin-settings]
       summary: Gestion des membres de l'équipe et fondateur (EF-107)
+      x-permission: [team, view, default]
       responses:
         '200':
           description: Liste
@@ -1235,6 +1329,7 @@ paths:
         content:
           application/json:
             schema: {$ref: '#/components/schemas/TeamMemberUpsert'}
+      x-permission: [team, create, default]
       responses:
         '201': {description: 'Membre créé'}
 
@@ -1253,6 +1348,7 @@ paths:
         content:
           application/json:
             schema: {$ref: '#/components/schemas/TeamMemberUpsert'}
+      x-permission: [team, edit, default]
       responses:
         '200': {description: 'Mis à jour'}
     delete:
@@ -1264,6 +1360,7 @@ paths:
           in: path
           required: true
           schema: {type: string, format: uuid}
+      x-permission: [team, delete, default]
       responses:
         '204': {description: 'Supprimé'}
         '400': {$ref: '#/components/responses/Eproblem'}
@@ -1273,6 +1370,7 @@ paths:
       operationId: adminListSettings
       tags: [admin-settings]
       summary: Liste des groupes de paramètres (EF-510)
+      x-permission: [settings, view, default]
       responses:
         '200':
           description: Groupes de configuration
@@ -1292,6 +1390,7 @@ paths:
           in: path
           required: true
           schema: {type: string, enum: [identity, contact, cookies, ui_copy, features, seo, retention]}
+      x-permission: [settings, view, default]
       responses:
         '200':
           description: Paramètres du groupe
@@ -1314,6 +1413,7 @@ paths:
             schema:
               type: object
               additionalProperties: true
+      x-permission: [settings, edit, default]
       responses:
         '200': {description: 'Réglages enregistrés'}
 
@@ -1335,6 +1435,7 @@ paths:
         - name: offset
           in: query
           schema: {type: integer, default: 0}
+      x-permission: [media, view, default]
       responses:
         '200':
           description: Liste des médias
@@ -1363,6 +1464,7 @@ paths:
               properties:
                 file: {type: string, format: binary}
                 kind: {type: string, enum: [image, pdf, document]}
+      x-permission: [media, create, default]
       responses:
         '201':
           description: Média enregistré
@@ -1381,6 +1483,7 @@ paths:
           in: path
           required: true
           schema: {type: string, format: uuid}
+      x-permission: [media, view, default]
       responses:
         '200':
           description: Média
@@ -1396,6 +1499,7 @@ paths:
           in: path
           required: true
           schema: {type: string, format: uuid}
+      x-permission: [media, delete, default]
       responses:
         '204': {description: 'Média supprimé'}
         '409': {$ref: '#/components/responses/Eproblem'}
@@ -1405,6 +1509,7 @@ paths:
       operationId: adminListRedirects
       tags: [admin-settings]
       summary: Liste des redirections 301/302 (EF-511, EF-704)
+      x-permission: [seo, view, default]
       responses:
         '200':
           description: Liste
@@ -1422,6 +1527,7 @@ paths:
         content:
           application/json:
             schema: {$ref: '#/components/schemas/RedirectCreate'}
+      x-permission: [seo, create, default]
       responses:
         '201': {description: 'Redirection créée'}
 
@@ -1435,6 +1541,7 @@ paths:
           in: path
           required: true
           schema: {type: string, format: uuid}
+      x-permission: [seo, delete, default]
       responses:
         '204': {description: 'Redirection supprimée'}
 
@@ -1443,6 +1550,7 @@ paths:
       operationId: adminListUsers
       tags: [admin-users]
       summary: Liste des comptes utilisateurs du back-office (EF-513)
+      x-permission: [users, view, default]
       responses:
         '200':
           description: Liste
@@ -1460,6 +1568,7 @@ paths:
         content:
           application/json:
             schema: {$ref: '#/components/schemas/AdminUserCreate'}
+      x-permission: [users, create, default]
       responses:
         '201': {description: 'Utilisateur créé'}
 
@@ -1473,6 +1582,7 @@ paths:
           in: path
           required: true
           schema: {type: string, format: uuid}
+      x-permission: [users, view, default]
       responses:
         '200':
           description: Fiche
@@ -1493,6 +1603,7 @@ paths:
         content:
           application/json:
             schema: {$ref: '#/components/schemas/AdminUserUpdate'}
+      x-permission: [users, edit, default]
       responses:
         '200': {description: 'Mis à jour'}
 
@@ -1506,6 +1617,7 @@ paths:
           in: path
           required: true
           schema: {type: string, format: uuid}
+      x-permission: [users, deactivate, default]
       responses:
         '200': {description: 'Compte désactivé'}
 
@@ -1514,6 +1626,7 @@ paths:
       operationId: adminListRoles
       tags: [admin-users]
       summary: Rôles back-office et permissions associées (EF-502)
+      x-permission: [users, view, default]
       responses:
         '200':
           description: Rôles
@@ -1528,6 +1641,7 @@ paths:
       operationId: adminListPermissions
       tags: [admin-users]
       summary: Registre fermé des modules et actions de permission
+      x-permission: [settings, view, default]
       responses:
         '200':
           description: Permissions
@@ -1552,6 +1666,7 @@ paths:
         - name: offset
           in: query
           schema: {type: integer, default: 0}
+      x-permission: [leads, view, default]
       responses:
         '200':
           description: Liste
@@ -1564,6 +1679,33 @@ paths:
                     type: array
                     items: {$ref: '#/components/schemas/LeadDetail'}
                   total: {type: integer}
+
+  /admin/leads/{id}:
+    get:
+      operationId: adminGetLead
+      tags: [admin-leads]
+      summary: Détail d'une demande et de ses notes internes (EF-304)
+      description: |
+        Renvoie la demande complète pour l'écran de traitement, notes
+        internes incluses. Un lead anonymisé reste consultable mais sans
+        données personnelles, conformément à la politique de rétention.
+      x-permission: [leads, view, default]
+      security:
+        - SessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Demande détaillée
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LeadDetail'}
+        '401': {$ref: '#/components/responses/Eproblem'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '404': {$ref: '#/components/responses/Eproblem'}
 
   /admin/leads/{id}/status:
     patch:
@@ -1580,6 +1722,7 @@ paths:
         content:
           application/json:
             schema: {$ref: '#/components/schemas/LeadStatusUpdate'}
+      x-permission: [leads, status, default]
       responses:
         '200': {description: 'Statut mis à jour'}
 
@@ -1598,6 +1741,7 @@ paths:
         content:
           application/json:
             schema: {$ref: '#/components/schemas/LeadNoteCreate'}
+      x-permission: [leads, notes, default]
       responses:
         '201': {description: 'Note ajoutée'}
 
@@ -1606,6 +1750,7 @@ paths:
       operationId: adminExportLeadsCsv
       tags: [admin-leads]
       summary: Export CSV des leads (droit requis, journalisé dans l'audit - EF-305)
+      x-permission: [leads, export, default]
       responses:
         '200':
           description: Fichier CSV
@@ -1628,6 +1773,7 @@ paths:
         - name: offset
           in: query
           schema: {type: integer, default: 0}
+      x-permission: [audit, view, default]
       responses:
         '200':
           description: Entrées audit
@@ -1963,6 +2109,28 @@ components:
           properties:
             body: {$ref: '#/components/schemas/Localized'}
             author_name: {type: string, nullable: true}
+
+    PublicationList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/PublicationSummary'}
+        next_cursor: {type: string, nullable: true}
+        total: {type: integer}
+
+    PublicationCreate:
+      type: object
+      required: [title, slug, category_code, lang, body]
+      properties:
+        slug: {type: string, maxLength: 200, pattern: '^[a-z0-9-]+$'}
+        title: {type: string, maxLength: 200}
+        excerpt: {type: string, nullable: true}
+        category_code: {type: string}
+        lang: {type: string, enum: [fr, en]}
+        body: {type: string}
+        cover_media_id: {type: string, format: uuid, nullable: true}
 
     PageSummary:
       type: object
