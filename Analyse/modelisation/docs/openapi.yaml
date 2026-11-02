@@ -1,14 +1,34 @@
 openapi: 3.1.0
 info:
   title: EXAUCE Backend — Contrat API v1
-  version: 1.0.0-M3
-  description: >-
+  version: 1.0.0-M3.1
+  description: |
     Contrat d'API de référence pour le Backend (FastAPI + PostgreSQL) d'EXAUCE
     Audit & Conseils SAS.
-    Trois surfaces : public (/api/v1), espace client (/api/v1/client), back-office (/api/v1/admin).
-    Chaque réponse de contenu est mono-langue avec repli explicite (is_fallback).
+    Trois surfaces : public (`/api/v1`), espace client (`/api/v1/client`),
+    back-office (`/api/v1/admin`).
+    Chaque réponse de contenu est mono-langue avec repli explicite (`is_fallback`).
+
+    **Noms figés — session et CSRF (ADR-004 / ADR-009, page 09).**
+    Le Backend et le Back-office n'utilisent que ces identifiants :
+
+    | Canal | Nom | Attributs |
+    |---|---|---|
+    | Cookie de session | `session_id` | HttpOnly, Secure (prod), SameSite=Lax, Domain `.exauceac.com` (prod) |
+    | Cookie CSRF | `csrf_token` | **non-HttpOnly** (lisible JS), Secure (prod), SameSite=Lax, Domain `.exauceac.com` (prod) |
+    | En-tête CSRF | `X-CSRF-Token` | obligatoire sur toute mutation (`POST`/`PUT`/`PATCH`/`DELETE`) de `/admin/**` hors login, forgot, reset, activate |
+
+    Le jeton CSRF est émis au login réussi (`status=authenticated`), à l'activation,
+    et renvoyé par `GET /admin/auth/me`. Le client recopie le cookie `csrf_token`
+    dans l'en-tête `X-CSRF-Token`. Écarts d'en-tête : `403` `CSRF_TOKEN_MISSING`
+    ou `CSRF_TOKEN_MISMATCH`.
+
+    Mot de passe : Argon2id, **longueur minimale 14** (page 09). Aucun jeton
+    d'accès n'est renvoyé dans le corps JSON (pas de Bearer, pas de localStorage).
   contact:
     name: Projet EXAUCE
+  license:
+    name: Proprietary
 servers:
   - url: /api/v1
     description: Serveur API v1
@@ -22,7 +42,15 @@ tags:
   - name: client
     description: Espace client (v2)
   - name: admin-auth
-    description: Authentification back-office
+    description: Authentification back-office (session cookie + CSRF)
+  - name: admin-reports
+    description: Tableau de bord et agrégats
+  - name: admin-publication
+    description: Jobs de publication SSG et flux SSE
+  - name: admin-notifications
+    description: Notifications in-app (leads)
+  - name: admin-search
+    description: Recherche back-office — à venir (501)
   - name: admin-content
     description: Gestion éditoriale des services et publications
   - name: admin-pages
@@ -424,20 +452,351 @@ paths:
       operationId: adminLogin
       tags: [admin-auth]
       summary: Connexion back-office (Argon2id + TOTP, EF-501, ENF-301)
+      description: |
+        Première étape : e-mail + mot de passe.
+        Si le compte a le MFA activé et qu'`totp_code` est absent ou invalide
+        après mot de passe correct : `200` avec `status=mfa_required`
+        (aucun cookie de session). Le client réessaie avec le même payload
+        plus `totp_code`.
+        Succès : `200` `status=authenticated`, cookies `session_id` (HttpOnly)
+        et `csrf_token` (lisible), corps `{ user, csrf_token }`.
+        Identifiants invalides : `401` `UNAUTHENTICATED` (message identique,
+        anti-énumération). Trop de tentatives : `429` `RATE_LIMITED` avec
+        `Retry-After`. Session idle expirée côté client : redirection login
+        après `401` `SESSION_EXPIRED` sur les routes suivantes.
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              type: object
-              required: [email, password]
-              properties:
-                email: {type: string, format: email}
-                password: {type: string, format: password}
-                totp_code: {type: string}
+            schema: {$ref: '#/components/schemas/AdminLoginRequest'}
       responses:
-        '200': {description: 'Session créée'}
+        '200':
+          description: Session créée ou MFA requis
+          headers:
+            Set-Cookie:
+              description: |
+                En cas de `status=authenticated` uniquement :
+                `session_id` (HttpOnly) et `csrf_token` (non-HttpOnly).
+              schema: {type: string}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminLoginResponse'}
         '401': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
+        '429':
+          description: Verrouillage / rate limit (page 09 §2.2)
+          headers:
+            Retry-After:
+              schema: {type: integer}
+              description: Secondes avant nouvel essai
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+
+  /admin/auth/logout:
+    post:
+      operationId: adminLogout
+      tags: [admin-auth]
+      summary: Déconnexion (révocation de la session courante)
+      description: Exige cookie `session_id` et en-tête `X-CSRF-Token`.
+      security:
+        - SessionCookie: []
+          CsrfHeader: []
+      parameters:
+        - $ref: '#/components/parameters/csrfHeader'
+      responses:
+        '204': {description: 'Session révoquée, cookies effacés'}
+        '401': {$ref: '#/components/responses/Eproblem'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/auth/me:
+    get:
+      operationId: adminMe
+      tags: [admin-auth]
+      summary: Session courante, permissions et jeton CSRF
+      security:
+        - SessionCookie: []
+      description: |
+        Source de vérité UI pour le RBAC (masquer n'est pas autoriser).
+        Réémet `csrf_token` (cookie + corps) pour les SPA qui relisent
+        le cookie après un rechargement.
+      responses:
+        '200':
+          description: Utilisateur authentifié
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminMeResponse'}
+        '401': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/auth/password-forgot:
+    post:
+      operationId: adminPasswordForgot
+      tags: [admin-auth]
+      summary: Demande de réinitialisation (lien signé, 1 h, usage unique)
+      description: |
+        Toujours `202`, même si l'e-mail est inconnu (anti-énumération, page 09).
+        Aucun cookie. Le mail n'est envoyé que si le compte existe et est actif.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AdminPasswordForgotRequest'}
+      responses:
+        '202':
+          description: Demande acceptée (aucune indication d'existence du compte)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: {type: string, enum: [accepted]}
+        '422': {$ref: '#/components/responses/Eproblem'}
+        '429': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/auth/password-reset:
+    post:
+      operationId: adminPasswordReset
+      tags: [admin-auth]
+      summary: Pose un nouveau mot de passe via le jeton du lien signé
+      description: Révoque les sessions existantes du compte (page 09 §2.2).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AdminPasswordResetRequest'}
+      responses:
+        '204': {description: Mot de passe mis à jour}
+        '410':
+          description: Jeton expiré, déjà utilisé ou invalide (`TOKEN_EXPIRED`)
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/auth/password-change:
+    post:
+      operationId: adminPasswordChange
+      tags: [admin-auth]
+      summary: Changement de mot de passe (session active, dont must_reset_password)
+      parameters:
+        - $ref: '#/components/parameters/csrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AdminPasswordChangeRequest'}
+      responses:
+        '204': {description: Mot de passe mis à jour}
+        '401': {$ref: '#/components/responses/Eproblem'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/auth/activate:
+    post:
+      operationId: adminActivateAccount
+      tags: [admin-auth]
+      summary: Activation par invitation (fondateur Q-105 et utilisateurs invités)
+      description: |
+        Compte créé avec `password_hash=NULL` et `must_reset_password=true`.
+        Le lien signé (TTL 7 jours, usage unique) permet de définir le mot
+        de passe (min. 14). Succès : session + cookies CSRF comme au login.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AdminActivateRequest'}
+      responses:
+        '200':
+          description: Compte activé, session créée
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminLoginAuthenticated'}
+        '410':
+          description: Invitation expirée, déjà utilisée ou invalide (`TOKEN_EXPIRED`)
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/reports/dashboard:
+    get:
+      operationId: adminDashboard
+      tags: [admin-reports]
+      summary: Agrégats du tableau de bord (EF-512)
+      description: Widgets leads, publications, contenus non publiés, dernier build, audit récent, complétude i18n.
+      x-permission: [audit, view, default]
+      responses:
+        '200':
+          description: Agrégats
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminDashboard'}
+        '401': {$ref: '#/components/responses/Eproblem'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/publication-jobs:
+    get:
+      operationId: adminListPublicationJobs
+      tags: [admin-publication]
+      summary: Historique des jobs de publication SSG
+      x-permission: [pages, view, default]
+      parameters:
+        - name: limit
+          in: query
+          schema: {type: integer, default: 20, maximum: 100}
+        - name: offset
+          in: query
+          schema: {type: integer, default: 0, minimum: 0}
+      responses:
+        '200':
+          description: Liste paginée (offset, tables d'admin stables)
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PublicationJobList'}
+        '401': {$ref: '#/components/responses/Eproblem'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+    post:
+      operationId: adminTriggerPublication
+      tags: [admin-publication]
+      summary: Déclenche un job de publication (bouton Publier)
+      x-permission: [pages, publish, default]
+      parameters:
+        - $ref: '#/components/parameters/csrfHeader'
+      responses:
+        '202':
+          description: Job accepté
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PublicationJob'}
+        '401': {$ref: '#/components/responses/Eproblem'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '409':
+          description: Un job `queued` ou `building` existe déjà (`CONFLICT`)
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+
+  /admin/publication-jobs/current:
+    get:
+      operationId: adminCurrentPublicationJob
+      tags: [admin-publication]
+      summary: État courant du site public et dernier/actuel job
+      description: |
+        Alimente l'indicateur navbar : `up_to_date` | `pending_changes` |
+        `building` | `failed`.
+      x-permission: [pages, view, default]
+      responses:
+        '200':
+          description: État de publication
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PublicationSiteStatus'}
+        '401': {$ref: '#/components/responses/Eproblem'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/publication-status:
+    get:
+      operationId: adminPublicationStatusStream
+      tags: [admin-publication]
+      summary: Flux SSE des jobs de publication (page 17)
+      description: |
+        `Content-Type: text/event-stream`. Cookie `session_id` requis.
+        GET : pas d'en-tête CSRF.
+
+        Format fil de fer (champs SSE standard) :
+
+        ```
+        id: <uuid-job-ou-seq>
+        event: publication.job
+        data: <JSON PublicationJob>
+
+        event: heartbeat
+        data: {"ts":"2026-10-31T19:00:00Z"}
+        ```
+
+        `event` vaut `publication.job` (changement d'état) ou `heartbeat`
+        (toutes les 15 s, pour garder le proxy). `retry` conseillé : 3000.
+        Le JSON `data` d'un `publication.job` valide `PublicationJob`.
+      x-permission: [pages, view, default]
+      responses:
+        '200':
+          description: Flux ouvert (trames SSE `event` + `data` JSON)
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '401': {$ref: '#/components/responses/Eproblem'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/notifications:
+    get:
+      operationId: adminListNotifications
+      tags: [admin-notifications]
+      summary: Notifications in-app (nouveaux leads)
+      x-permission: [leads, view, default]
+      parameters:
+        - name: unread_only
+          in: query
+          schema: {type: boolean, default: false}
+        - name: limit
+          in: query
+          schema: {type: integer, default: 20, maximum: 100}
+      responses:
+        '200':
+          description: Liste
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminNotificationList'}
+        '401': {$ref: '#/components/responses/Eproblem'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/notifications/{id}/read:
+    post:
+      operationId: adminMarkNotificationRead
+      tags: [admin-notifications]
+      summary: Marque une notification comme lue
+      x-permission: [leads, view, default]
+      parameters:
+        - $ref: '#/components/parameters/csrfHeader'
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '204': {description: Marquée lue}
+        '401': {$ref: '#/components/responses/Eproblem'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '404': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/search:
+    get:
+      operationId: adminSearch
+      tags: [admin-search]
+      summary: Recherche admin (à venir — non implémenté en v1)
+      description: |
+        **À venir.** La recherche plein texte du back-office n'est pas
+        au périmètre v1. L'UI expose une palette (Ctrl/Cmd+K) limitée aux
+        entrées de navigation, plus un état « recherche de contenu bientôt
+        disponible ». Cet endpoint est tracé pour ne pas inventer un contrat
+        parallèle. Réponse v1 : `200` avec `status=not_implemented` et
+        `results: []` (pas de 501, pour rester consommable par le client typé).
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: {type: string, minLength: 1, maxLength: 200}
+        - name: lang
+          in: query
+          schema: {type: string, pattern: '^[a-z]{2}(-[A-Z]{2})?$'}
+      responses:
+        '200':
+          description: Stub v1 — recherche de contenu non disponible
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminSearchResponse'}
+        '401': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
 
   /admin/content/tree:
     get:
@@ -1288,6 +1647,14 @@ paths:
 
 components:
   parameters:
+    csrfHeader:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      description: |
+        Nom figé. Doit égaler la valeur du cookie `csrf_token`.
+        Obligatoire sur les mutations `/admin/**` (sauf login, forgot, reset, activate).
+      schema: {type: string, minLength: 16}
     lang:
       name: lang
       in: query
@@ -1306,6 +1673,18 @@ components:
       in: header
       required: true
       schema: {type: string, format: uuid}
+
+  securitySchemes:
+    SessionCookie:
+      type: apiKey
+      in: cookie
+      name: session_id
+      description: Cookie de session HttpOnly. Nom figé.
+    CsrfHeader:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: En-tête CSRF. Nom figé. Valeur = cookie csrf_token.
 
   responses:
     Eproblem:
@@ -1330,9 +1709,41 @@ components:
         type: {type: string}
         title: {type: string}
         status: {type: integer}
-        code: {type: string, description: Code d'erreur stable}
+        code:
+          type: string
+          description: Code d'erreur stable
+          enum:
+            - VALIDATION_ERROR
+            - UNKNOWN_LANG
+            - CONTENT_NOT_FOUND
+            - REDIRECTED
+            - UNAUTHENTICATED
+            - SESSION_EXPIRED
+            - MFA_REQUIRED
+            - FORBIDDEN
+            - CSRF_TOKEN_MISSING
+            - CSRF_TOKEN_MISMATCH
+            - NOT_PERMITTED_LANG
+            - INVALID_TRANSITION
+            - CONFLICT
+            - RATE_LIMITED
+            - IDEMPOTENT_REPLAY_CONFLICT
+            - UPLOAD_REJECTED
+            - IDOR_BLOCKED
+            - TOKEN_EXPIRED
+            - NOT_IMPLEMENTED
+            - SERVER_ERROR
         detail: {type: string}
         correlation_id: {type: string}
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, code, message]
+            properties:
+              field: {type: string}
+              code: {type: string}
+              message: {type: string}
 
     Localized:
       type: object
@@ -1683,6 +2094,8 @@ components:
         display_name: {type: string}
         is_active: {type: boolean}
         default_lang: {type: string}
+        must_reset_password: {type: boolean}
+        mfa_enabled: {type: boolean}
         roles:
           type: array
           items: {type: string}
@@ -1690,12 +2103,25 @@ components:
 
     AdminUserCreate:
       type: object
-      required: [email, password, display_name]
+      required: [email, display_name]
+      description: |
+        Mot de passe optionnel. S'il est omis, le Backend envoie une
+        invitation signée (Q-105 / EF-513) ; le compte naît avec
+        `password_hash=NULL` et `must_reset_password=true`.
+        S'il est fourni, longueur minimale 14 (page 09).
       properties:
         email: {type: string, format: email}
-        password: {type: string, format: password, minLength: 12}
+        password:
+          type: string
+          format: password
+          minLength: 14
+          description: Optionnel. Absent → invitation, pas de mot de passe initial.
         display_name: {type: string}
         default_lang: {type: string, default: fr}
+        send_invitation:
+          type: boolean
+          default: true
+          description: Ignoré si `password` est fourni et que l'invitation n'est pas souhaitée.
         role_codes:
           type: array
           items: {type: string}
@@ -1805,3 +2231,216 @@ components:
         node_type: {type: string, enum: [family, domain, group, service]}
         parent_id: {type: string, format: uuid, nullable: true}
         position: {type: integer}
+
+    AdminLoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: {type: string, format: email}
+        password: {type: string, format: password, minLength: 1}
+        totp_code:
+          type: string
+          minLength: 6
+          maxLength: 8
+          description: Code TOTP. Requis au second essai si `status=mfa_required`.
+
+    AdminLoginAuthenticated:
+      type: object
+      required: [status, user, csrf_token]
+      properties:
+        status: {type: string, enum: [authenticated]}
+        user: {$ref: '#/components/schemas/AdminSessionUser'}
+        csrf_token:
+          type: string
+          description: Même valeur que le cookie `csrf_token` (non-HttpOnly).
+
+    AdminLoginMfaRequired:
+      type: object
+      required: [status]
+      properties:
+        status: {type: string, enum: [mfa_required]}
+
+    AdminLoginResponse:
+      description: |
+        Discriminateur `status`. `authenticated` pose les cookies `session_id`
+        et `csrf_token`. `mfa_required` n'en pose aucun ; le client renvoie
+        le même login avec `totp_code`.
+      oneOf:
+        - $ref: '#/components/schemas/AdminLoginAuthenticated'
+        - $ref: '#/components/schemas/AdminLoginMfaRequired'
+
+    AdminSessionUser:
+      type: object
+      required: [id, email, display_name, is_active, must_reset_password, permissions]
+      properties:
+        id: {type: string, format: uuid}
+        email: {type: string, format: email}
+        display_name: {type: string}
+        is_active: {type: boolean}
+        default_lang: {type: string}
+        must_reset_password: {type: boolean}
+        mfa_enabled: {type: boolean}
+        roles:
+          type: array
+          items: {type: string}
+        permissions:
+          type: array
+          items: {$ref: '#/components/schemas/Permission'}
+
+    AdminMeResponse:
+      type: object
+      required: [user, csrf_token]
+      properties:
+        user: {$ref: '#/components/schemas/AdminSessionUser'}
+        csrf_token: {type: string}
+
+    AdminPasswordForgotRequest:
+      type: object
+      required: [email]
+      properties:
+        email: {type: string, format: email}
+
+    AdminPasswordResetRequest:
+      type: object
+      required: [token, password]
+      properties:
+        token: {type: string}
+        password: {type: string, format: password, minLength: 14}
+
+    AdminPasswordChangeRequest:
+      type: object
+      required: [current_password, new_password]
+      properties:
+        current_password: {type: string, format: password}
+        new_password: {type: string, format: password, minLength: 14}
+
+    AdminActivateRequest:
+      type: object
+      required: [token, password]
+      properties:
+        token: {type: string}
+        password: {type: string, format: password, minLength: 14}
+        totp_code:
+          type: string
+          description: Optionnel. Enrôlement TOTP si le rôle l'exige et qu'un secret a été scanné hors bande.
+
+    LeadSummary:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        email: {type: string, format: email}
+        subject: {type: string}
+        status: {type: string, enum: [new, in_progress, waiting, done, rejected, anonymized]}
+        created_at: {type: string, format: date-time}
+
+    AdminDashboard:
+      type: object
+      required: [leads, publications, content, publication, i18n, audit]
+      properties:
+        generated_at: {type: string, format: date-time}
+        leads:
+          type: object
+          required: [new_count, recent]
+          properties:
+            new_count: {type: integer, minimum: 0}
+            recent:
+              type: array
+              items: {$ref: '#/components/schemas/LeadSummary'}
+        publications:
+          type: object
+          required: [draft_count, in_review_count]
+          properties:
+            draft_count: {type: integer, minimum: 0}
+            in_review_count: {type: integer, minimum: 0}
+        content:
+          type: object
+          required: [unpublished_changes_count]
+          properties:
+            unpublished_changes_count:
+              type: integer
+              minimum: 0
+              description: Entités éditoriales modifiées plus récentes que le dernier job `success`.
+        publication: {$ref: '#/components/schemas/PublicationSiteStatus'}
+        i18n:
+          type: object
+          required: [completeness_pct, missing_count]
+          properties:
+            completeness_pct: {type: number, minimum: 0, maximum: 100}
+            missing_count: {type: integer, minimum: 0}
+        audit:
+          type: object
+          required: [recent]
+          properties:
+            recent:
+              type: array
+              items: {$ref: '#/components/schemas/AuditEntry'}
+
+    PublicationJob:
+      type: object
+      required: [id, status, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        status: {type: string, enum: [queued, building, success, failed]}
+        triggered_by_name: {type: string, nullable: true}
+        step: {type: string, nullable: true}
+        step_index: {type: integer, nullable: true}
+        step_total: {type: integer, nullable: true}
+        log_output: {type: string, nullable: true}
+        error_summary: {type: string, nullable: true}
+        started_at: {type: string, format: date-time, nullable: true}
+        completed_at: {type: string, format: date-time, nullable: true}
+        created_at: {type: string, format: date-time}
+
+    PublicationJobList:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/PublicationJob'}
+        total: {type: integer}
+
+    PublicationSiteStatus:
+      type: object
+      required: [site_status]
+      properties:
+        site_status:
+          type: string
+          enum: [up_to_date, pending_changes, building, failed]
+        current_job:
+          oneOf:
+            - $ref: '#/components/schemas/PublicationJob'
+            - type: 'null'
+        last_success_at: {type: string, format: date-time, nullable: true}
+
+    AdminNotification:
+      type: object
+      required: [id, kind, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        kind: {type: string, enum: [lead_new]}
+        title: {type: string}
+        lead_id: {type: string, format: uuid, nullable: true}
+        read_at: {type: string, format: date-time, nullable: true}
+        created_at: {type: string, format: date-time}
+
+    AdminNotificationList:
+      type: object
+      required: [items, unread_count]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/AdminNotification'}
+        unread_count: {type: integer, minimum: 0}
+
+    AdminSearchResponse:
+      type: object
+      required: [status, results]
+      description: Stub v1. Une version ultérieure pourra renvoyer `ok` et des `SearchHit`.
+      properties:
+        status: {type: string, enum: [not_implemented]}
+        results:
+          type: array
+          maxItems: 0
+          items: {$ref: '#/components/schemas/SearchHit'}

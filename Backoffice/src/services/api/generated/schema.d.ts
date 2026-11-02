@@ -2459,7 +2459,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Session révoquée */
+            /** @description Session révoquée, cookies effacés */
             204: {
                 headers: {
                     [name: string]: unknown;
