@@ -186,6 +186,7 @@ libellés sont en i18n back-office. Il est semé par migration et peut être
 | `modes` | services | `title`, `items[].title`, `items[].text` |
 | `values_grid` | à propos | `title`, `empty_text`, `items[].title`, `items[].text` |
 | `steps` | à propos | `kicker`, `items[].title`, `items[].text` |
+| `what_we_do` | à propos | `kicker`, `text` |
 | `founder_card` | accueil, à propos | `kicker`, `empty_text` |
 | `interventions_compare` | interventions | `title`, `head_label`, `caption`, `rows[].label`, `rows[].recurring`, `rows[].oneoff` |
 | `contact_form` | contact (position 1) | `intro`, `success_text` |
