@@ -30,7 +30,7 @@ class User(UUIDPk, Timestamped, Base):
 
     __tablename__ = "users"
 
-    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
     password_hash: Mapped[str | None] = mapped_column(String(255))
     display_name: Mapped[str] = mapped_column(String(120), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
@@ -42,14 +42,18 @@ class User(UUIDPk, Timestamped, Base):
         String(10), ForeignKey("languages.code", ondelete="RESTRICT"), nullable=False, default="fr"
     )
 
+    __table_args__ = (UniqueConstraint("email", name="uq_users_email"),)
+
 
 class Role(UUIDPk, Base):
     """Rôle — semés : super_admin, admin, editor, reviewer, crm, viewer."""
 
     __tablename__ = "roles"
 
-    code: Mapped[str] = mapped_column(String(30), nullable=False, unique=True)
+    code: Mapped[str] = mapped_column(String(30), nullable=False)
     label: Mapped[str] = mapped_column(String(60), nullable=False)
+
+    __table_args__ = (UniqueConstraint("code", name="uq_roles_code"),)
 
 
 class Permission(UUIDPk, Base):
@@ -102,7 +106,7 @@ class Session(UUIDPk, Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -112,6 +116,7 @@ class Session(UUIDPk, Base):
     user_agent: Mapped[str | None] = mapped_column(String(400))
 
     __table_args__ = (
+        UniqueConstraint("token_hash", name="uq_sessions_token_hash"),
         Index("ix_sessions_user_id", "user_id"),
         Index("ix_sessions_expires_at", "expires_at"),
     )
@@ -140,7 +145,7 @@ class Invitation(UUIDPk, Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     created_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
     )
@@ -149,6 +154,8 @@ class Invitation(UUIDPk, Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+    __table_args__ = (UniqueConstraint("token_hash", name="uq_invitations_token_hash"),)
 
 
 class Consent(UUIDPk, Base):

@@ -14,6 +14,7 @@ from sqlalchemy import (
     Index,
     SmallInteger,
     String,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -27,7 +28,7 @@ class Media(UUIDPk, Timestamped, Base):
     __tablename__ = "medias"
 
     kind: Mapped[str] = mapped_column(String(12), nullable=False)
-    storage_key: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    storage_key: Mapped[str] = mapped_column(String(255), nullable=False)
     mime: Mapped[str] = mapped_column(String(120), nullable=False)
     size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
     checksum: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -40,6 +41,7 @@ class Media(UUIDPk, Timestamped, Base):
     )
 
     __table_args__ = (
+        UniqueConstraint("storage_key", name="uq_medias_storage_key"),
         CheckConstraint("kind IN ('image','pdf','document')", name="ck_medias_kind"),
         CheckConstraint("status IN ('active','replaced','deleted')", name="ck_medias_status"),
     )
@@ -55,9 +57,10 @@ class MediaVariant(UUIDPk, Base):
     )
     width: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     format: Mapped[str] = mapped_column(String(8), nullable=False)
-    storage_key: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    storage_key: Mapped[str] = mapped_column(String(255), nullable=False)
 
     __table_args__ = (
+        UniqueConstraint("storage_key", name="uq_media_variants_storage_key"),
         CheckConstraint("format IN ('webp','jpg')", name="ck_media_variants_format"),
         Index("ix_media_variants_media_id", "media_id"),
     )

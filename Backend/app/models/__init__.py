@@ -16,6 +16,12 @@ from app.models.auth import (
     UserRole,
 )
 from app.models.base import Base
+from app.models.client import (
+    ClientAccount,
+    ClientDocument,
+    ClientInvitation,
+    ClientUser,
+)
 from app.models.content import (
     Category,
     ContentNode,
@@ -50,6 +56,7 @@ from app.models.i18n import (
     Redirect,
     SearchSynonym,
 )
+from app.models.idempotency import IdempotencyKey
 from app.models.leads import (
     AuditLog,
     Lead,
@@ -65,7 +72,11 @@ __all__ = [
     "AuditLog",
     "Base",
     "Category",
+    "ClientAccount",
     "ClientAccountStatus",
+    "ClientDocument",
+    "ClientInvitation",
+    "ClientUser",
     "Consent",
     "ConsentType",
     "ContentNode",
@@ -73,6 +84,7 @@ __all__ = [
     "EmailStatus",
     "EntityTranslation",
     "EntityType",
+    "IdempotencyKey",
     "InterventionType",
     "Invitation",
     "Language",

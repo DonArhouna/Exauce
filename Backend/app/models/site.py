@@ -49,7 +49,7 @@ class Office(UUIDPk, Timestamped, Base):
 
     __tablename__ = "offices"
 
-    code: Mapped[str] = mapped_column(String(40), nullable=False, unique=True)
+    code: Mapped[str] = mapped_column(String(40), nullable=False)
     source_key: Mapped[str | None] = mapped_column(String(60))
     is_headquarters: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
@@ -63,6 +63,7 @@ class Office(UUIDPk, Timestamped, Base):
     )
 
     __table_args__ = (
+        UniqueConstraint("code", name="uq_offices_code"),
         Index(
             "uq_offices_headquarters",
             "is_headquarters",
@@ -83,7 +84,7 @@ class TeamMember(UUIDPk, Timestamped, Base):
 
     __tablename__ = "team_members"
 
-    code: Mapped[str] = mapped_column(String(40), nullable=False, unique=True)
+    code: Mapped[str] = mapped_column(String(40), nullable=False)
     source_key: Mapped[str | None] = mapped_column(String(60))
     is_founder: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
@@ -95,6 +96,7 @@ class TeamMember(UUIDPk, Timestamped, Base):
     linkedin_url: Mapped[str | None] = mapped_column(String(500))
 
     __table_args__ = (
+        UniqueConstraint("code", name="uq_team_members_code"),
         Index(
             "uq_team_members_founder",
             "is_founder",

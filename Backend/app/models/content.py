@@ -72,7 +72,7 @@ class Page(UUIDPk, Timestamped, Base):
 
     __tablename__ = "pages"
 
-    page_key: Mapped[str] = mapped_column(String(40), nullable=False, unique=True)
+    page_key: Mapped[str] = mapped_column(String(40), nullable=False)
     template: Mapped[str] = mapped_column(String(20), nullable=False)
     source_key: Mapped[str | None] = mapped_column(String(60))
     is_in_nav: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -84,6 +84,7 @@ class Page(UUIDPk, Timestamped, Base):
     banners_pending: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     __table_args__ = (
+        UniqueConstraint("page_key", name="uq_pages_page_key"),
         CheckConstraint(
             "template IN ('home','standard','legal','contact','coming_soon')",
             name="ck_pages_template",
@@ -130,7 +131,14 @@ class PageSection(UUIDPk, Timestamped, Base):
     config: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
 
     __table_args__ = (
-        UniqueConstraint("page_id", "position", name="uq_section_position"),
+        # Doc 06 §2.2 : réordonnancement des sections en une seule transaction.
+        UniqueConstraint(
+            "page_id",
+            "position",
+            name="uq_section_position",
+            deferrable=True,
+            initially="DEFERRED",
+        ),
         Index(
             "uq_page_sections_page_id_source_key",
             "page_id",
@@ -147,11 +155,12 @@ class InterventionType(UUIDPk, Base):
 
     __tablename__ = "intervention_types"
 
-    code: Mapped[str] = mapped_column(String(20), nullable=False, unique=True)
+    code: Mapped[str] = mapped_column(String(20), nullable=False)
     source_key: Mapped[str | None] = mapped_column(String(40))
     sort_order: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0)
 
     __table_args__ = (
+        UniqueConstraint("code", name="uq_intervention_types_code"),
         Index(
             "uq_intervention_types_source_key",
             "source_key",
@@ -167,7 +176,7 @@ class Sector(UUIDPk, Timestamped, Base):
     __tablename__ = "sectors"
 
     kind: Mapped[str] = mapped_column(String(12), nullable=False)
-    code: Mapped[str] = mapped_column(String(40), nullable=False, unique=True)
+    code: Mapped[str] = mapped_column(String(40), nullable=False)
     source_key: Mapped[str | None] = mapped_column(String(60))
     parent_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("sectors.id", ondelete="RESTRICT")
@@ -176,6 +185,7 @@ class Sector(UUIDPk, Timestamped, Base):
     approved: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     __table_args__ = (
+        UniqueConstraint("code", name="uq_sectors_code"),
         CheckConstraint("kind IN ('sector','subcategory')", name="ck_sectors_kind"),
         Index(
             "uq_sectors_source_key",
@@ -191,11 +201,12 @@ class Category(UUIDPk, Base):
 
     __tablename__ = "categories"
 
-    code: Mapped[str] = mapped_column(String(40), nullable=False, unique=True)
+    code: Mapped[str] = mapped_column(String(40), nullable=False)
     position: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0)
     source_key: Mapped[str | None] = mapped_column(String(60))
 
     __table_args__ = (
+        UniqueConstraint("code", name="uq_categories_code"),
         Index(
             "uq_categories_source_key",
             "source_key",

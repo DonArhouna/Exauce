@@ -16,6 +16,7 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -37,7 +38,14 @@ class Language(Base):
     sort_order: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=1)
 
     __table_args__ = (
-        UniqueConstraint("is_default", name="uq_langues_default"),
+        # §2.1 « 1 seul » / §7 : index partiel — un UNIQUE pleine colonne
+        # interdirait deux langues non-défaut (cas à 3+ langues).
+        Index(
+            "uq_langues_default",
+            "is_default",
+            unique=True,
+            postgresql_where=text("is_default"),
+        ),
         CheckConstraint("direction IN ('ltr', 'rtl')", name="ck_langues_direction"),
     )
 
@@ -66,7 +74,15 @@ class EntityTranslation(UUIDPk, Timestamped, Base):
         UniqueConstraint(
             "entity_type", "entity_id", "lang", name="uq_entity_translations_entity_lang"
         ),
-        UniqueConstraint("entity_type", "lang", "slug", name="uq_entity_translations_slug"),
+        # Doc 06 §3 : UQ partiel, plusieurs NULL de slug autorisés.
+        Index(
+            "uq_entity_translations_slug",
+            "entity_type",
+            "lang",
+            "slug",
+            unique=True,
+            postgresql_where=text("slug IS NOT NULL"),
+        ),
         CheckConstraint(
             "status IN ('missing','draft','in_review','published','stale')",
             name="ck_entity_translations_status",
@@ -117,7 +133,7 @@ class Redirect(UUIDPk, Base):
     lang: Mapped[str | None] = mapped_column(
         String(10), ForeignKey("languages.code", ondelete="RESTRICT")
     )
-    old_path: Mapped[str] = mapped_column(String(500), nullable=False, unique=True)
+    old_path: Mapped[str] = mapped_column(String(500), nullable=False)
     target_path: Mapped[str] = mapped_column(String(500), nullable=False)
     status_code: Mapped[int] = mapped_column(
         SmallInteger, nullable=False, default=int(RedirectStatus.PERMANENT.value)
@@ -128,6 +144,7 @@ class Redirect(UUIDPk, Base):
     )
 
     __table_args__ = (
+        UniqueConstraint("old_path", name="uq_redirects_old_path"),
         CheckConstraint("status_code IN (301, 302)", name="ck_redirects_status_code"),
         Index("ix_redirects_entity_type_entity_id", "entity_type", "entity_id"),
     )
