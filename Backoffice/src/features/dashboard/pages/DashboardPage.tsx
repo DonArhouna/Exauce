@@ -35,14 +35,14 @@ export default function DashboardPage() {
   const canViewContent = hasAnyPermission(permissions, 'pages', 'view');
   const canViewI18n = hasAnyPermission(permissions, 'settings', 'view');
   const canOpenAudit = hasAnyPermission(permissions, 'audit', 'view');
-  const siteStatus = data?.publication.site_status ?? 'pending_changes';
+  const siteStatus = data?.publication?.site_status ?? 'pending_changes';
   const statusLabels: Record<string, string> = {
     up_to_date: t('publication.upToDate'),
     pending_changes: t('publication.pendingChanges'),
     building: t('publication.building'),
     failed: t('publication.failed'),
   };
-  const lastSuccess = data?.publication.last_success_at
+  const lastSuccess = data?.publication?.last_success_at
     ? formatDateTime(data.publication.last_success_at, i18n.language)
     : t('publication.never');
 
@@ -63,7 +63,7 @@ export default function DashboardPage() {
           <StatCard
             icon={Inbox}
             label={t('dashboard.leads.title')}
-            value={data?.leads.new_count ?? 0}
+            value={data?.leads?.new_count ?? 0}
             hint={t('dashboard.leads.pending')}
             tone="warning"
             loading={isLoading}
@@ -75,8 +75,8 @@ export default function DashboardPage() {
           <StatCard
             icon={Newspaper}
             label={t('dashboard.publications.title')}
-            value={data?.publications.draft_count ?? 0}
-            hint={t('dashboard.publications.inReviewCount', { count: data?.publications.in_review_count ?? 0 })}
+            value={data?.publications?.draft_count ?? 0}
+            hint={t('dashboard.publications.inReviewCount', { count: data?.publications?.in_review_count ?? 0 })}
             tone="info"
             loading={isLoading}
             error={isError}
@@ -87,7 +87,7 @@ export default function DashboardPage() {
           <StatCard
             icon={PenLine}
             label={t('dashboard.content.title')}
-            value={data?.content.unpublished_changes_count ?? 0}
+            value={data?.content?.unpublished_changes_count ?? 0}
             hint={t('dashboard.content.hint')}
             tone="warning"
             loading={isLoading}
@@ -117,7 +117,7 @@ export default function DashboardPage() {
               <div>
                 <CardTitle>{t('dashboard.leads.recent')}</CardTitle>
                 <CardDescription>
-                  {t('dashboard.leads.newCount', { count: data?.leads.new_count ?? 0 })}
+                  {t('dashboard.leads.newCount', { count: data?.leads?.new_count ?? 0 })}
                 </CardDescription>
               </div>
               <span className="grid h-8 w-8 place-items-center rounded-control bg-turquoise-50 text-turquoise-700">
@@ -125,7 +125,7 @@ export default function DashboardPage() {
               </span>
             </CardHeader>
             <CardContent>
-              <LeadList leads={data?.leads.recent} loading={isLoading} error={isError} onRetry={retry} />
+              <LeadList leads={data?.leads?.recent} loading={isLoading} error={isError} onRetry={retry} />
             </CardContent>
             <CardFooter>
               <Link to="/demandes" className="text-sm font-medium text-turquoise-700 hover:text-turquoise-600">
@@ -142,7 +142,7 @@ export default function DashboardPage() {
                 <CardTitle>{t('dashboard.activity.title')}</CardTitle>
               </CardHeader>
               <CardContent className="pt-2">
-                <ActivityList entries={data?.audit.recent} loading={isLoading} error={isError} onRetry={retry} />
+                <ActivityList entries={data?.audit?.recent} loading={isLoading} error={isError} onRetry={retry} />
               </CardContent>
               <CardFooter>
                 <Link to="/audit" className="text-sm font-medium text-turquoise-700 hover:text-turquoise-600">
@@ -154,8 +154,8 @@ export default function DashboardPage() {
 
           {canViewI18n ? (
             <I18nCompleteness
-              completeness={data?.i18n.completeness_pct}
-              missing={data?.i18n.missing_count}
+              completeness={data?.i18n?.completeness_pct}
+              missing={data?.i18n?.missing_count}
               loading={isLoading}
               error={isError}
               onRetry={retry}

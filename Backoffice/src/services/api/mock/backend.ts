@@ -214,11 +214,29 @@ function changePassword(request: MockRequest): MockResponse {
   return { status: 204 };
 }
 
+/**
+ * Tableau de bord : accessible à toute session. Chaque groupe d'agrégats
+ * n'est renvoyé que si la permission correspondante est détenue, comme le
+ * décrit le contrat (groupes optionnels de `AdminDashboard`).
+ */
 function dashboard(): MockResponse {
   const current = currentAccount();
   if (!current) return problem(401, 'SESSION_EXPIRED', 'Session expirée');
-  if (!can(current.account, 'audit', 'view')) return problem(403, 'FORBIDDEN', 'Permission insuffisante');
-  return { status: 200, body: getMockDashboard() };
+  const account = current.account;
+  const full = getMockDashboard();
+  return {
+    status: 200,
+    body: {
+      generated_at: full.generated_at,
+      ...(can(account, 'leads', 'view') ? { leads: full.leads } : {}),
+      ...(can(account, 'publications', 'view')
+        ? { publications: full.publications, publication: full.publication }
+        : {}),
+      ...(can(account, 'pages', 'view') ? { content: full.content } : {}),
+      ...(can(account, 'settings', 'view') ? { i18n: full.i18n } : {}),
+      ...(can(account, 'audit', 'view') ? { audit: full.audit } : {}),
+    },
+  };
 }
 
 function publicationStatus(): MockResponse {

@@ -2504,11 +2504,16 @@ components:
 
     AdminDashboard:
       type: object
-      required: [leads, publications, content, publication, i18n, audit]
+      description: |
+        Agrégats du tableau de bord. Chaque groupe n'est présent que si la
+        session détient la permission correspondante ; un groupe absent vaut
+        "non autorisé" et ne doit pas être affiché.
+      required: [generated_at]
       properties:
         generated_at: {type: string, format: date-time}
         leads:
           type: object
+          description: Présent avec `leads:view`.
           required: [new_count, recent]
           properties:
             new_count: {type: integer, minimum: 0}
@@ -2517,27 +2522,34 @@ components:
               items: {$ref: '#/components/schemas/LeadSummary'}
         publications:
           type: object
+          description: Présent avec `publications:view`.
           required: [draft_count, in_review_count]
           properties:
             draft_count: {type: integer, minimum: 0}
             in_review_count: {type: integer, minimum: 0}
         content:
           type: object
+          description: Présent avec `pages:view`.
           required: [unpublished_changes_count]
           properties:
             unpublished_changes_count:
               type: integer
               minimum: 0
               description: Entités éditoriales modifiées plus récentes que le dernier job `success`.
-        publication: {$ref: '#/components/schemas/PublicationSiteStatus'}
+        publication:
+          allOf:
+            - $ref: '#/components/schemas/PublicationSiteStatus'
+          description: Présent avec `publications:view`.
         i18n:
           type: object
+          description: Présent avec `settings:view`.
           required: [completeness_pct, missing_count]
           properties:
             completeness_pct: {type: number, minimum: 0, maximum: 100}
             missing_count: {type: integer, minimum: 0}
         audit:
           type: object
+          description: Présent avec `audit:view`.
           required: [recent]
           properties:
             recent:

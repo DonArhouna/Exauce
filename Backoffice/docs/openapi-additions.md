@@ -71,6 +71,13 @@ Opérations admin volontairement **sans** `x-permission` (8) :
 - L'interface applique le même filtre pour ne pas rendre de bloc vide, sans que ce
   filtrage soit une mesure de sécurité.
 
+### Schéma `AdminDashboard`
+- Les six groupes (`leads`, `publications`, `content`, `publication`, `i18n`,
+  `audit`) deviennent **optionnels** : seul `generated_at` reste obligatoire, et
+  chaque groupe documente la permission qui le fait apparaître. C'est la
+  traduction dans le contrat du filtrage serveur ; le client lit des groupes
+  facultatifs au lieu d'interpréter un `403` global.
+
 ## Retiré
 
 Aucun endpoint ni schéma n'est retiré. Les seules suppressions sont :

@@ -1866,27 +1866,38 @@ export interface components {
             /** Format: date-time */
             created_at?: string;
         };
+        /**
+         * @description Agrégats du tableau de bord. Chaque groupe n'est présent que si la
+         *     session détient la permission correspondante ; un groupe absent vaut
+         *     "non autorisé" et ne doit pas être affiché.
+         */
         AdminDashboard: {
             /** Format: date-time */
-            generated_at?: string;
-            leads: {
+            generated_at: string;
+            /** @description Présent avec `leads:view`. */
+            leads?: {
                 new_count: number;
                 recent: components["schemas"]["LeadSummary"][];
             };
-            publications: {
+            /** @description Présent avec `publications:view`. */
+            publications?: {
                 draft_count: number;
                 in_review_count: number;
             };
-            content: {
+            /** @description Présent avec `pages:view`. */
+            content?: {
                 /** @description Entités éditoriales modifiées plus récentes que le dernier job `success`. */
                 unpublished_changes_count: number;
             };
-            publication: components["schemas"]["PublicationSiteStatus"];
-            i18n: {
+            /** @description Présent avec `publications:view`. */
+            publication?: components["schemas"]["PublicationSiteStatus"];
+            /** @description Présent avec `settings:view`. */
+            i18n?: {
                 completeness_pct: number;
                 missing_count: number;
             };
-            audit: {
+            /** @description Présent avec `audit:view`. */
+            audit?: {
                 recent: components["schemas"]["AuditEntry"][];
             };
         };
