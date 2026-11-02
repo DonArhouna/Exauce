@@ -23,3 +23,17 @@ export type AdminNotification = Schemas['AdminNotification'];
 export type AdminNotificationList = Schemas['AdminNotificationList'];
 export type AuditEntry = Schemas['AuditEntry'];
 export type LeadSummary = Schemas['LeadSummary'];
+
+export type MediaItem = Schemas['MediaItem'];
+
+/** Types de média acceptés par le contrat. */
+export type MediaKind = NonNullable<MediaItem['kind']>;
+
+/**
+ * Réponse de `GET /admin/media` : enveloppe paginée déclarée en ligne dans le
+ * contrat (pas de schéma nommé), d'où ce type local.
+ */
+export interface MediaList {
+  items: MediaItem[];
+  total: number;
+}

@@ -266,5 +266,76 @@
       "user.create": "created a user",
       "settings.update": "updated settings"
     }
+  },
+  "media": {
+    "kind": {
+      "image": "Image",
+      "pdf": "PDF",
+      "document": "Document"
+    },
+    "unknownType": "Unknown type",
+    "picker": {
+      "choose": "Choose a media file",
+      "replace": "Replace",
+      "remove": "Remove",
+      "empty": "No media selected.",
+      "title": "Media library",
+      "description": "Pick an existing file or upload a new one.",
+      "search": "Search",
+      "searchPlaceholder": "Name, alternative text…",
+      "upload": "Upload",
+      "uploadHint": "Formats: images, PDF and documents.",
+      "accepted": "Accepted formats: {{types}} · {{size}} maximum.",
+      "progress": "Upload progress",
+      "progressValue": "{{value}}% sent",
+      "uploadFailed": "Upload rejected",
+      "loadFailed": "The media library could not be loaded.",
+      "noResult": "No media matches this search."
+    },
+    "errors": {
+      "mime": "This file format is not allowed.",
+      "size": "The file exceeds the maximum allowed size.",
+      "infected": "The file was rejected by the antivirus scan.",
+      "upload": "The upload failed. Try again."
+    },
+    "alt": {
+      "legend": "Alternative text",
+      "hint": "Describe the image for people who cannot see it.",
+      "label": "Alternative text ({{language}})",
+      "required": "Alternative text is required ({{language}}).",
+      "decorative": "Purely decorative image",
+      "decorativeHint": "No alternative text will be asked for; reserve this for visuals without information.",
+      "missing": "{{count}} language(s) without alternative text",
+      "publishBlocked": "{{count}} media item(s) without alternative text block publishing."
+    }
+  },
+  "video": {
+    "urlPlaceholder": "https://www.youtube.com/watch?v=…",
+    "errors": {
+      "invalid": "Invalid link: only YouTube and Vimeo are accepted."
+    },
+    "provider": {
+      "youtube": "YouTube",
+      "vimeo": "Vimeo"
+    },
+    "preview": "Preview",
+    "previewTitle": "{{provider}} preview",
+    "privacy": "Cookie-free preview.",
+    "emptyPreview": "Paste a YouTube or Vimeo link to see a preview.",
+    "caption": "Caption",
+    "transcription": "Transcript",
+    "transcriptionPlaceholder": "Transcribe the spoken content…",
+    "captionFor": "Caption ({{language}})",
+    "transcriptionFor": "Transcript ({{language}})"
+  },
+  "gallery": {
+    "count": "{{count}} item(s)",
+    "empty": "No media in this gallery.",
+    "moved": "Media moved to position {{position}} of {{total}}.",
+    "removed": "Media removed; {{total}} remaining.",
+    "moveUp": "Move media {{position}} up",
+    "moveDown": "Move media {{position}} down",
+    "remove": "Remove media {{position}}",
+    "dragHint": "Drag to reorder, or use the Move up and Move down buttons."
   }
 }

@@ -266,5 +266,76 @@
       "user.create": "a créé un utilisateur",
       "settings.update": "a mis à jour les paramètres"
     }
+  },
+  "media": {
+    "kind": {
+      "image": "Image",
+      "pdf": "PDF",
+      "document": "Document"
+    },
+    "unknownType": "Type inconnu",
+    "picker": {
+      "choose": "Choisir un média",
+      "replace": "Remplacer",
+      "remove": "Retirer",
+      "empty": "Aucun média sélectionné.",
+      "title": "Médiathèque",
+      "description": "Choisissez un média existant ou téléversez un fichier.",
+      "search": "Rechercher",
+      "searchPlaceholder": "Nom, texte alternatif…",
+      "upload": "Téléverser",
+      "uploadHint": "Formats : images, PDF et documents.",
+      "accepted": "Formats acceptés : {{types}} · {{size}} maximum.",
+      "progress": "Progression du téléversement",
+      "progressValue": "{{value}} % envoyé",
+      "uploadFailed": "Téléversement refusé",
+      "loadFailed": "Impossible de charger la médiathèque.",
+      "noResult": "Aucun média ne correspond à la recherche."
+    },
+    "errors": {
+      "mime": "Ce format de fichier n’est pas autorisé.",
+      "size": "Le fichier dépasse la taille maximale autorisée.",
+      "infected": "Le fichier a été refusé par l’analyse antivirus.",
+      "upload": "Le téléversement a échoué. Réessayez."
+    },
+    "alt": {
+      "legend": "Texte alternatif",
+      "hint": "Décrivez l’image pour les personnes qui ne la voient pas.",
+      "label": "Texte alternatif ({{language}})",
+      "required": "Le texte alternatif est obligatoire ({{language}}).",
+      "decorative": "Image purement décorative",
+      "decorativeHint": "Aucun texte alternatif ne sera demandé ; à réserver aux visuels sans information.",
+      "missing": "{{count}} langue(s) sans texte alternatif",
+      "publishBlocked": "{{count}} média(s) sans texte alternatif bloquent la publication."
+    }
+  },
+  "video": {
+    "urlPlaceholder": "https://www.youtube.com/watch?v=…",
+    "errors": {
+      "invalid": "Lien invalide : seuls YouTube et Vimeo sont acceptés."
+    },
+    "provider": {
+      "youtube": "YouTube",
+      "vimeo": "Vimeo"
+    },
+    "preview": "Aperçu",
+    "previewTitle": "Aperçu {{provider}}",
+    "privacy": "Aperçu sans cookie publicitaire.",
+    "emptyPreview": "Collez un lien YouTube ou Vimeo pour afficher un aperçu.",
+    "caption": "Légende",
+    "transcription": "Transcription",
+    "transcriptionPlaceholder": "Retranscrivez le contenu parlé…",
+    "captionFor": "Légende ({{language}})",
+    "transcriptionFor": "Transcription ({{language}})"
+  },
+  "gallery": {
+    "count": "{{count}} média(s)",
+    "empty": "Aucun média dans cette galerie.",
+    "moved": "Média déplacé en position {{position}} sur {{total}}.",
+    "removed": "Média retiré ; {{total}} restant(s).",
+    "moveUp": "Monter le média {{position}}",
+    "moveDown": "Descendre le média {{position}}",
+    "remove": "Retirer le média {{position}}",
+    "dragHint": "Glisser pour réordonner, ou utiliser les boutons Monter et Descendre."
   }
 }

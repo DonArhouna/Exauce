@@ -4,16 +4,22 @@ import type {
   AdminPasswordChangeRequest,
   AdminPasswordResetRequest,
 } from '../types';
+import { isAcceptedMime, MAX_UPLOAD_BYTES } from '@/lib/media';
 import {
   DEMO,
+  createMockMedia,
+  deleteMockMedia,
   endSession,
   findAccountByEmail,
   findAccountById,
+  findMockMedia,
   findPendingAccount,
   getAttempts,
+  getMockMediaUsages,
   getMockPublicationJobs,
   getMockPublicationStatus,
   getSession,
+  listMockMedia,
   listMockNotifications,
   markMockNotificationRead,
   startSession,
@@ -293,6 +299,116 @@ function readNotification(request: MockRequest, id: string): MockResponse {
   return markMockNotificationRead(id) ? { status: 204 } : problem(404, 'CONTENT_NOT_FOUND', 'Notification inconnue');
 }
 
+// ── Médiathèque (démo uniquement) ──────────────────────────────
+function mediaList(request: MockRequest): MockResponse {
+  const current = currentAccount();
+  if (!current) return problem(401, 'SESSION_EXPIRED', 'Session expirée');
+  if (!can(current.account, 'media', 'view')) return problem(403, 'FORBIDDEN', 'Permission insuffisante');
+  const limit = Number(request.query.limit ?? 24);
+  const offset = Number(request.query.offset ?? 0);
+  return {
+    status: 200,
+    body: listMockMedia({
+      kind: typeof request.query.kind === 'string' ? request.query.kind : undefined,
+      search: typeof request.query.search === 'string' ? request.query.search : undefined,
+      limit: Number.isFinite(limit) && limit > 0 ? limit : 24,
+      offset: Number.isFinite(offset) && offset > 0 ? offset : 0,
+    }),
+  };
+}
+
+function mediaDetail(id: string): MockResponse {
+  const current = currentAccount();
+  if (!current) return problem(401, 'SESSION_EXPIRED', 'Session expirée');
+  if (!can(current.account, 'media', 'view')) return problem(403, 'FORBIDDEN', 'Permission insuffisante');
+  const item = findMockMedia(id);
+  return item ? { status: 200, body: item } : problem(404, 'CONTENT_NOT_FOUND', 'Média inconnu');
+}
+
+/** Motif de refus lisible par la machine, en plus du message serveur. */
+function uploadRejected(reason: 'MIME_NOT_ALLOWED' | 'TOO_LARGE' | 'INFECTED', detail: string): MockResponse {
+  return {
+    status: 415,
+    body: {
+      type: 'https://exauceac.com/errors/upload_rejected',
+      title: 'upload rejected',
+      status: 415,
+      code: 'UPLOAD_REJECTED',
+      detail,
+      errors: [{ field: 'file', code: reason, message: detail }],
+    },
+  };
+}
+
+function uploadMedia(request: MockRequest): MockResponse {
+  const failure = requireSessionAndCsrf(request);
+  if (failure) return failure;
+  const current = currentAccount();
+  if (!current) return problem(401, 'SESSION_EXPIRED', 'Session expirée');
+  if (!can(current.account, 'media', 'create')) {
+    return problem(403, 'FORBIDDEN', 'Permission insuffisante');
+  }
+
+  // Le vrai endpoint reçoit un multipart : le mock reçoit les métadonnées.
+  const payload = (request.body ?? {}) as {
+    filename?: string;
+    mime?: string;
+    size_bytes?: number;
+    kind?: string;
+  };
+  const filename = (payload.filename ?? '').trim();
+  const mime = (payload.mime ?? '').trim().toLowerCase();
+  const size = Number(payload.size_bytes ?? 0);
+  const kind = payload.kind;
+
+  if (!filename || !mime) return problem(422, 'VALIDATION_ERROR', 'Fichier ou type MIME absent');
+  if (filename.toLowerCase().includes('eicar')) {
+    return uploadRejected('INFECTED', 'Fichier rejeté par l’analyse antivirus');
+  }
+  if (kind !== 'image' && kind !== 'pdf' && kind !== 'document') {
+    return problem(422, 'VALIDATION_ERROR', 'Type de média inconnu');
+  }
+  if (!isAcceptedMime(mime, kind)) {
+    return uploadRejected('MIME_NOT_ALLOWED', `Type de fichier non autorisé : ${mime}`);
+  }
+  if (!Number.isFinite(size) || size <= 0) {
+    return problem(422, 'VALIDATION_ERROR', 'Taille de fichier invalide');
+  }
+  if (size > MAX_UPLOAD_BYTES) {
+    return uploadRejected('TOO_LARGE', `Fichier trop volumineux (maximum ${MAX_UPLOAD_BYTES} octets)`);
+  }
+
+  const item = createMockMedia({ filename, mime, size_bytes: size, kind });
+  if (!item) return problem(422, 'VALIDATION_ERROR', 'Type de média inconnu');
+  return { status: 201, body: item };
+}
+
+function removeMedia(request: MockRequest, id: string): MockResponse {
+  const failure = requireSessionAndCsrf(request);
+  if (failure) return failure;
+  const current = currentAccount();
+  if (!current) return problem(401, 'SESSION_EXPIRED', 'Session expirée');
+  if (!can(current.account, 'media', 'delete')) {
+    return problem(403, 'FORBIDDEN', 'Permission insuffisante');
+  }
+  const result = deleteMockMedia(id);
+  if (result === 'not_found') return problem(404, 'CONTENT_NOT_FOUND', 'Média inconnu');
+  if (result === 'in_use') {
+    const usages = getMockMediaUsages(id).map((usage) => usage.label);
+    return {
+      status: 409,
+      body: {
+        type: 'https://exauceac.com/errors/conflict',
+        title: 'conflict',
+        status: 409,
+        code: 'CONFLICT',
+        detail: `Média encore référencé : ${usages.join(', ')}`,
+      },
+    };
+  }
+  return { status: 204 };
+}
+
 /** Routeur du backend mock : toute route non couverte renvoie 501. */
 export async function mockRequest(request: MockRequest): Promise<MockResponse> {
   await delay();
@@ -300,6 +416,10 @@ export async function mockRequest(request: MockRequest): Promise<MockResponse> {
 
   if (route === 'POST /admin/publication-jobs') return triggerPublication(request);
   if (route === 'GET /admin/publication-jobs/current') return publicationStatus();
+
+  const mediaId = request.path.match(new RegExp('^/admin/media/([^/]+)$'));
+  if (mediaId && request.method === 'GET') return mediaDetail(mediaId[1]);
+  if (mediaId && request.method === 'DELETE') return removeMedia(request, mediaId[1]);
 
   const notificationRead = request.path.match(/^\/admin\/notifications\/([^/]+)\/read$/);
   if (request.method === 'POST' && notificationRead) {
@@ -327,6 +447,10 @@ export async function mockRequest(request: MockRequest): Promise<MockResponse> {
       return publicationJobs(request);
     case 'GET /admin/notifications':
       return notifications(request);
+    case 'GET /admin/media':
+      return mediaList(request);
+    case 'POST /admin/media/upload':
+      return uploadMedia(request);
     default:
       return problem(501, 'NOT_IMPLEMENTED', `Route non couverte par le mock : ${route}`);
   }
