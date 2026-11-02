@@ -36,7 +36,7 @@ export function SidebarContent({ collapsed = false, onToggle, onNavigate }: Side
         ) : null}
       </div>
 
-      <nav aria-label={t('nav.mainNavigation')} className="flex-1 space-y-5 overflow-y-auto px-2.5 pb-4">
+      <nav aria-label={t('nav.mainNavigation')} className="flex-1 space-y-5 overflow-y-auto px-2.5 pb-4 sidebar-scroll">
         {groups.map((group) => (
           <div key={group.key}>
             <p
