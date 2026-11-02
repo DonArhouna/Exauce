@@ -49,6 +49,7 @@ développement complet sans backend.
 | `fondateur@exauceac.com` | `exauce-fondateur-2026` | super-administrateur (toutes les entrées) |
 | `editeur@exauceac.com` | `exauce-editeur-2026` | éditeur (navigation restreinte) |
 | `mfa@exauceac.com` | `exauce-mfa-2026` | MFA activé, code `123456` |
+| `lecteur@exauceac.com` | `exauce-lecteur-2026` | démo uniquement : `pages:view` + `publications:view` (dashboard sans `leads:view` ni `audit:view`) |
 | invitation | jeton `exauce-invitation-demo` | activation du compte fondateur |
 
 ## Sécurité

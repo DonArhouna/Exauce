@@ -54,7 +54,6 @@ export const NAV_GROUPS: NavGroup[] = [
         path: '/tableau-de-bord',
         labelKey: 'nav.dashboard',
         icon: LayoutDashboard,
-        permission: { module: 'audit', action: 'view' },
       },
     ],
   },

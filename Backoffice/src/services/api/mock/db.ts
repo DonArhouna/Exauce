@@ -86,6 +86,14 @@ const EDITOR_PERMISSIONS: Permission[] = [
   return { module, action, lang: null };
 });
 
+const LECTEUR_PERMISSIONS: Permission[] = [
+  'pages:view',
+  'publications:view',
+].map((pair) => {
+  const [module, action] = pair.split(':');
+  return { module, action, lang: null };
+});
+
 function makeUser(
   id: string,
   email: string,
@@ -139,6 +147,18 @@ function createInitialAccounts(): MockAccount[] {
         { mfaEnabled: true },
       ),
       password: 'exauce-mfa-2026',
+    },
+    {
+      // Démo uniquement : compte restreint (ni leads:view, ni audit:view) pour
+      // vérifier que le tableau de bord reste accessible et filtre ses blocs.
+      user: makeUser(
+        '55555555-5555-4555-8555-555555555555',
+        'lecteur@exauceac.com',
+        'Compte lecteur',
+        ['reader'],
+        LECTEUR_PERMISSIONS,
+      ),
+      password: 'exauce-lecteur-2026',
     },
     {
       user: makeUser(

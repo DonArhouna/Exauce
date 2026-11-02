@@ -25,14 +25,9 @@ export function AppRoutes() {
 
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
-          <Route
-            path={DASHBOARD_PATH}
-            element={
-              <RequirePermission module="audit" action="view">
-                <DashboardPage />
-              </RequirePermission>
-            }
-          />
+          {/* Tableau de bord : tout utilisateur authentifié ; les blocs sont
+              filtrés par permission côté UI et côté serveur. */}
+          <Route path={DASHBOARD_PATH} element={<DashboardPage />} />
           {NAV_ITEMS.filter((item) => item.path !== DASHBOARD_PATH).map((item) => (
             <Route
               key={item.path}
