@@ -195,11 +195,29 @@ erDiagram
     timestamp expires_at
     boolean revoked
   }
+  login_attempts {
+    uuid id PK
+    varchar email
+    boolean succeeded
+    inet ip
+    timestamp at
+  }
+  invitations {
+    uuid id PK
+    uuid user_id FK
+    varchar token_hash "usage unique"
+    uuid created_by FK
+    timestamp expires_at
+    timestamp consumed_at "null si non utilise"
+  }
   users ||--o{ user_roles : ""
   roles ||--o{ user_roles : ""
   roles ||--o{ role_permissions : ""
   permissions ||--o{ role_permissions : ""
   users ||--o{ sessions : ""
+  users ||--o{ login_attempts : ""
+  users ||--o{ invitations : "user_id"
+  users ||--o{ invitations : "created_by"
 ```
 
 *Figure 3 : la granularité de permission est `module × action × lang`.*
@@ -288,6 +306,15 @@ erDiagram
     uuid author_id FK
     text note
     boolean internal
+  }
+  idempotency_keys {
+    uuid id PK
+    varchar key
+    varchar scope
+    varchar request_hash "sha256 du payload"
+    int response_status "null = en cours"
+    json response_body
+    timestamp expires_at
   }
   leads ||--o{ lead_notes : ""
 ```
@@ -668,6 +695,20 @@ Rôles semés : `super_admin`, `admin`, `editor`, `reviewer`, `crm`, `viewer`.
 **Table `sessions`** : `id UUID PK`, `user_id FK`, `token_hash VARCHAR(64) NN UQ`,
 `created_at`, `expires_at NN`, `revoked_at`, `ip INET`, `user_agent`.
 
+**Table `login_attempts`** — amendement M3 (doc 09 §2.2) : `id UUID PK`,
+`email VARCHAR(255) NN`, `succeeded BOOLEAN NN`, `ip INET`,
+`at TIMESTAMPTZ NN` ; index `(email, at)`. Journal des tentatives qui pilote
+le verrouillage proportionnel (5 échecs → 5 min, doublement exponentiel,
+plafond 1 h), sans jamais distinguer « compte inconnu » et « mot de passe
+erroné » côté réponse.
+
+**Table `invitations`** — amendement M3 (Q-105/U1, contrat
+`/admin/auth/activate`) : `id UUID PK`, `user_id FK users NN`,
+`token_hash VARCHAR(64) NN UQ`, `created_by FK users NULL`, `expires_at NN`,
+`consumed_at`, `created_at`. Jeton signé à usage unique (TTL 7 jours) pour
+l'activation du fondateur (`password_hash=NULL`, `must_reset_password=true`)
+et des utilisateurs invités ; aucune route d'inscription publique (EF-401).
+
 ### 2.4 Contexte 4 · comptes clients (v2)
 
 **Table `client_accounts`** : `id UUID PK`, `is_organization BOOLEAN NN`,
@@ -712,6 +753,15 @@ requested_by client_user_id FK, assigned_to users FK NULL).
 
 **Table `lead_notes`** : `id PK`, `lead_id FK NN`, `author_id FK users NN`,
 `note TEXT NN`, `internal BOOLEAN NN`, `created_at`.
+
+**Table `idempotency_keys`** — amendement M3 (doc 08 §5, écritures
+publiques) : `id UUID PK`, `key VARCHAR(128) NN`, `scope VARCHAR(60) NN`
+(ex. `POST /api/v1/contact`), `request_hash CHAR(64) NN` (SHA-256 du
+payload), `response_status SMALLINT NULL` (`NULL` = requête en cours),
+`response_body JSONB`, `created_at / updated_at`, `expires_at NN` ;
+UQ `(scope, key)`, index `(expires_at)` pour la purge des clés expirées.
+Rejeu de la réponse avec l'en-tête `X-Idempotent-Replayed: true` ;
+`409 IDEMPOTENT_REPLAY_CONFLICT` si même clé et payload différent.
 
 ### 2.6 Contexte 6 · médias
 
@@ -826,6 +876,9 @@ non réversible ou pseudonymisé de façon paramétrée — À VALIDER avec CDP)
 | redirects | UQ (old_path) ; (entity_type, entity_id) | pas de règle contradictoire, purge par entité |
 | leads | (status, created_at) | files de traitement |
 | sessions | (user_id), (expires_at) | révocation et purge |
+| login_attempts | (email, at) | verrouillage proportionnel après 5 échecs (page 09 §2.2) |
+| invitations | UQ (token_hash) | jeton d'activation à usage unique (Q-105, EF-401) |
+| idempotency_keys | UQ (scope, key) ; (expires_at) | rejoue/conflit `Idempotency-Key` (08 §5) + purge des clés expirées |
 | client_documents | (account_id, original_name) — **non unique** | l'unicité n'est PAS imposée (SC-404) |
 | media_refs | (ref_type, ref_id) | liste des référents à jour |
 | audit_log | (entity), (at) | consultabilité (EF-901) |
