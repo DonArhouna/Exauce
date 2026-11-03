@@ -128,6 +128,67 @@ FOUNDER: dict[str, Any] = {
     "roles": ("super_admin",),
 }
 
+# --- Comptes de démo (doc 06 §6.2 point 17, Q-104) -------------------------
+# Uniquement avec --with-demo, jamais en production. Sans mot de passe :
+# activation par invitation signée (MailHog en dev). (email_local, rôle, libellé).
+DEMO_USERS: tuple[tuple[str, str, str], ...] = (
+    ("demo-admin", "admin", "Administrateur"),
+    ("demo-editor", "editor", "Rédacteur"),
+    ("demo-reviewer", "reviewer", "Relecteur"),
+    ("demo-crm", "crm", "Chargé de relation clients"),
+    ("demo-viewer", "viewer", "Lecteur"),
+)
+
+# --- Matrice de permissions (doc 10 §2 lignes 27-48 + décisions 2026-11-03) -
+# module -> (actions, langue_scopable) ; scopable => 2 permissions (fr, en).
+PERMISSIONS_MATRIX: dict[str, tuple[tuple[str, ...], bool]] = {
+    "pages": (("view", "create", "edit", "review", "publish", "delete"), True),
+    "tree": (("view", "create", "edit", "move", "merge", "delete"), True),
+    "publications": (("view", "create", "edit", "review", "publish", "delete"), True),
+    "media": (("view", "create", "edit", "delete"), False),
+    "leads": (("view", "edit", "status", "notes", "export", "anonymize"), False),
+    "clients": (("view", "create", "edit", "delete", "upload"), False),
+    "users": (("view", "create", "edit", "delete", "deactivate"), False),
+    "languages": (("view", "activate", "deactivate"), False),
+    "offices": (("view", "create", "edit", "delete", "deactivate"), True),
+    "team": (("view", "create", "edit", "delete", "deactivate"), True),
+    "settings": (("view", "edit"), True),
+    "seo": (("view", "create", "edit", "delete"), True),
+    "audit": (("view", "export"), False),
+    "backup": (("view", "run"), False),
+}
+
+#: rôle -> {module: actions ou None = toutes les actions du module}.
+#: Décisions 2026-11-03 (page 10 §2) : super_admin = tout ; admin = ses
+#: 9 modules ; editor/reviewer = répartition pages+tree+publications+media ;
+#: crm = leads+clients ; viewer = aucune permission.
+ROLE_PERMISSIONS: dict[str, dict[str, tuple[str, ...] | None]] = {
+    "super_admin": dict.fromkeys(PERMISSIONS_MATRIX),
+    "admin": {
+        "pages": ("publish",),
+        "tree": None,
+        "publications": ("publish",),
+        "users": None,
+        "offices": None,
+        "team": None,
+        "settings": None,
+        "seo": None,
+        "audit": None,
+    },
+    "editor": {
+        "pages": ("view", "create", "edit", "delete"),
+        "tree": ("view", "create", "edit"),
+        "publications": ("view", "create", "edit", "delete"),
+        "media": None,
+    },
+    "reviewer": {
+        "pages": ("view", "review"),
+        "publications": ("view", "review"),
+    },
+    "crm": {"leads": None, "clients": None},
+    "viewer": {},
+}
+
 # --- Registre des groupes de settings traduisibles (doc 16 §9) -------------
 # Seuls les settings a valeur documentee sont semes (doc 06 §6.2 point 14) ;
 # les setting_keys de contact/seo/retention/features sont absentes des docs.
@@ -162,6 +223,9 @@ class SeedPayload:
     publications: list[dict[str, Any]] = field(default_factory=list)
     redirects: list[dict[str, Any]] = field(default_factory=list)
     founder: dict[str, Any] = field(default_factory=dict)
+    demo_users: list[dict[str, Any]] = field(default_factory=list)
+    permissions: list[dict[str, Any]] = field(default_factory=list)
+    role_permissions: list[dict[str, Any]] = field(default_factory=list)
     editorial_targets: int = 0
     editorial_keys: int = 0
 
@@ -659,6 +723,46 @@ def _apply_base(payload: SeedPayload, content: dict[str, Any]) -> None:
                 data["author_name"] = pub["author"]
 
 
+def _build_permissions() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Registre `permissions` (95) + jonctions `role_permissions` (195)."""
+    permissions: list[dict[str, Any]] = []
+    for module, (actions, scopable) in PERMISSIONS_MATRIX.items():
+        for action in actions:
+            for lang in ("fr", "en") if scopable else (None,):
+                permissions.append({"module": module, "action": action, "lang": lang})
+
+    role_permissions: list[dict[str, Any]] = []
+    for role_code, modules in ROLE_PERMISSIONS.items():
+        for module, allowed in modules.items():
+            module_actions = PERMISSIONS_MATRIX[module][0] if allowed is None else allowed
+            scopable = PERMISSIONS_MATRIX[module][1]
+            for action in module_actions:
+                for lang in ("fr", "en") if scopable else (None,):
+                    role_permissions.append(
+                        {
+                            "role_code": role_code,
+                            "module": module,
+                            "action": action,
+                            "lang": lang,
+                        }
+                    )
+    return permissions, role_permissions
+
+
+def _build_demo_users() -> list[dict[str, Any]]:
+    """Comptes de démo `--with-demo` uniquement — sans mot de passe (Q-104)."""
+    return [
+        {
+            "email": f"{local}@exauceac.com",
+            "display_name": label,
+            "role": role,
+            "password_hash": None,
+            "must_reset_password": True,
+        }
+        for local, role, label in DEMO_USERS
+    ]
+
+
 def build_payload(*, with_demo: bool = False) -> SeedPayload:
     """Construit le payload complet ; `with_demo` ajoute les 3 publications."""
     content = _load("content_data.json")
@@ -691,7 +795,9 @@ def build_payload(*, with_demo: bool = False) -> SeedPayload:
         ],
         founder=dict(FOUNDER),
         nodes=_build_nodes(content),
+        demo_users=_build_demo_users() if with_demo else [],
     )
+    payload.permissions, payload.role_permissions = _build_permissions()
 
     _apply_editorial(rows, payload)
     _apply_base(payload, content)

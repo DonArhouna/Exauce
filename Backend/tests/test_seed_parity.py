@@ -22,7 +22,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from app.core.config import get_settings
-from app.models.auth import Role, User, UserRole
+from app.models.auth import Permission, Role, RolePermission, User, UserRole
 from app.models.content import (
     Category,
     ContentNode,
@@ -81,6 +81,31 @@ def test_payload_parity_table() -> None:
         "viewer",
     }
     assert len(payload.languages) == 2
+
+    # Permissions (doc 10 §2 + décisions 2026-11-03) : 95 / 195 (doc 06 §6.2).
+    assert len(payload.permissions) == 95
+    assert len(payload.role_permissions) == 195
+    triples = [(p["module"], p["action"], p["lang"]) for p in payload.permissions]
+    assert len(set(triples)) == len(triples), "triplet (module, action, lang) duplique"
+    links = [
+        (row["role_code"], row["module"], row["action"], row["lang"])
+        for row in payload.role_permissions
+    ]
+    assert len(set(links)) == len(links), "association role/permission dupliquee"
+
+    # Fondateur + comptes de démo (Q-105 / Q-104).
+    assert payload.founder["email"] == "fondateur@exauceac.com"
+    assert payload.founder["password_hash"] is None
+    assert len(payload.demo_users) == 5
+    assert {d["role"] for d in payload.demo_users} == {
+        "admin",
+        "editor",
+        "reviewer",
+        "crm",
+        "viewer",
+    }
+    assert all(d["password_hash"] is None for d in payload.demo_users)
+    assert build_payload(with_demo=False).demo_users == []
 
     # Pages : legale en draft + banners_pending, 3 systemes (doc 06 L569).
     by_key = {p["page_key"]: p for p in payload.pages}
@@ -233,6 +258,17 @@ async def test_db_parity_counts(seeded: AsyncSession) -> None:
     assert await _count(seeded, SiteSetting) == 10
     assert await _count(seeded, SiteSetting, SiteSetting.group_key == "legal") == 0
 
+    # Permissions (doc 10 §2 + décisions 2026-11-03) : 95 / 195 (doc 06 §6.2).
+    assert await _count(seeded, Permission) == 95
+    assert await _count(seeded, RolePermission) == 195
+    # Comptes : fondateur + 5 comptes de démo (--with-demo, Q-104/Q-105).
+    assert await _count(seeded, User) == 6
+    assert await _count(seeded, User, User.password_hash.is_(None)) == 6
+    assert await _count(seeded, User, User.email.like("demo-%")) == 5
+    assert await _count(seeded, UserRole) == 6
+    # Décision Q-105/U1 : auteur des publications = compte fondateur.
+    assert await _count(seeded, Publication, Publication.author_id.is_not(None)) == 3
+
     legal_page = (
         await seeded.execute(select(Page).where(Page.page_key == "legal_notice"))
     ).scalar_one()
@@ -341,14 +377,51 @@ async def test_db_founder_and_roles(seeded: AsyncSession) -> None:
     """Compte fondateur sans mot de passe + roles semes (doc 06 §6.2, Q-105)."""
     assert await _count(seeded, Role) == 6
     users = (await seeded.execute(select(User))).scalars().all()
-    assert len(users) == 1
-    founder = users[0]
-    assert founder.email == "fondateur@exauceac.com"
+    assert len(users) == 6  # fondateur + 5 comptes de démo (--with-demo)
+    founder = next(u for u in users if u.email == "fondateur@exauceac.com")
     assert founder.password_hash is None
     assert founder.must_reset_password is True
     assert founder.default_lang == "fr"
 
+    # Les publications sont attribuées au fondateur (décision Q-105/U1).
+    pubs = (await seeded.execute(select(Publication))).scalars().all()
+    assert all(pub.author_id == founder.id for pub in pubs)
+
+    # Auteur des liens : 6 (fondateur + 5 démo), rôle du fondateur = super_admin.
     links = (await seeded.execute(select(UserRole))).scalars().all()
-    assert len(links) == 1
-    role = (await seeded.execute(select(Role).where(Role.id == links[0].role_id))).scalar_one()
+    assert len(links) == 6
+    founder_role_id = next(link.role_id for link in links if link.user_id == founder.id)
+    role = (await seeded.execute(select(Role).where(Role.id == founder_role_id))).scalar_one()
     assert role.code == "super_admin"
+
+
+async def test_db_permission_matrix(seeded: AsyncSession) -> None:
+    """Distribution des permissions par rôle = décisions 2026-11-03 (doc 10 §2)."""
+    payload = build_payload(with_demo=True)
+
+    role_ids = {r.code: r.id for r in (await seeded.execute(select(Role))).scalars()}
+    perm_ids = {
+        (p.module, p.action, p.lang): p.id
+        for p in (await seeded.execute(select(Permission))).scalars()
+    }
+    expected: dict[str, set[uuid.UUID]] = {}
+    for link in payload.role_permissions:
+        expected.setdefault(link["role_code"], set()).add(
+            perm_ids[(link["module"], link["action"], link["lang"])]
+        )
+
+    rows = (await seeded.execute(select(RolePermission))).scalars().all()
+    live: dict[uuid.UUID, set[uuid.UUID]] = {}
+    for row in rows:
+        live.setdefault(row.role_id, set()).add(row.permission_id)
+
+    # viewer (« Lecteur ») n'a aucune ligne : absent de la jonction par construction.
+    assert set(live) == set(role_ids.values()) - {role_ids["viewer"]}
+    for code, perms in expected.items():
+        assert live.get(role_ids[code], set()) == perms, code
+
+    # Rôles à privilège et rôle Lecteur (aucune permission).
+    assert len(expected["super_admin"]) == 95  # toutes les permissions
+    assert len(expected["admin"]) == 55  # ses 9 modules
+    assert len(expected["crm"]) == 11  # leads + clients
+    assert expected.get("viewer", set()) == set()  # « Lecteur » : aucune permission

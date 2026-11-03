@@ -21,7 +21,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.auth import Role, User, UserRole
+from app.models.auth import Permission, Role, RolePermission, User, UserRole
 from app.models.content import (
     Category,
     ContentNode,
@@ -161,6 +161,74 @@ async def run_seed(
             stats=stats,
         )
         role_ids[role["code"]] = instance.id
+
+    # --- Permissions (doc 10 §2 + décisions 2026-11-03) : registre + liens --
+    permission_ids: dict[tuple[str, str, str | None], uuid.UUID] = {}
+    for perm in payload.permissions:
+        instance = await _upsert(
+            session,
+            Permission,
+            key={"module": perm["module"], "action": perm["action"], "lang": perm["lang"]},
+            attrs={},
+            entity="permissions",
+            stats=stats,
+        )
+        permission_ids[(perm["module"], perm["action"], perm["lang"])] = instance.id
+
+    for link in payload.role_permissions:
+        await _upsert(
+            session,
+            RolePermission,
+            key={
+                "role_id": role_ids[link["role_code"]],
+                "permission_id": permission_ids[(link["module"], link["action"], link["lang"])],
+            },
+            attrs={},
+            entity="role_permissions",
+            stats=stats,
+        )
+
+    # --- Compte fondateur (avant les publications : author_id, Q-105/U1) ---
+    founder = payload.founder
+    user = await _upsert(
+        session,
+        User,
+        key={"email": founder["email"]},
+        attrs={
+            "display_name": founder["display_name"],
+            "password_hash": founder["password_hash"],
+            "is_active": founder["is_active"],
+            "mfa_active": founder["mfa_active"],
+            "must_reset_password": founder["must_reset_password"],
+            "default_lang": founder["default_lang"],
+        },
+        # Jamais de re-ecriture du hash / flags sur re-execution (Q-105/U1).
+        update_attrs={"display_name": founder["display_name"]},
+        entity="users",
+        stats=stats,
+    )
+    for role_code in founder["roles"]:
+        await _link_role(session, stats, user.id, role_ids[role_code])
+
+    # --- Comptes de démo (--with-demo seulement, Q-104) : sans mot de passe -
+    for demo in payload.demo_users:
+        instance = await _upsert(
+            session,
+            User,
+            key={"email": demo["email"]},
+            attrs={
+                "display_name": demo["display_name"],
+                "password_hash": None,
+                "is_active": True,
+                "mfa_active": False,
+                "must_reset_password": True,
+                "default_lang": "fr",
+            },
+            update_attrs={"display_name": demo["display_name"]},
+            entity="users",
+            stats=stats,
+        )
+        await _link_role(session, stats, instance.id, role_ids[demo["role"]])
 
     page_ids: dict[str, uuid.UUID] = {}
     for page in payload.pages:
@@ -319,13 +387,15 @@ async def run_seed(
                 "category_id": category_ids[publication["category"]],
                 "status": publication["status"],
                 "published_at": published,
-                # author_id (NULL, Q-105) : jamais recalcule par la suite.
-                "author_id": None,
+                # Décision Q-105/U1 : auteur = compte fondateur ; `author_name`
+                # reste un texte d'affichage optionnel dans `data`.
+                "author_id": user.id,
             },
             update_attrs={
                 "category_id": category_ids[publication["category"]],
                 "status": publication["status"],
                 "published_at": published,
+                "author_id": user.id,
             },
             entity="publications",
             stats=stats,
@@ -346,27 +416,6 @@ async def run_seed(
             entity="redirects",
             stats=stats,
         )
-
-    founder = payload.founder
-    user = await _upsert(
-        session,
-        User,
-        key={"email": founder["email"]},
-        attrs={
-            "display_name": founder["display_name"],
-            "password_hash": founder["password_hash"],
-            "is_active": founder["is_active"],
-            "mfa_active": founder["mfa_active"],
-            "must_reset_password": founder["must_reset_password"],
-            "default_lang": founder["default_lang"],
-        },
-        # Jamais de re-ecriture du hash / flags sur re-execution (Q-105/U1).
-        update_attrs={"display_name": founder["display_name"]},
-        entity="users",
-        stats=stats,
-    )
-    for role_code in founder["roles"]:
-        await _link_role(session, stats, user.id, role_ids[role_code])
 
     for entity_type, entity_id, translations in jobs:
         for code, spec in translations.items():

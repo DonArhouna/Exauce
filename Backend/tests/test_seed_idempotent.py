@@ -21,15 +21,22 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from app.core.config import get_settings
+from app.models.auth import Permission, RolePermission, User
 from app.models.content import ContentNode, Page, PageSection, Publication
 from app.models.i18n import EntityTranslation
 from app.seed import SeedStats, build_payload, run_seed
 
 
 def test_payload_without_demo_has_no_publications() -> None:
-    """Mode production : le payload ne contient aucune publication (Q-104)."""
-    assert build_payload(with_demo=False).publications == []
+    """Mode production : ni publication, ni compte de démo (Q-104)."""
+    production = build_payload(with_demo=False)
+    assert production.publications == []
+    assert production.demo_users == []
     assert len(build_payload(with_demo=True).publications) == 3
+    assert len(build_payload(with_demo=True).demo_users) == 5
+    # Permissions : registre fermé, identique en production (pas de démo dedans).
+    assert len(production.permissions) == 95
+    assert len(production.role_permissions) == 195
 
 
 async def test_demo_and_production_are_exclusive() -> None:
@@ -70,6 +77,9 @@ async def _snapshot(session: AsyncSession) -> dict[str, Any]:
         ("sections", PageSection),
         ("publications", Publication),
         ("translations", EntityTranslation),
+        ("permissions", Permission),
+        ("role_permissions", RolePermission),
+        ("users", User),
     ):
         stmt = select(func.count()).select_from(model)
         counts[name] = int((await session.execute(stmt)).scalar_one())
