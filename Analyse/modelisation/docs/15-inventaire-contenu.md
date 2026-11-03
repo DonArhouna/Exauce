@@ -25,7 +25,8 @@
 | `i18n — technique` | reste dans le code / les templates (exception) |
 | `— (clé morte)` | supprimée du frontend, aucun équivalent en base |
 
-**Synthèse** : **125 clés éditoriales**, **45 clés d'interface**, **5 clés
+**Synthèse** : **126 clés éditoriales** (soit **127 cibles en base** :
+`contact.address` a deux cibles), **44 clés d'interface**, **5 clés
 techniques**, **9 clés mortes** = **184** (184 = 184 entre FR et EN). Le
 détail des exceptions est en §17.
 
@@ -96,7 +97,7 @@ fermeture, langue) restent des libellés d'interface.*
 | `contact.name` | libellé du champ | UI | `i18n — UI` |
 | `contact.email` | libellé du champ | UI | `i18n — UI` |
 | `contact.phone` | libellé du champ | UI | `i18n — UI` |
-| `contact.address` | adresse affichée | Éditorial | `offices.hq.data.address_lines` + `data.city` |
+| `contact.address` | adresse affichée | Éditorial | `offices.hq.data.address_lines` (« Dakar, Sénégal ») — la seconde cible `data.city` est **redondante** : `city` provient de `OFFICES` (doc 13 §1.1, fait foi) et l'emporte |
 | `contact.companyName` | raison sociale affichée | Éditorial | `site_settings.identity.legal_name` |
 | `contact.subject` | libellé du champ | UI | `i18n — UI` |
 | `contact.message` | libellé du champ | UI | `i18n — UI` |
@@ -292,7 +293,7 @@ Les redirections 301 gèrent l'historique d'URL `/localisations` et `/locations`
 | `legal.mentions` | titre du bloc mentions | Éditorial | `page_sections.legal_notice.mentions.data.title` |
 | `legal.privacy` | titre du bloc confidentialité | Éditorial | `page_sections.legal_notice.privacy.data.title` |
 | `legal.cookies` | titre du bloc cookies | Éditorial | `page_sections.legal_notice.cookies.data.title` |
-| `legal.toComplete` | bandeau « à compléter » (H-007) | Éditorial | `site_settings.legal.banner_text` |
+| `legal.toComplete` | bandeau « à compléter » (H-007) | Éditorial | `page_sections.legal_notice.mentions.data.banner_text` (+ `privacy`, `cookies` — valeur reportée sur les 3 blocs `legal_document` ; le groupe `site_settings.legal` **n'existe pas**, registre doc 16 §9) |
 | `legal.bodyMentions` | corps des mentions | Éditorial | `page_sections.legal_notice.mentions.data.body` |
 | `legal.bodyPrivacy` | corps de la confidentialité | Éditorial | `page_sections.legal_notice.privacy.data.body` |
 | `legal.bodyCookies` | corps des cookies | Éditorial | `page_sections.legal_notice.cookies.data.body` |

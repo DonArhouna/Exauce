@@ -47,6 +47,23 @@ obligatoire** pour tout rôle donnant accès à : publier, exporter les
 leads, gérer des utilisateurs, accéder aux documents clients (colonne
 « MFA » ci-dessous — EF-501, EF-502).*
 
+> **Décisions de seed (propriétaire, 2026-11-03)** — interprétations retenues
+> là où le tableau est ambigu :
+>
+> - **`tree`** : `editor` a `view/create/edit` (doc 08 §7.3 « editor→admin »),
+>   `admin` a les 6 actions ;
+> - **`pages` / `publications`** : `editor` = `view/create/edit/delete`,
+>   `reviewer` = `view/review`, `admin` = `publish` ;
+> - **`super_admin`** = toutes les permissions du registre ; **`admin`** = ses
+>   9 modules nommés ci-dessus (pas de `media`/`leads`) ;
+> - **`viewer`** (« Lecteur ») : rôle semé **sans aucune permission**
+>   (doc 01 L28 : existence à confirmer) ;
+> - **langue** : modules « langue-scopable » $\rightarrow$ deux permissions par
+>   action (`lang='fr'` et `lang='en'`) ; sinon `lang=NULL` (toutes langues) ;
+> - **MFA obligatoire** : `super_admin`, `admin`, `crm` (doc 09 §2.1) ;
+>   enrôlement TOTP **à l'activation** (secret livré dans l'e-mail
+>   d'invitation), `403 FORBIDDEN` au login tant que non enrôlé.
+
 ## 3. Cartographie des écrans (plan)
 
 ```mermaid

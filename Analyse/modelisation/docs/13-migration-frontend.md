@@ -50,9 +50,10 @@ société et les coordonnées d'un bureau.
 | `phoneMobile` | `+221 77 099 31 83` | `offices.hq.phone_mobile` | idem |
 | `city` | `Dakar` | `entity_translations(office, hq).city` | traduisible (`Dakar` identique FR/EN) |
 
-Les champs absents aujourd'hui — lignes d'adresse, région, horaires, photo,
+Les champs absents aujourd'hui — région, horaires, photo,
 lien de carte — existent dans `offices` mais restent **vides** au seed : ils
-ne sont pas inventés (doc 15 §19). Le JSON-LD `OrganizationJsonLd` est
+ne sont pas inventés (doc 15 §19). Seule exception : les lignes d'adresse,
+semées avec la valeur de `contact.address` (« Dakar, Sénégal », doc 15). Le JSON-LD `OrganizationJsonLd` est
 reconstruit depuis `site_settings.identity` + le bureau siège.
 
 ### 1.2 `SERVICES` → `content_nodes` + `entity_translations`
@@ -203,7 +204,8 @@ Un seul fondateur (`is_founder=true`, index partiel). La section
 | `city` | `… .city` |
 | `contact.addressesComing` | texte de repli de la section `offices_grid` (`empty_text`) |
 | contacts de la colonne de droite (`ORGANIZATION`) | champs du bureau `hq` |
-| — | `address_lines`, `region`, `hours`, `map_url`, `media_id` : **vides** (à fournir) |
+| `contact.address` (doc 15) | `address_lines` = `["Dakar, Sénégal"]` semé au seed |
+| — | `region`, `hours`, `map_url`, `media_id` : **vides** (à fournir) |
 
 ## 2. Ce qui manque aujourd'hui et doit être créé au seed
 

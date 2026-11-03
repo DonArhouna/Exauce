@@ -680,13 +680,18 @@ Les 3 secteurs et les 9 sous-catégories vivent dans `sectors` :
 | created_at / updated_at | TIMESTAMPTZ | NN | — |
 
 **Table `roles`** : `id UUID PK`, `code VARCHAR(30) UQ`, `label VARCHAR(60) NN`.
-Rôles semés : `super_admin`, `admin`, `editor`, `reviewer`, `crm`, `viewer`.
+Rôles semés (code $\rightarrow$ libellé, acteurs page 03 §5 + décision
+`viewer` 2026-11-03) : `super_admin` « Super-admin », `admin` «
+Administrateur », `editor` « Rédacteur », `reviewer` « Relecteur », `crm` «
+Chargé de relation clients », `viewer` « Lecteur ».
 
 **Table `permissions`** : `id UUID PK`, `module VARCHAR(24) NN`
 (registre aligné sur la page 10 : `pages`, `tree`, `publications`, `media`,
 `leads`, `clients`, `users`, `languages`, `offices`, `team`, `settings`,
 `seo`, `audit`, `backup`), `action VARCHAR(12) NN`
-(`view/create/edit/review/publish/delete/export/move/merge/deactivate`),
+(`view/create/edit/review/publish/delete/export/move/merge/deactivate` +
+`status/notes/anonymize/upload/activate/run` — les 6 dernières portées par
+la matrice page 10 §2, lignes `leads`, `clients`, `languages`, `backup`),
 `lang VARCHAR(10)` FK languages NULL = toutes.
 
 **Table `role_permissions`** : pair `(role_id FK, permission_id FK)` PK composite.
@@ -1033,6 +1038,9 @@ Le seed est orchestré par un **script Python CLI dédié et idempotent** (`pyth
     - `/fr/locations` $\rightarrow$ `/fr/contact#implantations`
     - `/en/localisations` $\rightarrow$ `/en/contact#implantations`
 
+16. **`permissions` + `role_permissions`** : registre fermé de la matrice page 10 §2 (14 modules, actions du §2.3). Pour les modules langue-scopables (`pages`, `tree`, `publications`, `offices`, `team`, `settings`, `seo`) : deux permissions par action (`lang='fr'` et `lang='en'`) ; `lang=NULL` pour les autres. **95 permissions, 195 associations** — super_admin : toutes ; admin : ses 9 modules ; editor : pages/tree/publications/media ; reviewer : pages/publications ; crm : leads/clients ; **viewer : aucune** (décisions 2026-11-03, détail page 10 §2).
+17. **Comptes de démo (uniquement `--with-demo`, jamais en `--production` — Q-104)** : `demo-admin`, `demo-editor`, `demo-reviewer`, `demo-crm`, `demo-viewer` (`@exauceac.com`), **sans mot de passe** : activation par invitation signée (MailHog en dev) ; l'invitation porte un secret TOTP pour les rôles à MFA obligatoire (`admin`, `crm`, `super_admin` — page 09 §2.1).
+
 **Test de parité (doit s'exécuter en CI)** :
 
 | Vérification | Valeur attendue |
@@ -1051,7 +1059,9 @@ Le seed est orchestré par un **script Python CLI dédié et idempotent** (`pyth
 | `offices` / dont siège | 1 / 1 |
 | `team_members` / dont fondateur | 1 / 1 |
 | compte fondateur `users` sans mot de passe par défaut (Q-105) | 1 (`must_reset_password=true`) |
-| clés i18n **éditoriales** (doc 15) couvertes par une cible en base | 125 / 125 |
+| `permissions` / `role_permissions` (matrice page 10 §2) | **95 / 195** |
+| comptes de démo back-office (`--with-demo` seulement) | 5 (0 en production) |
+| clés i18n **éditoriales** (doc 15) couvertes par une cible en base | **126 / 126** (127 cibles : `contact.address` ×2) |
 | clés i18n restantes après purge des clés mortes | 175 (FR = EN) |
 | `redirects` au seed (anciennes URLs Localisations - Q-103) | **4** |
 
