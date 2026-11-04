@@ -11,6 +11,7 @@ import ipaddress
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 
+import segno
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select, update
@@ -22,17 +23,21 @@ from app.core.csrf import CSRF_COOKIE, SESSION_COOKIE
 from app.core.db import get_session
 from app.core.errors import ApiError
 from app.core.security import (
+    backup_codes,
     hash_password,
     hash_token,
     lockout_remaining,
     new_csrf_token,
     new_session_token,
+    new_totp_secret,
     password_is_strong,
+    totp_provisioning_uri,
+    verify_backup_code,
     verify_password,
     verify_totp,
 )
 from app.models.auth import LoginAttempt, Session, User
-from app.services.invitations import create_invitation, find_usable_invitation
+from app.services.invitations import MFA_MANDATORY_ROLES, create_invitation, find_usable_invitation
 
 router = APIRouter(prefix="/admin/auth", tags=["admin-auth"])
 
@@ -102,6 +107,11 @@ def _client_ip(request: Request) -> str | None:
     except ValueError:
         return None
     return host
+
+
+def _qr_svg(uri: str) -> str:
+    """QR du provisioning URI (segno, pur Python) — SVG inline affichable par le SPA."""
+    return segno.make(uri).svg_inline(scale=4)
 
 
 async def _record_attempt(db: AsyncSession, email: str, succeeded: bool, request: Request):
@@ -205,20 +215,42 @@ async def login(
 
     assert user is not None  # credentials_ok implique user
     role_codes, permissions = await load_rbac(db, user.id)
-    mandatory = {"super_admin", "admin", "crm"}.intersection(role_codes)
-    if mandatory and not user.mfa_active:
-        # Écart signalé au Backoffice : à ajouter aux réponses de login (PR contrat).
-        raise ApiError(
-            403,
-            "FORBIDDEN",
-            "Ce rôle impose le MFA : activez votre compte via l'invitation "
-            "(secret TOTP fourni par e-mail).",
-        )
+    mandatory = MFA_MANDATORY_ROLES.intersection(role_codes)
 
-    if user.mfa_active:
+    if mandatory and not user.mfa_active:
+        # État dédié (contrat : ajouter `mfa_enrollment_required`) — ouvre le
+        # parcours d'enrôlement : secret, QR, premier code, codes de secours.
+        if payload.totp_code is None:
+            if user.mfa_secret is None:
+                user.mfa_secret = new_totp_secret()
+                await db.commit()
+            uri = totp_provisioning_uri(user.mfa_secret, user.email)
+            return {
+                "status": "mfa_enrollment_required",
+                "mfa_enrollment": {
+                    "totp_secret": user.mfa_secret,
+                    "otpauth_uri": uri,
+                    "qr_svg": _qr_svg(uri),
+                    "backup_codes": backup_codes(user.mfa_secret),
+                },
+            }
+        if not verify_totp(user.mfa_secret or "", payload.totp_code):
+            await _record_attempt(db, email, succeeded=False, request=request)
+            raise ApiError(401, "UNAUTHENTICATED", "Code de vérification invalide.")
+        # Premier code validé : enrôlement achevé, session créée ci-dessous.
+        user.mfa_active = True
+
+    elif user.mfa_active:
         if payload.totp_code is None:
             return {"status": "mfa_required"}
-        if not verify_totp(user.mfa_secret or "", payload.totp_code):
+        secret = user.mfa_secret or ""
+        # 6 chiffres = TOTP ; 8 chiffres = code de secours (perte de l'appareil).
+        valid = (
+            verify_totp(secret, payload.totp_code)
+            if len(payload.totp_code) <= 6
+            else verify_backup_code(secret, payload.totp_code)
+        )
+        if not valid:
             await _record_attempt(db, email, succeeded=False, request=request)
             raise ApiError(401, "UNAUTHENTICATED", "Code de vérification invalide.")
 

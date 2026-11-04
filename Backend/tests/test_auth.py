@@ -1,8 +1,9 @@
 """Tests d'authentification — page 09 / contrat `/admin/auth/*`.
 
 Couvre : succès, échec anti-énumération, verrouillage (429), MFA TOTP
-(`mfa_required`, code valide/invalid), rôle obligatoire non enrôlé (403),
-`/auth/me` avec permissions, invitations (expirée / réutilisée / code TOTP),
+(`mfa_required`, `mfa_enrollment_required` avec secret/QR/codes de secours,
+code valide/invalid, code de secours), `/auth/me` avec permissions,
+invitations (expirée / réutilisée / code TOTP),
 réinitialisation avec révocation des sessions, changement de mot de passe.
 
 Les comptes de test sont préparés par la fixture `auth_env` (conftest) sur la
@@ -19,6 +20,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.security import backup_codes
 from app.models.auth import Invitation, Permission, RolePermission, User, UserRole
 from app.services.invitations import create_invitation
 
@@ -134,13 +136,78 @@ async def test_mfa_required_then_valid_code(client: TestClient, auth_env) -> Non
     assert good.json()["user"]["mfa_enabled"] is True
 
 
-async def test_mandatory_mfa_not_enrolled_is_403(client: TestClient, auth_env) -> None:  # noqa: ANN001
-    response = client.post(
+async def test_mandatory_mfa_enrollment_flow(client: TestClient, auth_env) -> None:  # noqa: ANN001
+    """Rôle obligatoire non enrôlé : état dédié, puis enrôlement au 1er code."""
+    secret = None
+
+    first = client.post(
         "/api/v1/admin/auth/login", json={"email": ADMIN, "password": AUTH_PASSWORD}
     )
-    assert response.status_code == 403
-    assert _problem(response)["code"] == "FORBIDDEN"
-    assert _no_session_cookie(client)
+    assert first.status_code == 200
+    body = first.json()
+    assert body["status"] == "mfa_enrollment_required"
+    enrollment = body["mfa_enrollment"]
+    secret = enrollment["totp_secret"]
+    assert secret
+    assert enrollment["otpauth_uri"].startswith("otpauth://totp/")
+    assert "<svg" in enrollment["qr_svg"]
+    assert len(enrollment["backup_codes"]) == 10
+    assert all(len(code.replace("-", "")) == 8 for code in enrollment["backup_codes"])
+    assert "set-cookie" not in first.headers  # pas de session avant le code
+
+    wrong = client.post(
+        "/api/v1/admin/auth/login",
+        json={"email": ADMIN, "password": AUTH_PASSWORD, "totp_code": _WRONG_TOTP},
+    )
+    assert wrong.status_code == 401
+    assert _problem(wrong)["code"] == "UNAUTHENTICATED"
+
+    ok = client.post(
+        "/api/v1/admin/auth/login",
+        json={
+            "email": ADMIN,
+            "password": AUTH_PASSWORD,
+            "totp_code": pyotp.TOTP(secret).now(),
+        },
+    )
+    assert ok.status_code == 200
+    assert ok.json()["status"] == "authenticated"
+    assert ok.json()["user"]["mfa_enabled"] is True
+    assert client.cookies.get("session_id") is not None
+
+    # Enrôlé : le login suivant réclame le code (état mfa_required).
+    client.cookies.clear()
+    enrolled = client.post(
+        "/api/v1/admin/auth/login", json={"email": ADMIN, "password": AUTH_PASSWORD}
+    )
+    assert enrolled.status_code == 200
+    assert enrolled.json() == {"status": "mfa_required"}
+
+
+async def test_login_accepts_backup_code(client: TestClient, auth_env) -> None:  # noqa: ANN001
+    """Code de secours (8 chiffres) : admission après enrôlement TOTP."""
+    session: AsyncSession = auth_env["session"]
+    user = await _user(session, MFA_EMAIL)
+
+    enrolled = client.post(
+        "/api/v1/admin/auth/login",
+        json={
+            "email": MFA_EMAIL,
+            "password": AUTH_PASSWORD,
+            "totp_code": pyotp.TOTP(TOTP_SECRET).now(),
+        },
+    )
+    assert enrolled.status_code == 200
+    assert enrolled.json()["status"] == "authenticated"
+
+    backup = backup_codes(user.mfa_secret or "")[0]
+    client.cookies.clear()
+    by_backup = client.post(
+        "/api/v1/admin/auth/login",
+        json={"email": MFA_EMAIL, "password": AUTH_PASSWORD, "totp_code": backup},
+    )
+    assert by_backup.status_code == 200
+    assert by_backup.json()["status"] == "authenticated"
 
 
 # --------------------------------------------------------------- /auth/me ----

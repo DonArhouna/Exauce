@@ -8,6 +8,7 @@ les parcours applicatifs vivent dans `app/api/admin_auth.py` et
 from __future__ import annotations
 
 import hashlib
+import hmac
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -130,6 +131,40 @@ def verify_totp(secret: str, code: str | None) -> bool:
         return pyotp.TOTP(secret).verify(code.replace(" ", ""), valid_window=1)
     except Exception:  # noqa: BLE001 — code mal formé => refus, jamais de 500
         return False
+
+
+# --------------------------------------------------------- codes de secours ---
+
+BACKUP_CODE_COUNT = 10
+BACKUP_CODE_DIGITS = 8
+
+
+def backup_codes(secret: str) -> list[str]:
+    """10 codes de secours dérivés du secret TOTP (aucune colonne en base).
+
+    Dérivation déterministe `HMAC-SHA256(secret, index)` → 8 chiffres, affichés
+    `1234-5678`. Ils tournent à chaque ré-enrôlement (nouveau secret) ; usage
+    unique **non** marqué en base (migration gelée) — limitation tracée dans la
+    note de contrat.
+    """
+    return [_backup_code_at(secret, index) for index in range(BACKUP_CODE_COUNT)]
+
+
+def _backup_code_at(secret: str, index: int) -> str:
+    digest = hmac.new(
+        secret.encode("utf-8"), f"exauce-mfa-backup:{index}".encode(), hashlib.sha256
+    ).digest()[:5]
+    value = int.from_bytes(digest, "big") % 10**BACKUP_CODE_DIGITS
+    return f"{value:0{BACKUP_CODE_DIGITS}d}"
+
+
+def verify_backup_code(secret: str, candidate: str) -> bool:
+    """Compare un code de secours (8 chiffres, tirets/spaces acceptés) en constant time."""
+    normalized = "".join(ch for ch in candidate if ch.isdigit())
+    if len(normalized) != BACKUP_CODE_DIGITS:
+        return False
+    matches = [hmac.compare_digest(normalized, code) for code in backup_codes(secret)]
+    return any(matches)
 
 
 # --------------------------------------------------------------- verrouillage --
