@@ -142,3 +142,56 @@ Contenu, dans un même commit :
 `/admin/languages`, `/admin/content/{type}/{id}` (détail GET),
 `/admin/clients`, `/admin/backup`, `/admin/content/{id}/submit-review` —
 à ajouter dans une PR ultérieure, pas dans la PR unique.
+
+## 6. Login à trois états — détail à intégrer à la PR unique
+
+Le `403 FORBIDDEN` retourné jusqu'ici pour un compte MFA obligatoire non
+enrôlé est **remplacé par un état dédié** (décision 2026-11-03). `POST
+/admin/auth/login` répond `200` avec un discriminateur `status` à trois
+valeurs :
+
+| `status` | Signification | Corps |
+|---|---|---|
+| `authenticated` | session créée, cookies posés | `user` + `permissions` |
+| `mfa_required` | enrôlé, code TOTP réclamé | objet vide |
+| `mfa_enrollment_required` | MFA obligatoire (`super_admin`, `admin`, `crm`) mais non enrôlé | objet `mfa_enrollment` |
+
+`mfa_enrollment` (renvoyé dès le premier login sans code, et régénéré à
+chaque appel tant que le code n'est pas validé) :
+
+```json
+{
+  "totp_secret": "JBSWY3DPEHPK3PXP",
+  "otpauth_uri": "otpauth://totp/ExAUCE:admin@exauceac.com?secret=…",
+  "qr_svg": "<svg …>…</svg>",
+  "backup_codes": ["48192037", "…"]
+}
+```
+
+- **QR** : généré côté backend (segno, SVG inline) — le SPA l'affiche tel
+  quel, aucune librairie côté client ;
+- **premier code** : un `totp_code` (6 chiffres) valide sur ce login achève
+  l'enrôlement (`mfa_active=true`), la session est créée et la réponse passe
+  en `authenticated` ; un code invalide → `401 UNAUTHENTICATED` (le compte
+  n'est pas encore enrôlé, aucun lockout MFA) ;
+- **codes de secours** : 10 codes de 8 chiffres dérivés du secret
+  (`HMAC-SHA256`, zéro migration), envoyés dans `mfa_enrollment` et dans le
+  mail d'invitation ; au login post-enrôlement, `totp_code` de **8 chiffres**
+  est vérifié comme code de secours (perte d'appareil). *Limitation : l'usage
+  unique n'est pas marqué en base (migration gelée) — colonne dédiée proposée
+  plus tard ; les codes tournent à chaque ré-enrôlement.*
+- le champ `totp_code` du schéma `LoginRequest` doit avoir `maxLength: 8`
+  (codes de secours sans séparateur) — `minLength: 6` reste acceptable.
+
+## 7. Points tracés hors PR unique
+
+- **Rate-limit `password-forgot`** : absent aujourd'hui (verrou
+  exponentiel présent sur le login seul) — **bloquant avant mise en ligne**,
+  à ajouter dans le contrat (`429`) et à implémenter avant go-live ;
+- **`is_demo`** : colonne `publications.is_demo` différée à la migration 0002
+  (avec les colonnes média, en attente de validation de la note `a06cad0`) ;
+  le seed distingue déjà les comptes démo par `source_key` ;
+- **activation des comptes démo (dev)** : `python -m app.cli.seed
+  --with-demo` puis `python -m app.cli.invite --demo` — 5 invitations vers
+  MailHog (`localhost:8025`), **refusé en production** (code de sortie 2,
+  Q-104).
