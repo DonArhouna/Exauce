@@ -17,6 +17,18 @@
 | Cohérence | mêmes conventions partout : JSON, ISO-8601 UTC (`Z`), UUID, codes de langue BCP-47 |
 | Sécurité | cf. page 09 — cookies httpOnly + CSRF, permissions par (module, action, langue) |
 
+Noms **figés** (contrat machine `openapi.yaml`, à ne pas renommer) :
+
+| Canal | Nom | Notes |
+|---|---|---|
+| Cookie session | `session_id` | HttpOnly, Secure (prod), SameSite=Lax |
+| Cookie CSRF | `csrf_token` | **non-HttpOnly**, même Domain / SameSite / Secure |
+| En-tête CSRF | `X-CSRF-Token` | obligatoire sur mutations `/admin/**` hors login, forgot, reset, activate |
+
+Émission du CSRF : login `authenticated`, activation, et `GET /admin/auth/me`.
+Codes d'écart : `CSRF_TOKEN_MISSING`, `CSRF_TOKEN_MISMATCH` (403).
+Longueur minimale des mots de passe : **14** (page 09). Création d'utilisateur : mot de passe optionnel (invitation à la place, Q-105).
+
 ## 2. Pagination, filtre, tri, champs sparse
 
 - **Pagination** : **curseur** (`?cursor=<opaque>&limit=`, réponse
@@ -95,9 +107,12 @@
 | `UNKNOWN_LANG` | 404 | code de langue inconnu/inactif |
 | `CONTENT_NOT_FOUND` | 404 | slug/id inconnu ou draft non exposé |
 | `REDIRECTED` | 301/302 | slug ancien → cible (EF-604) |
-| `UNAUTHENTICATED` | 401 | session absente/expirée |
-| `MFA_REQUIRED` | 401 | première étape réussie, MFA attendu |
+| `UNAUTHENTICATED` | 401 | identifiants invalides ou session absente |
+| `SESSION_EXPIRED` | 401 | session idle expirée (30 min) ou vie max (8 h) |
+| `MFA_REQUIRED` | 401 | code catalogue ; login admin : `200` + `status=mfa_required` |
 | `FORBIDDEN` | 403 | permission (module/action/langue) insuffisante |
+| `CSRF_TOKEN_MISSING` | 403 | mutation `/admin/**` sans en-tête `X-CSRF-Token` |
+| `CSRF_TOKEN_MISMATCH` | 403 | `X-CSRF-Token` ≠ cookie `csrf_token` |
 | `NOT_PERMITTED_LANG` | 403 | action interdite sur cette langue (RBAC L) |
 | `INVALID_TRANSITION` | 409 | workflow éditorial, transition illégale |
 | `CONFLICT` | 409 | verrou optimiste (version d'entité) |
@@ -105,6 +120,8 @@
 | `IDEMPOTENT_REPLAY_CONFLICT` | 409 | même clé, autre payload |
 | `UPLOAD_REJECTED` | 415 | type/taille/contenu refusé |
 | `IDOR_BLOCKED` | 404/403 | doc client non accessible (anti-IDOR, journalisé) |
+| `TOKEN_EXPIRED` | 410 | invitation ou reset déjà utilisé / périmé |
+| `NOT_IMPLEMENTED` | 501 | réservé ; la recherche admin v1 renvoie `200` `status=not_implemented` |
 | `SERVER_ERROR` | 500 | inattendu (correlation_id obligatoire) |
 
 ## 7. Contrat par ressource
@@ -145,8 +162,20 @@ Légende : **A** anonyme · **C** client authentifié · **B** back-office
 
 | Endpoint | Description | Rôle min. | EF / UC | Tables |
 |---|---|---|---|---|
-| `POST /api/v1/admin/auth/login` (+ MFA) | connexion | — | EF-501 / UC-043 | users, sessions |
-| `GET/POST/PATCH /admin/users` · `…/{id}/deactivate` | utilisateurs | admin | EF-513 / UC-043 | users, roles, sessions |
+| `POST /api/v1/admin/auth/login` (+ MFA) | connexion ; `200` `authenticated` \| `mfa_required` | — | EF-501 / UC-043 | users, sessions |
+| `POST /admin/auth/logout` | révocation session | session | EF-501 | sessions |
+| `GET /admin/auth/me` | utilisateur + permissions + `csrf_token` | session | EF-502 | users, roles, permissions |
+| `POST /admin/auth/password-forgot` | demande reset (toujours 202) | — | EF-501 | users, outbox_emails |
+| `POST /admin/auth/password-reset` | nouveau mot de passe (jeton signé) | — | EF-501 | users, sessions |
+| `POST /admin/auth/password-change` | changement (session, `must_reset_password`) | session | EF-501 | users |
+| `POST /admin/auth/activate` | activation invitation (Q-105) | — | EF-513 | users |
+| `GET /admin/reports/dashboard` | agrégats tableau de bord | view | EF-512 / UC-04x | agrégats |
+| `GET/POST /admin/publication-jobs` | historique / déclenchement SSG | view / publish | EF-506 | publication_jobs |
+| `GET /admin/publication-jobs/current` | état navbar (à jour / pending / building / failed) | view | EF-506 | publication_jobs |
+| `GET /admin/publication-status` | SSE `publication.job` + `heartbeat` | view | page 17 | publication_jobs |
+| `GET /admin/notifications` `POST …/{id}/read` | notifs leads | crm | EF-304 | leads |
+| `GET /admin/search` | **à venir** — stub `status=not_implemented` | session | — | — |
+| `GET/POST/PATCH /admin/users` · `…/{id}/deactivate` | utilisateurs (password optionnel → invitation) | admin | EF-513 / UC-043 | users, roles, sessions |
 | `GET/POST /admin/roles` ` /permissions` | rôles et permissions | super_admin | EF-502 / UC-043 | roles, permissions |
 | `GET/POST/PATCH /admin/languages` | langues (activate…) | super_admin | EF-602 / US-009 | languages |
 | `GET /admin/content-tree` `POST /admin/content-tree` | lecture/écriture arbre | editor→admin | EF-508 / UC-041 | content_nodes |

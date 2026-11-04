@@ -1,0 +1,11 @@
+extends:
+  - spectral:oas
+
+rules:
+  info-contact: true
+  operation-operationId: true
+  operation-success-response: true
+  oas3-unused-component: warn
+  # Descriptions longues optionnelles : le fichier historique n'en a pas partout.
+  operation-description: off
+  info-license: true

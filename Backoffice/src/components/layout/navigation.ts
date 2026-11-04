@@ -43,6 +43,10 @@ export interface NavGroup {
  * Mapping écran → permission. Le contrat OpenAPI ne déclare pas encore
  * `x-permission` sur tous les endpoints : ce fichier est la source UI à
  * aligner avec `GET /admin/permissions` (voir README).
+ *
+ * Le tableau de bord est accessible à tout utilisateur authentifié :
+ * aucune permission n'est requise pour l'afficher. Chaque widget conserve
+ * sa propre garde RBAC.
  */
 export const NAV_GROUPS: NavGroup[] = [
   {
@@ -54,7 +58,6 @@ export const NAV_GROUPS: NavGroup[] = [
         path: '/tableau-de-bord',
         labelKey: 'nav.dashboard',
         icon: LayoutDashboard,
-        permission: { module: 'audit', action: 'view' },
       },
     ],
   },
