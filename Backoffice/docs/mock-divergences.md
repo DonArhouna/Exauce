@@ -5,7 +5,7 @@ Ce fichier liste les points où le mock du Backoffice s'écarte volontairement d
 soit un manque de contrat à combler, soit une décision du propriétaire que le
 Backend n'a pas encore intégrée.
 
-Dernière mise à jour : écran « Pages et sections ».
+Dernière mise à jour : écrans « Pages et sections » et « Demandes de contact ».
 
 ## 1. Contrat OpenAPI — manques à combler
 
@@ -59,3 +59,21 @@ Source : `Backend/app/seed/payload.py` et `Backend/app/seed/data/section_types.j
   contact 2, espace client 1, mentions 3 ; `sectors` et `not_found` sans bloc.
 - `legal_notice` en `draft` avec `banners_pending: true`.
 - 21 types de sections.
+
+## 5. Écran « Demandes de contact »
+
+Le mock couvre les cinq endpoints du contrat (`GET /admin/leads`,
+`GET /admin/leads/{id}`, `PATCH .../status`, `POST .../notes`,
+`GET /admin/leads/export.csv`) mais avec des écarts à combler :
+
+| # | Écart | Ce que fait le mock | Proposition de contrat |
+|---|---|---|---|
+| 1 | La liste renvoie `LeadDetail[]` et ne filtre que par `status` | résumés (`AdminLeadSummary`), filtres `search`, `from`, `to`, et compteurs `counts` par statut | schéma `LeadSummary` pour `items`, paramètres de recherche et de période, `counts` |
+| 2 | Aucun verrou optimiste sur le statut | `LeadStatusUpdate` porte `revision` ; une valeur périmée renvoie `409 CONFLICT` | `revision` dans `LeadStatusUpdate` (comme les pages) |
+| 3 | Corps de la note nommé `note` | le mock attend `body` | aligner le nom (`note` ou `body`) |
+| 4 | `200`/`201` sans corps | les deux mutations renvoient la demande mise à jour (`AdminLeadDetail`) | renvoyer la demande, pour éviter un second appel |
+| 5 | Aucune règle sur les demandes anonymisées | toute écriture sur un statut `anonymized` renvoie `409 CONFLICT` | documenter le refus (statut terminal) |
+| 6 | Export sans paramètres | l'export CSV reprend les filtres de la liste | accepter les mêmes paramètres que `GET /admin/leads` |
+
+Ces écarts n'empêchent pas la démonstration : le mock est l'autorité locale et
+l'écran n'appelle que ces cinq routes.

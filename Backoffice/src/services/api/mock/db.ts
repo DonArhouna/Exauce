@@ -7,6 +7,7 @@ import type {
   PublicationSiteStatus,
 } from '../types';
 import { resetPages } from './pages';
+import { resetLeads } from './leads';
 
 export interface MockAccount {
   user: AdminSessionUser;
@@ -587,4 +588,5 @@ export function resetMockBackend(): void {
   media = initialMedia();
   mediaUsages = initialMediaUsages();
   resetPages();
+  resetLeads();
 }

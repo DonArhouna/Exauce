@@ -3,6 +3,8 @@ import type {
   AdminLoginRequest,
   AdminPasswordChangeRequest,
   AdminPasswordResetRequest,
+  LeadListQuery,
+  LeadStatus,
 } from '../types';
 import { isAcceptedMime, MAX_UPLOAD_BYTES } from '@/lib/media';
 import {
@@ -41,6 +43,14 @@ import {
   type WorkflowAction,
 } from './pages';
 import { listSectionTypes } from './sectionTypes';
+import {
+  addLeadNote,
+  exportLeadsCsv,
+  LEAD_STATUSES,
+  leadDetail,
+  listLeads,
+  updateLeadStatus,
+} from './leads';
 
 export interface MockRequest {
   method: string;
@@ -349,6 +359,104 @@ function readNotification(request: MockRequest, id: string): MockResponse {
   return markMockNotificationRead(id) ? { status: 204 } : problem(404, 'CONTENT_NOT_FOUND', 'Notification inconnue');
 }
 
+// ── Demandes de contact (mock) ─────────────────────────────────
+function leadQuery(request: MockRequest): LeadListQuery {
+  const text = (key: string) => {
+    const value = request.query[key];
+    return typeof value === 'string' && value.length > 0 ? value : undefined;
+  };
+  const limit = Number(request.query.limit ?? 20);
+  const offset = Number(request.query.offset ?? 0);
+  const status = text('status');
+  return {
+    status: (status as LeadStatus | 'all' | undefined) ?? 'all',
+    search: text('search'),
+    sector: text('sector'),
+    from: text('from'),
+    to: text('to'),
+    limit: Number.isFinite(limit) && limit > 0 ? limit : 20,
+    offset: Number.isFinite(offset) && offset > 0 ? offset : 0,
+  };
+}
+
+function leadsGuard(action: string): MockResponse | null {
+  const current = currentAccount();
+  if (!current) return problem(401, 'SESSION_EXPIRED', 'Session expirée');
+  if (!can(current.account, 'leads', action)) {
+    return problem(403, 'FORBIDDEN', 'Permission insuffisante');
+  }
+  return null;
+}
+
+function leadsList(request: MockRequest): MockResponse {
+  const failure = leadsGuard('view');
+  if (failure) return failure;
+  return { status: 200, body: listLeads(leadQuery(request)) };
+}
+
+function leadsDetail(id: string): MockResponse {
+  const failure = leadsGuard('view');
+  if (failure) return failure;
+  const detail = leadDetail(id);
+  return detail
+    ? { status: 200, body: detail }
+    : problem(404, 'CONTENT_NOT_FOUND', 'Demande inconnue');
+}
+
+function leadMutationFailure(code: 'not_found' | 'conflict' | 'immutable'): MockResponse {
+  if (code === 'not_found') return problem(404, 'CONTENT_NOT_FOUND', 'Demande inconnue');
+  if (code === 'conflict') {
+    return problem(409, 'CONFLICT', 'La demande a été modifiée entre-temps');
+  }
+  return problem(409, 'CONFLICT', 'Une demande anonymisée n’est plus modifiable');
+}
+
+function leadsStatus(request: MockRequest, id: string): MockResponse {
+  const failure = requireSessionAndCsrf(request) ?? leadsGuard('status');
+  if (failure) return failure;
+  const body = (request.body ?? {}) as { status?: string; revision?: number };
+  if (!body.status || !LEAD_STATUSES.includes(body.status as LeadStatus)) {
+    return problem(422, 'VALIDATION_ERROR', 'Statut inconnu');
+  }
+  if (typeof body.revision !== 'number') {
+    return problem(422, 'VALIDATION_ERROR', 'Révision manquante');
+  }
+  const result = updateLeadStatus(id, {
+    status: body.status as LeadStatus,
+    revision: body.revision,
+  });
+  if (!result.ok) return leadMutationFailure(result.code);
+  return { status: 200, body: result.value };
+}
+
+function leadsNote(request: MockRequest, id: string): MockResponse {
+  const failure = requireSessionAndCsrf(request) ?? leadsGuard('notes');
+  if (failure) return failure;
+  const current = currentAccount();
+  if (!current) return problem(401, 'SESSION_EXPIRED', 'Session expirée');
+  const body = (request.body ?? {}) as { body?: string };
+  const text = (body.body ?? '').trim();
+  if (text.length === 0) {
+    return problem(422, 'VALIDATION_ERROR', 'Le commentaire est obligatoire');
+  }
+  const result = addLeadNote(id, {
+    body: text,
+    author_name: current.account.user.display_name,
+  });
+  if (!result.ok) return leadMutationFailure(result.code);
+  return { status: 201, body: result.value };
+}
+
+function leadsExport(request: MockRequest): MockResponse {
+  const failure = leadsGuard('export');
+  if (failure) return failure;
+  return {
+    status: 200,
+    body: exportLeadsCsv(leadQuery(request)),
+    headers: { 'Content-Type': 'text/csv; charset=utf-8' },
+  };
+}
+
 // ── Médiathèque (démo uniquement) ──────────────────────────────
 function mediaList(request: MockRequest): MockResponse {
   const current = currentAccount();
@@ -614,6 +722,19 @@ export async function mockRequest(request: MockRequest): Promise<MockResponse> {
   if (sectionId && request.method === 'PATCH') return sectionPatch(request, sectionId[1]);
   if (sectionId && request.method === 'DELETE') return sectionDelete(request, sectionId[1]);
 
+  if (request.method === 'GET' && request.path === '/admin/leads/export.csv') {
+    return leadsExport(request);
+  }
+
+  const leadStatus = request.path.match(/^\/admin\/leads\/([^/]+)\/status$/);
+  if (request.method === 'PATCH' && leadStatus) return leadsStatus(request, leadStatus[1]);
+
+  const leadNotes = request.path.match(/^\/admin\/leads\/([^/]+)\/notes$/);
+  if (request.method === 'POST' && leadNotes) return leadsNote(request, leadNotes[1]);
+
+  const leadId = request.path.match(/^\/admin\/leads\/([^/]+)$/);
+  if (request.method === 'GET' && leadId) return leadsDetail(leadId[1]);
+
   const mediaId = request.path.match(new RegExp('^/admin/media/([^/]+)$'));
   if (mediaId && request.method === 'GET') return mediaDetail(mediaId[1]);
   if (mediaId && request.method === 'DELETE') return removeMedia(request, mediaId[1]);
@@ -644,6 +765,10 @@ export async function mockRequest(request: MockRequest): Promise<MockResponse> {
       return publicationJobs(request);
     case 'GET /admin/notifications':
       return notifications(request);
+    case 'GET /admin/leads':
+      return leadsList(request);
+    case 'GET /admin/leads/export.csv':
+      return leadsExport(request);
     case 'GET /admin/media':
       return mediaList(request);
     case 'POST /admin/media/upload':

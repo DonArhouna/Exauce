@@ -114,3 +114,55 @@ export interface ProblemFieldError {
   field: string;
   message: string;
 }
+
+// ── Demandes de contact ───────────────────────────────────────
+/** Statuts d'une demande (contrat `leads.status`, doc 03). */
+export type LeadStatus = 'new' | 'in_progress' | 'waiting' | 'done' | 'rejected' | 'anonymized';
+
+/** Note interne attachée à une demande. */
+export interface LeadNote {
+  id: string;
+  author_name: string;
+  body: string;
+  created_at: string;
+}
+
+/** Ligne de liste : sans message ni notes, pour rester légère. */
+export interface AdminLeadSummary {
+  id: string;
+  reference: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  company: string | null;
+  sector: string | null;
+  subject: string;
+  source: string;
+  status: LeadStatus;
+  assigned_to_name: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminLeadDetail extends AdminLeadSummary {
+  message: string;
+  revision: number;
+  notes: LeadNote[];
+}
+
+export interface LeadListQuery {
+  status?: LeadStatus | 'all';
+  search?: string;
+  sector?: string;
+  from?: string;
+  to?: string;
+  limit: number;
+  offset: number;
+}
+
+/** Liste filtrée et compteurs par statut (onglets de l'écran). */
+export interface LeadList {
+  items: AdminLeadSummary[];
+  total: number;
+  counts: Record<LeadStatus, number>;
+}
