@@ -1,4 +1,15 @@
-import type { InterventionType, Location, Partner, Publication, PublicationCategory, Sector, ServiceFamily } from '@/types/content';
+import type {
+  InterventionType,
+  LocalizedText,
+  Location,
+  Partner,
+  Publication,
+  PublicationCategory,
+  PublicationImageMedia,
+  PublicationVideoMedia,
+  Sector,
+  ServiceFamily,
+} from '@/types/content';
 
 /**
  * ORGANISATION — informations stables du cabinet (docx, niveau 1).
@@ -558,7 +569,56 @@ export const PUBLICATION_CATEGORIES: readonly PublicationCategory[] = [
   'legal',
 ] as const;
 
-/** PUBLICATIONS — placeholders mockés clairement marqués « Exemple » (branchement backend FastAPI prévu). */
+/**
+ * TODO API: fabriques de médias de démonstration.
+ * Elles produisent exactement la forme attendue du futur schéma média
+ * (`type`, `source`, `src`, `alt`, `caption`, `poster`, `durationMs`).
+ * À supprimer lors du branchement sur `GET /publications`.
+ */
+function demoImage(
+  id: string,
+  file: string,
+  alt: LocalizedText,
+  caption?: LocalizedText,
+): PublicationImageMedia {
+  return { id, type: 'image', source: 'upload', src: `/publications/${file}`, alt, caption };
+}
+
+function demoVideo(
+  id: string,
+  file: string,
+  poster: string,
+  durationMs: number,
+  alt: LocalizedText,
+  caption?: LocalizedText,
+): PublicationVideoMedia {
+  return {
+    id,
+    type: 'video',
+    source: 'upload',
+    src: `/publications/${file}`,
+    poster: `/publications/${poster}`,
+    durationMs,
+    alt,
+    caption,
+  };
+}
+
+/**
+ * PUBLICATIONS — placeholders mockés clairement marqués « Exemple »
+ * (branchement backend FastAPI prévu).
+ *
+ * Jeu de démonstration imposé par le brief (6 publications) :
+ *   1. sans média
+ *   2. 1 image
+ *   3. 5 images
+ *   4. 1 vidéo
+ *   5. images + vidéo
+ *   6. 12 médias
+ *
+ * `cover` et `mediaCount` ne sont jamais stockés : voir `lib/media.ts`.
+ * TODO API: remplacer par GET /publications.
+ */
 export const PUBLICATIONS_MOCK: Publication[] = [
   {
     id: 'pub-1',
@@ -572,6 +632,8 @@ export const PUBLICATIONS_MOCK: Publication[] = [
       fr: 'Exemple de publication (contenu à venir). La structuration, l’organisation et le fonctionnement des assemblées des associés.',
       en: 'Sample publication (content to come). Structuring, organizing and operating shareholders’ meetings.',
     },
+    // Aucun média : la galerie ne doit pas être rendue (cas limite du brief).
+    media: [],
   },
   {
     id: 'pub-2',
@@ -584,6 +646,21 @@ export const PUBLICATIONS_MOCK: Publication[] = [
       fr: 'Exemple de publication (contenu à venir). Élaboration, refonte ou mise à jour de cartographies des risques.',
       en: 'Sample publication (content to come). Development, redesign or update of risk mappings.',
     },
+    // 1 image.
+    media: [
+      demoImage(
+        'pub-2-media-1',
+        'pub-img-2.svg',
+        {
+          fr: 'Visuel de substitution — cartographie des risques.',
+          en: 'Substitute visual — risk mapping.',
+        },
+        {
+          fr: 'Représentation schématique d’une cartographie des risques.',
+          en: 'Schematic representation of a risk map.',
+        },
+      ),
+    ],
   },
   {
     id: 'pub-3',
@@ -596,6 +673,164 @@ export const PUBLICATIONS_MOCK: Publication[] = [
       fr: 'Exemple de publication (contenu à venir). Mise en place, révision ou externalisation de la fonction de reporting financier.',
       en: 'Sample publication (content to come). Setting up, reviewing or outsourcing the financial reporting function.',
     },
+    // 5 images.
+    media: [
+      demoImage('pub-3-media-1', 'pub-img-1.svg', {
+        fr: 'Visuel de substitution — gouvernance et structuration.',
+        en: 'Substitute visual — governance and structuring.',
+      }),
+      demoImage('pub-3-media-2', 'pub-img-3.svg', {
+        fr: 'Visuel de substitution — reporting financier.',
+        en: 'Substitute visual — financial reporting.',
+      }),
+      demoImage('pub-3-media-3', 'pub-img-5.svg', {
+        fr: 'Visuel de substitution — systèmes d’information.',
+        en: 'Substitute visual — information systems.',
+      }),
+      demoImage('pub-3-media-4', 'pub-img-7.svg', {
+        fr: 'Visuel de substitution — audit interne et contrôle.',
+        en: 'Substitute visual — internal audit and control.',
+      }),
+      demoImage('pub-3-media-5', 'pub-img-8.svg', {
+        fr: 'Visuel de substitution — organisation et stratégie.',
+        en: 'Substitute visual — organization and strategy.',
+      }),
+    ],
+  },
+  {
+    id: 'pub-4',
+    slug: { fr: 'exemple-ressources-humaines-video', en: 'sample-human-resources-video' },
+    title: { fr: 'Exemple — Ressources humaines : entretien de cadrage (vidéo)', en: 'Sample — Human resources: scoping interview (video)' },
+    category: 'hr',
+    date: '2025-04-15',
+    status: 'draft',
+    excerpt: {
+      fr: 'Exemple de publication (contenu à venir). Entretien de cadrage filmé pour illustrer l’approche ressources humaines.',
+      en: 'Sample publication (content to come). Filmed scoping interview illustrating the human resources approach.',
+    },
+    // 1 vidéo.
+    media: [
+      demoVideo(
+        'pub-4-media-1',
+        'pub-video-1.mp4',
+        'pub-poster-1.svg',
+        5055,
+        {
+          fr: 'Vidéo de substitution — entretien de cadrage en ressources humaines.',
+          en: 'Substitute video — human resources scoping interview.',
+        },
+        {
+          fr: 'Séquence de démonstration (fichier libre de droits).',
+          en: 'Demonstration clip (royalty-free file).',
+        },
+      ),
+    ],
+  },
+  {
+    id: 'pub-5',
+    slug: { fr: 'exemple-systemes-information-galerie', en: 'sample-information-systems-gallery' },
+    title: { fr: 'Exemple — Systèmes d’information : galerie commentée', en: 'Sample — Information systems: annotated gallery' },
+    category: 'it',
+    date: '2025-05-15',
+    status: 'draft',
+    excerpt: {
+      fr: 'Exemple de publication (contenu à venir). Galerie mixte images et vidéo pour illustrer un projet systèmes d’information.',
+      en: 'Sample publication (content to come). Mixed image and video gallery illustrating an information systems project.',
+    },
+    // Images + vidéo.
+    coverId: 'pub-5-media-1',
+    media: [
+      demoImage('pub-5-media-1', 'pub-img-2.svg', {
+        fr: 'Visuel de substitution — analyse des risques du projet.',
+        en: 'Substitute visual — project risk analysis.',
+      }),
+      demoImage('pub-5-media-2', 'pub-img-6.svg', {
+        fr: 'Visuel de substitution — cadre juridique et fiscal.',
+        en: 'Substitute visual — legal and tax framework.',
+      }),
+      demoVideo(
+        'pub-5-media-3',
+        'pub-video-1.mp4',
+        'pub-poster-2.svg',
+        5055,
+        {
+          fr: 'Vidéo de substitution — démonstration de la galerie mixte.',
+          en: 'Substitute video — mixed gallery demonstration.',
+        },
+        {
+          fr: 'Séquence de démonstration (fichier libre de droits).',
+          en: 'Demonstration clip (royalty-free file).',
+        },
+      ),
+      demoImage('pub-5-media-4', 'pub-img-8.svg', {
+        fr: 'Visuel de substitution — organisation et stratégie.',
+        en: 'Substitute visual — organization and strategy.',
+      }),
+    ],
+  },
+  {
+    id: 'pub-6',
+    slug: { fr: 'exemple-juridique-fiscal-galerie', en: 'sample-legal-tax-gallery' },
+    title: { fr: 'Exemple — Juridique et fiscal : douze repères', en: 'Sample — Legal and tax: twelve markers' },
+    category: 'legal',
+    date: '2025-06-15',
+    status: 'draft',
+    excerpt: {
+      fr: 'Exemple de publication (contenu à venir). Douze visuels de repérage pour parcourir les sujets juridiques et fiscaux.',
+      en: 'Sample publication (content to come). Twelve reference visuals covering legal and tax topics.',
+    },
+    // 12 médias — couverture désignée explicitement (3e image).
+    coverId: 'pub-6-media-3',
+    media: [
+      demoImage('pub-6-media-1', 'pub-img-1.svg', {
+        fr: 'Visuel de substitution — gouvernance et structuration.',
+        en: 'Substitute visual — governance and structuring.',
+      }),
+      demoImage('pub-6-media-2', 'pub-img-2.svg', {
+        fr: 'Visuel de substitution — cartographie des risques.',
+        en: 'Substitute visual — risk mapping.',
+      }),
+      demoImage('pub-6-media-3', 'pub-img-3.svg', {
+        fr: 'Visuel de substitution — reporting financier.',
+        en: 'Substitute visual — financial reporting.',
+      }),
+      demoImage('pub-6-media-4', 'pub-img-4.svg', {
+        fr: 'Visuel de substitution — ressources humaines.',
+        en: 'Substitute visual — human resources.',
+      }),
+      demoImage('pub-6-media-5', 'pub-img-5.svg', {
+        fr: 'Visuel de substitution — systèmes d’information.',
+        en: 'Substitute visual — information systems.',
+      }),
+      demoImage('pub-6-media-6', 'pub-img-6.svg', {
+        fr: 'Visuel de substitution — juridique et fiscal.',
+        en: 'Substitute visual — legal and tax.',
+      }),
+      demoImage('pub-6-media-7', 'pub-img-7.svg', {
+        fr: 'Visuel de substitution — audit interne et contrôle.',
+        en: 'Substitute visual — internal audit and control.',
+      }),
+      demoImage('pub-6-media-8', 'pub-img-8.svg', {
+        fr: 'Visuel de substitution — organisation et stratégie.',
+        en: 'Substitute visual — organization and strategy.',
+      }),
+      demoImage('pub-6-media-9', 'pub-img-9.svg', {
+        fr: 'Visuel de substitution — formation et compétences.',
+        en: 'Substitute visual — training and skills.',
+      }),
+      demoImage('pub-6-media-10', 'pub-img-10.svg', {
+        fr: 'Visuel de substitution — gouvernance des données.',
+        en: 'Substitute visual — data governance.',
+      }),
+      demoImage('pub-6-media-11', 'pub-img-11.svg', {
+        fr: 'Visuel de substitution — finance et performance.',
+        en: 'Substitute visual — finance and performance.',
+      }),
+      demoImage('pub-6-media-12', 'pub-img-12.svg', {
+        fr: 'Visuel de substitution — transformation digitale.',
+        en: 'Substitute visual — digital transformation.',
+      }),
+    ],
   },
 ];
 

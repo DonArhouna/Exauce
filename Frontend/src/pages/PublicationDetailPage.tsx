@@ -5,6 +5,7 @@ import { Page } from '@/components/layout/Page';
 import { PageHero } from '@/components/layout/PageHero';
 import { Reveal } from '@/components/ui/Reveal';
 import { Badge } from '@/components/ui/Card';
+import { MediaGallery } from '@/components/ui/MediaGallery';
 import { PUBLICATIONS_MOCK } from '@/data/content.data';
 import { resolveFromSlug } from '@/lib/routes';
 import { Navigate } from 'react-router-dom';
@@ -97,6 +98,16 @@ export default function PublicationDetailPage() {
           <div className="mt-10 rounded-card border border-dashed border-turquoise-500/40 bg-white p-8 shadow-card">
             <p className="text-sm text-slate-600">{t('publications.bodyComing')}</p>
           </div>
+        )}
+
+        {/* Galerie médias — dérivée du tableau `media` (aucun champ stocké) */}
+        {pub.media && pub.media.length > 0 && (
+          <section className="mt-12" aria-labelledby="pub-media-title">
+            <h2 id="pub-media-title" className="font-display text-2xl">
+              {t('publications.mediaTitle')}
+            </h2>
+            <MediaGallery media={pub.media} lang={l} />
+          </section>
         )}
 
         <Link to={`/${l}/publications`} className="mt-12 inline-flex items-center gap-2 text-sm text-turquoise-700 hover:underline">

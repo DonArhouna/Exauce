@@ -152,4 +152,19 @@
     <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/publications/exemple-reporting-financier" />
     <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/publications/sample-financial-reporting" />
   </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/publications/exemple-ressources-humaines-video</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/publications/exemple-ressources-humaines-video" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/publications/sample-human-resources-video" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/publications/exemple-systemes-information-galerie</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/publications/exemple-systemes-information-galerie" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/publications/sample-information-systems-gallery" />
+  </url>
+  <url>
+    <loc>https://www.exauceac.com/fr/publications/exemple-juridique-fiscal-galerie</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/publications/exemple-juridique-fiscal-galerie" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/publications/sample-legal-tax-gallery" />
+  </url>
 </urlset>

@@ -71,6 +71,52 @@ export type PublicationCategory = 'governance' | 'audit' | 'finance' | 'hr' | 'i
 
 export type PublicationSlug = LocalizedText;
 
+/**
+ * Origine d'un média de publication.
+ *
+ * Valeur isolée dans un seul type : alignée sur la contrainte de la note média
+ * Backend (`source` ∈ `upload` | `external`). Un renommage éventuel
+ * (`uploaded`, `remote`…) ne touche que cette ligne.
+ *
+ * TODO API: remplacer par le type généré depuis `openapi.yaml` quand le
+ * schéma média sera exposé.
+ */
+export type MediaSource = 'upload' | 'external';
+
+/** Champs communs aux médias d'une publication. */
+interface PublicationMediaBase {
+  /** id stable côté backend */
+  id: string;
+  /**
+   * Chemin local (`/publications/…`, source `upload`) ou URL absolue
+   * (source `external`). Aucun hotlink dans les données de démonstration.
+   */
+  src: string;
+  /** Texte alternatif localisé — obligatoire pour l'accessibilité. */
+  alt: LocalizedText;
+  /** Légende éditoriale optionnelle. */
+  caption?: LocalizedText;
+  /** Vignette d'aperçu (utile pour les vidéos). */
+  poster?: string;
+}
+
+/** Média image d'une publication. */
+export interface PublicationImageMedia extends PublicationMediaBase {
+  type: 'image';
+  source: MediaSource;
+}
+
+/** Média vidéo d'une publication. */
+export interface PublicationVideoMedia extends PublicationMediaBase {
+  type: 'video';
+  source: MediaSource;
+  /** Durée en millisecondes — aligné sur `duration_ms` de l'API. */
+  durationMs?: number;
+}
+
+/** Média d'une publication (union discriminée par `type`). */
+export type PublicationMedia = PublicationImageMedia | PublicationVideoMedia;
+
 /** Publication (mock — sera branchée sur le backend FastAPI). */
 export interface Publication {
   /** id stable côté backend */
@@ -86,8 +132,13 @@ export interface Publication {
   date: string;
   /** auteur — placeholder tant que non fourni */
   author?: string;
-  /** image optionnelle — placeholder tant que non fournie */
-  image?: { src: string; alt: LocalizedText };
+  /**
+   * Médias de la galerie (0..n) — source de vérité.
+   * `cover` et `mediaCount` ne sont jamais stockés : dérivés par `lib/media.ts`.
+   */
+  media?: PublicationMedia[];
+  /** id du média désigné comme couverture ; à défaut, le premier média. */
+  coverId?: string;
   /** statut éditorial backend-ready */
   status: 'draft' | 'published';
 }
