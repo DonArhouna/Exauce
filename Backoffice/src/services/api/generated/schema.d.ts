@@ -196,6 +196,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/partners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Partenaires actifs, dans l'ordre d'affichage
+         * @description Alimente le bloc « partenaires » de l'accueil. Seuls les partenaires
+         *     actifs sont renvoyés, triés par `position`. Réponse mono-langue avec
+         *     repli explicite (`is_fallback`) comme les autres contenus publics.
+         */
+        get: operations["listPartners"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/settings/public": {
         parameters: {
             query?: never;
@@ -501,6 +523,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/auth/mfa/enroll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Démarre l'enrôlement TOTP (secret et URI otpauth)
+         * @description Premier appel de l'enrôlement. Accepte soit une session active, soit
+         *     l'`enrollment_token` reçu au login avec `status=mfa_enrollment_required`
+         *     (aucun cookie de session dans ce second cas).
+         *     Le secret n'est renvoyé qu'une fois : il n'est pas relisible ensuite.
+         *     Un enrôlement déjà actif est refusé par `409 MFA_ALREADY_ENABLED`.
+         */
+        post: operations["adminMfaEnroll"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/auth/mfa/enroll/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Valide le premier code TOTP et remet les codes de secours
+         * @description Vérifie `totp_code` contre le secret en cours d'enrôlement, active le MFA
+         *     et génère dix codes de secours à usage unique, affichés une seule fois.
+         *     Si l'appel vient d'un login (`enrollment_token`), la session est créée
+         *     comme dans `POST /admin/auth/login` : cookies `session_id` et
+         *     `csrf_token`, corps enrichi des codes de secours.
+         */
+        post: operations["adminMfaEnrollConfirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/auth/mfa/recovery-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Régénère les codes de secours (mot de passe exigé)
+         * @description Invalide tous les codes précédents et renvoie dix nouveaux codes à usage
+         *     unique. Le mot de passe courant est exigé : les codes de secours sont
+         *     l'ultime moyen d'accès, la régénération est donc une opération sensible.
+         *     Le MFA doit être actif (`409 MFA_ENROLLMENT_REQUIRED` sinon).
+         */
+        post: operations["adminMfaRegenerateRecoveryCodes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/users/{id}/mfa/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Réinitialise le MFA d'un compte (téléphone perdu)
+         * @description Désactive le secret TOTP, invalide les codes de secours et révoque toutes
+         *     les sessions du compte. Au prochain login, le compte reçoit
+         *     `mfa_enrollment_required` s'il détient un rôle à MFA obligatoire
+         *     (`super_admin`, `admin`, `crm`), sinon un login simple.
+         *     L'auto-réinitialisation est refusée (`403`) : un compte ne peut pas
+         *     lever son propre second facteur.
+         */
+        post: operations["adminResetUserMfa"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/reports/dashboard": {
         parameters: {
             query?: never;
@@ -690,6 +808,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/publications/{id}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Médias d'une publication, ordonnés, avec couverture dérivée
+         * @description Renvoie la galerie complète. `media_count` et `cover_media_id` sont
+         *     **dérivés** de la liste (voir `PublicationMedia`) : le client ne les
+         *     calcule pas et ne les écrit jamais.
+         */
+        get: operations["adminListPublicationMedia"];
+        put?: never;
+        /**
+         * Attache un média à une publication (téléversé ou externe)
+         * @description `source=upload` exige `media_id` (média de la médiathèque) ;
+         *     `source=external` exige `external_url` (YouTube, Vimeo, CDN) et
+         *     `kind=video`. `alt` et `caption` sont par langue.
+         *     Une `position` déjà prise renvoie `409 POSITION_CONFLICT` ; la couverture
+         *     et `media_count` sont recalculés après l'ajout.
+         */
+        post: operations["adminAddPublicationMedia"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/publications/{id}/media/{media_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Détache un média d'une publication
+         * @description Le média lui-même reste dans la médiathèque. La couverture et
+         *     `media_count` sont recalculés ; une publication publiée le reste (la
+         *     republication du site est un job distinct).
+         */
+        delete: operations["adminRemovePublicationMedia"];
+        options?: never;
+        head?: never;
+        /**
+         * Modifie l'ordre, la source ou les textes d'un média de publication
+         * @description Mise à jour partielle. Changer `position` réordonne la galerie et peut
+         *     changer la couverture dérivée ; un doublon renvoie `409
+         *     POSITION_CONFLICT`. `alt` et `caption` s'écrivent par langue.
+         */
+        patch: operations["adminUpdatePublicationMedia"];
+        trace?: never;
+    };
     "/admin/content/tree": {
         parameters: {
             query?: never;
@@ -706,6 +882,30 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/admin/tree/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Activation et position d'un nœud de l'arborescence (EF-508)
+         * @description `is_active` pilote la visibilité publique du nœud et de sa descendance ;
+         *     `position` fixe son rang dans son parent. Les ancres publiques sont
+         *     dérivées de `source_key` et ne sont jamais modifiables : seule la
+         *     traduction (`title`, `slug`) les fait évoluer.
+         *     Le renommage passe par `PUT /admin/content/node/{id}/translation/{lang}`.
+         */
+        patch: operations["adminUpdateNode"];
         trace?: never;
     };
     "/admin/tree/{id}/move": {
@@ -837,7 +1037,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Ajout d'une section typée sur une page */
+        /**
+         * Ajout d'une section typée sur une page
+         * @description Ajoute un bloc à la position demandée. `revision` est la révision de page
+         *     lue par le client : une valeur périmée renvoie `409 CONFLICT`.
+         *     Un type absent du catalogue renvoie `422 VALIDATION_ERROR`, un type dont
+         *     `editable=false` renvoie `409 SECTION_TYPE_NOT_EDITABLE`.
+         *     La réponse contient la page entière pour conserver `revision` et l'ordre.
+         */
         post: operations["adminAddSection"];
         delete?: never;
         options?: never;
@@ -855,12 +1062,169 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Suppression d'une section */
+        /**
+         * Suppression d'une section
+         * @description `revision` est obligatoire en paramètre de requête. La suppression d'une
+         *     section d'une page publiée est réservée à `pages:delete` (admin) ; un
+         *     rédacteur reçoit `403 FORBIDDEN`.
+         */
         delete: operations["adminDeleteSection"];
         options?: never;
         head?: never;
-        /** Mise à jour d'une section (ordre position, activation, config JSON) */
+        /**
+         * Structure d'une section (position, activation)
+         * @description Ne touche pas aux textes : `PUT /admin/sections/{id}/content/{lang}`
+         *     écrit les données d'une langue. `revision` (page) protège l'ordre ;
+         *     `position` doit rester unique dans la page, sinon `409 POSITION_CONFLICT`.
+         */
         patch: operations["adminUpdateSection"];
+        trace?: never;
+    };
+    "/admin/sections/{id}/content/{lang}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Écriture des données d'une section pour une langue
+         * @description Remplace les valeurs d'une seule langue ; l'autre n'est pas touchée.
+         *     La permission est vérifiée **par langue** : un rédacteur limité au
+         *     français reçoit `403 NOT_PERMITTED_LANG` en écrivant `en`.
+         *     Les règles de validation viennent du catalogue (`GET
+         *     /admin/section-types`) : champ requis, longueur maximale, listes.
+         *     Un refus est `422 VALIDATION_ERROR` avec `errors[].field` en chemin
+         *     pointé (`items.0.label`).
+         */
+        put: operations["adminPutSectionContent"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/section-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Catalogue des types de section et de leurs schémas (EF-501)
+         * @description Source unique de vérité des formulaires de section : le client génère
+         *     les champs depuis `fields` et n'a aucun code par type. Le catalogue est
+         *     servi depuis la table `section_types` (seed de 21 codes), pas depuis le
+         *     code applicatif. `editable=false` signale un type hors du périmètre
+         *     d'édition : l'écran l'affiche en repli lecture seule, et une écriture
+         *     renvoie `409 SECTION_TYPE_NOT_EDITABLE`.
+         */
+        get: operations["adminListSectionTypes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/pages/{id}/submit-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Soumet la page à relecture (draft → in_review)
+         * @description Transition `draft → in_review`. `revision` obligatoire : une valeur
+         *     périmée renvoie `409 CONFLICT` avec l'état courant en `detail`, et le
+         *     client recharge. Un statut incompatible renvoie `409 INVALID_TRANSITION`.
+         *     La permission est vérifiée par langue quand `lang` est fourni.
+         */
+        post: operations["adminSubmitPageReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/pages/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approuve une page en relecture (in_review → approved)
+         * @description Transition `in_review → approved`. **Pas d'auto-approbation** : le
+         *     compte qui a soumis la page ne peut pas l'approuver, même s'il détient
+         *     `pages:review` ; le refus est `403 AUTO_APPROVAL_FORBIDDEN`.
+         *     `revision` obligatoire, `409 INVALID_TRANSITION` si le statut n'est pas
+         *     `in_review`.
+         */
+        post: operations["adminApprovePage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/pages/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rejette une page en relecture et la renvoie en brouillon
+         * @description Transition `in_review → draft`. `comment` est **obligatoire** : le motif
+         *     est conservé dans l'historique et affiché au rédacteur ; son absence
+         *     renvoie `422 VALIDATION_ERROR` sur le champ `comment`.
+         *     `revision` obligatoire, `409 INVALID_TRANSITION` sinon.
+         */
+        post: operations["adminRejectPage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/pages/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publie une page approuvée (approved → published)
+         * @description Transition `approved → published`. La publication reste une action
+         *     distincte de l'approbation (`pages:publish`). Refus possibles :
+         *     `409 INVALID_TRANSITION` si la page n'est pas approuvée ;
+         *     `409 SECTION_MEDIA_ALT_MISSING` si une image non décorative n'a pas de
+         *     texte alternatif dans chaque langue publiée, avec `errors[].field` en
+         *     `sections[].config.media.alt.<lang>` ; `422` si
+         *     `banners_pending=true` (bandeaux légaux non finalisés).
+         */
+        post: operations["adminPublishPage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/admin/sectors": {
@@ -1047,8 +1411,40 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Médiathèque — liste paginée avec filtres et recherche (EF-801..803) */
+        /**
+         * Médiathèque — liste paginée avec filtres et recherche (EF-801..803)
+         * @description La médiathèque regroupe visuellement par dossier, mais ce dossier se
+         *     déduit de `kind` : `image` → images, `video` → videos, `pdf` et
+         *     `document` → documents. Aucun champ `folder` n'est stocké. Les filtres
+         *     d'usage et de date, ainsi que le tri, alimentent la barre de filtres.
+         *     Un média `deleted` n'apparaît jamais. `usages` reste vide en liste :
+         *     il n'est renseigné que sur `GET /admin/media/{id}`.
+         */
         get: operations["adminListMedia"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/media/limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Limites de téléversement par dossier, lues dans la configuration
+         * @description Alimente l'aide de l'écran de téléversement et le contrôle préalable,
+         *     sans aucune limite recopiée en dur dans le client : les valeurs viennent
+         *     de la configuration du serveur. Le serveur reste l'autorité : un fichier
+         *     hors limite est refusé par `415` avec `errors[0].code` valant
+         *     `MIME_NOT_ALLOWED`, `TOO_LARGE` ou `INFECTED`.
+         */
+        get: operations["adminMediaLimits"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1090,6 +1486,84 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/admin/media/{id}/replace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remplace le fichier d'un média en conservant ses références
+         * @description Même `id`, mêmes usages : l'ancien fichier passe en `status=replaced`.
+         *     L'analyse antivirus s'applique comme au premier envoi (`415` avec
+         *     `errors[0].code` : `MIME_NOT_ALLOWED`, `TOO_LARGE`, `INFECTED`).
+         *     Pour une vidéo, `poster_media_id` et `duration_ms` sont recalculés.
+         */
+        post: operations["adminReplaceMedia"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/partners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Partenaires, tous statuts, dans l'ordre d'affichage
+         * @description Les partenaires alimentent le bloc « partenaires » de l'accueil. La
+         *     permission est celle des pages (`pages:view`) : ils font partie du
+         *     contenu éditorial, pas d'un module séparé.
+         */
+        get: operations["adminListPartners"];
+        put?: never;
+        /**
+         * Crée un partenaire
+         * @description `code` est un identifiant stable unique : un doublon renvoie `409
+         *     CONFLICT`. `position` situe le partenaire dans le bloc ; `translations`
+         *     porte le nom et la description par langue (`fr`, `en`).
+         *     La publication du partenaire suit celle de la page d'accueil.
+         */
+        post: operations["adminCreatePartner"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/partners/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Supprime un partenaire
+         * @description Suppression logique, réservée à `pages:delete` (admin) : un rédacteur
+         *     désactive le partenaire (`is_active=false`) au lieu de le supprimer.
+         */
+        delete: operations["adminDeletePartner"];
+        options?: never;
+        head?: never;
+        /**
+         * Modifie un partenaire (nom, logo, lien, ordre, activation)
+         * @description Mise à jour partielle : seuls les champs fournis changent. Le logo doit
+         *     être un média du dossier `images` (`422 VALIDATION_ERROR` sinon).
+         */
+        patch: operations["adminUpdatePartner"];
         trace?: never;
     };
     "/admin/redirects": {
@@ -1340,7 +1814,7 @@ export interface components {
              * @description Code d'erreur stable
              * @enum {string}
              */
-            code: "VALIDATION_ERROR" | "UNKNOWN_LANG" | "CONTENT_NOT_FOUND" | "REDIRECTED" | "UNAUTHENTICATED" | "SESSION_EXPIRED" | "MFA_REQUIRED" | "FORBIDDEN" | "CSRF_TOKEN_MISSING" | "CSRF_TOKEN_MISMATCH" | "NOT_PERMITTED_LANG" | "INVALID_TRANSITION" | "CONFLICT" | "RATE_LIMITED" | "IDEMPOTENT_REPLAY_CONFLICT" | "UPLOAD_REJECTED" | "IDOR_BLOCKED" | "TOKEN_EXPIRED" | "NOT_IMPLEMENTED" | "SERVER_ERROR";
+            code: "VALIDATION_ERROR" | "UNKNOWN_LANG" | "CONTENT_NOT_FOUND" | "REDIRECTED" | "UNAUTHENTICATED" | "SESSION_EXPIRED" | "MFA_REQUIRED" | "FORBIDDEN" | "CSRF_TOKEN_MISSING" | "CSRF_TOKEN_MISMATCH" | "NOT_PERMITTED_LANG" | "INVALID_TRANSITION" | "CONFLICT" | "RATE_LIMITED" | "IDEMPOTENT_REPLAY_CONFLICT" | "UPLOAD_REJECTED" | "IDOR_BLOCKED" | "TOKEN_EXPIRED" | "NOT_IMPLEMENTED" | "SERVER_ERROR" | "MFA_ALREADY_ENABLED" | "MFA_ENROLLMENT_REQUIRED" | "MFA_CODE_INVALID" | "RECOVERY_CODE_INVALID" | "AUTO_APPROVAL_FORBIDDEN" | "SECTION_TYPE_NOT_EDITABLE" | "SECTION_MEDIA_ALT_MISSING" | "MEDIA_IN_USE" | "POSITION_CONFLICT";
             detail?: string;
             correlation_id?: string;
             errors?: {
@@ -1386,7 +1860,12 @@ export interface components {
             slug?: string;
             title?: string;
             tagline?: string | null;
+            /** @description Clé stable d'ancrage public, dérivée du seed ; jamais modifiable. */
+            source_key?: string | null;
+            position?: number;
+            is_active?: boolean;
             is_fallback?: boolean;
+            translations?: components["schemas"]["NodeTranslations"];
             domains?: components["schemas"]["Domain"][];
         };
         Domain: {
@@ -1395,7 +1874,11 @@ export interface components {
             slug?: string;
             title?: string;
             intro?: string | null;
+            source_key?: string | null;
+            position?: number;
+            is_active?: boolean;
             is_fallback?: boolean;
+            translations?: components["schemas"]["NodeTranslations"];
             groups?: components["schemas"]["Group"][];
         };
         Group: {
@@ -1403,7 +1886,11 @@ export interface components {
             id?: string;
             slug?: string;
             title?: string;
+            source_key?: string | null;
+            position?: number;
+            is_active?: boolean;
             is_fallback?: boolean;
+            translations?: components["schemas"]["NodeTranslations"];
             services?: components["schemas"]["PrestationItem"][];
         };
         PrestationItem: {
@@ -1411,7 +1898,11 @@ export interface components {
             id?: string;
             slug?: string;
             title?: string;
+            source_key?: string | null;
+            position?: number;
+            is_active?: boolean;
             is_fallback?: boolean;
+            translations?: components["schemas"]["NodeTranslations"];
         };
         DomainDetail: {
             /** Format: uuid */
@@ -1524,6 +2015,16 @@ export interface components {
         PublicationDetail: components["schemas"]["PublicationSummary"] & {
             body?: components["schemas"]["Localized"];
             author_name?: string | null;
+            /** @description Médias ordonnés : galerie et vidéos, par `position`. */
+            media?: components["schemas"]["PublicationMedia"][];
+            /** @description Dérivé de `media` (lecture seule). */
+            media_count?: number;
+            /**
+             * Format: uuid
+             * @description Dérivé (lecture seule) : média de plus petite `position`, ou son
+             *     `poster_media_id` s'il s'agit d'une vidéo.
+             */
+            cover_media_id?: string | null;
         };
         PublicationList: {
             items: components["schemas"]["PublicationSummary"][];
@@ -1549,39 +2050,95 @@ export interface components {
             is_in_nav?: boolean;
             nav_position?: number | null;
             is_system?: boolean;
-            status?: string;
+            /** @enum {string} */
+            status?: "draft" | "in_review" | "approved" | "published" | "archived";
         };
         PageDetail: {
             /** Format: uuid */
-            id?: string;
+            id: string;
             page_key?: string;
             template?: string;
             is_in_nav?: boolean;
             nav_position?: number | null;
             is_system?: boolean;
-            status?: string;
+            /** @enum {string} */
+            status: "draft" | "in_review" | "approved" | "published" | "archived";
             banners_pending?: boolean;
+            /**
+             * @description Révision de la page. À renvoyer dans **toute** mutation (section,
+             *     workflow) ; une révision périmée renvoie `409 CONFLICT`.
+             */
+            revision: number;
             title?: components["schemas"]["Localized"];
-            sections?: components["schemas"]["Section"][];
+            /**
+             * @description Titre par langue (`fr`, `en`), pour l'édition côte à côte. `title`
+             *     reste la valeur de la langue demandée avec son `is_fallback`.
+             */
+            titles?: {
+                [key: string]: string;
+            };
+            /** @description Slug par langue (`fr`, `en`). */
+            slugs?: {
+                [key: string]: string;
+            };
+            /** @description Nombre de sections, dérivé de `sections`. */
+            section_count?: number;
+            sections: components["schemas"]["Section"][];
         };
         Section: {
             /** Format: uuid */
             id?: string;
             section_type?: string;
+            /**
+             * @description Clé d'ancre publique. Dérivée du seed pour les blocs existants et
+             *     jamais modifiable : elle change avec `section_type`, pas avec les textes.
+             */
             source_key?: string | null;
             position?: number;
             is_active?: boolean;
-            config?: Record<string, never>;
-            /** @description Données traduites de la section (hero, stats, CTA...) */
-            data?: Record<string, never>;
+            config?: components["schemas"]["SectionConfig"];
+            /**
+             * @description Données du type, **par langue** : `{ "fr": {...}, "en": {...} }`.
+             *     Les champs sont ceux du catalogue (`GET /admin/section-types`).
+             *     Une langue absente signifie « non traduite », pas « vide ».
+             */
+            data?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
         };
         SectionUpsert: {
+            /** @description Code du catalogue (`GET /admin/section-types`). */
             section_type: string;
             source_key?: string | null;
             position: number;
             /** @default true */
             is_active: boolean;
-            config?: Record<string, never>;
+            config?: components["schemas"]["SectionConfig"];
+            /** @description Données initiales par langue (`fr`, `en`). */
+            data?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** @description Révision de page lue par le client (verrou optimiste). */
+            revision: number;
+        };
+        SectionContentUpdate: {
+            /** @description Valeurs des champs du type, pour une seule langue. */
+            data: {
+                [key: string]: unknown;
+            };
+            revision: number;
+        };
+        /**
+         * @description Mutation de section : la page entière accompagne la section pour que le
+         *     client conserve `revision` et l'ordre sans seconde requête.
+         */
+        SectionMutationResult: {
+            page: components["schemas"]["PageDetail"];
+            section: components["schemas"]["Section"];
         };
         /** @description Coordonnées et SEO publics (EF-106) */
         PublicSettings: {
@@ -1611,17 +2168,255 @@ export interface components {
             /** Format: uuid */
             id?: string;
             /** @enum {string} */
-            kind?: "image" | "pdf" | "document";
+            kind?: "image" | "video" | "pdf" | "document";
             storage_key?: string;
             url?: string;
             mime?: string;
             size_bytes?: number;
             /** @enum {string} */
             status?: "active" | "replaced" | "deleted";
+            /** @description Valeur de la langue demandée ; avec `all_langs=true`, lire `translations`. */
             alt?: string | null;
             caption?: string | null;
+            /**
+             * @description Textes par langue (`fr`, `en`). L'écriture passe par
+             *     `PUT /admin/content/media/{id}/translation/{lang}`.
+             */
+            translations?: {
+                [key: string]: {
+                    alt?: string | null;
+                    caption?: string | null;
+                };
+            };
+            /** @description Nombre de contenus qui référencent ce média. */
+            usage_count?: number;
+            /** @description Renseigné sur `GET /admin/media/{id}`, vide dans la liste. */
+            usages?: components["schemas"]["MediaUsage"][];
+            /** @enum {string} */
+            scan_status?: "pending" | "clean" | "infected";
+            duration_ms?: number | null;
+            width?: number | null;
+            height?: number | null;
             /** Format: date-time */
             created_at?: string;
+        };
+        SectionTypeList: {
+            items: components["schemas"]["SectionType"][];
+        };
+        SectionType: {
+            code: string;
+            label?: components["schemas"]["Localized"];
+            /** @description Pages d'usage prévues par la modélisation éditoriale (doc 16 §3.4). */
+            usage?: string;
+            /**
+             * @description Faux = type hors périmètre d'édition (repli lecture seule). Une
+             *     écriture sur un tel type renvoie `409 SECTION_TYPE_NOT_EDITABLE`.
+             */
+            editable: boolean;
+            /** @description Emplacements média que le type accepte, pour l'éditeur. */
+            media_slots?: ("image" | "gallery" | "video")[];
+            fields: components["schemas"]["SectionField"][];
+        };
+        /**
+         * @description Description d'un champ de section : le client génère le contrôle depuis
+         *     `kind` et n'a aucune liste de champs codée en dur par type.
+         */
+        SectionField: {
+            key: string;
+            /** @enum {string} */
+            kind: "text" | "textarea" | "list" | "media" | "video" | "number" | "boolean";
+            label: components["schemas"]["Localized"];
+            required: boolean;
+            max_length?: number | null;
+            /** @description Champs de chaque élément quand `kind=list`. */
+            item_fields?: components["schemas"]["SectionField"][];
+        };
+        /**
+         * @description Configuration non traduite d'une section : médias, galerie, vidéo.
+         *     Versionné et décrit, pour qu'aucun bloc média ne soit codé en dur.
+         */
+        SectionConfig: {
+            media?: components["schemas"]["SectionMedia"];
+            gallery?: components["schemas"]["SectionMedia"][];
+            video?: components["schemas"]["SectionVideo"];
+        };
+        SectionMedia: {
+            /** Format: uuid */
+            media_id: string;
+            decorative: boolean;
+            /** @description Obligatoire si `decorative=false`, une entrée par langue publiée. */
+            alt?: {
+                [key: string]: string;
+            };
+            caption?: {
+                [key: string]: string;
+            };
+        };
+        SectionVideo: {
+            /** @enum {string} */
+            provider: "youtube" | "vimeo" | "upload";
+            video_id: string;
+            /** Format: uri */
+            url?: string;
+            /** Format: uuid */
+            poster_media_id?: string | null;
+            caption?: {
+                [key: string]: string;
+            };
+            transcription?: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * @description Traductions d'un nœud, par langue (`fr`, `en`). Renseigné avec
+         *     `all_langs=true` sur `GET /admin/content/tree`, sinon absent.
+         */
+        NodeTranslations: {
+            [key: string]: {
+                title?: string;
+                slug?: string;
+            };
+        };
+        PageTransitionRequest: {
+            /** @description Révision de la page lue par le client (verrou optimiste). */
+            revision: number;
+            /** @description Obligatoire pour `reject` (motif), facultatif ailleurs. */
+            comment?: string;
+        };
+        MediaUsage: {
+            /** @enum {string} */
+            entity_type: "page_section" | "page" | "publication" | "node";
+            /** Format: uuid */
+            entity_id: string;
+            title: string;
+            /** @description Route du Backoffice pour ouvrir le contenu qui référence le média. */
+            edit_path: string;
+        };
+        /**
+         * @description Limites de téléversement lues dans la configuration du serveur, jamais
+         *     recopiées en dur dans le client.
+         */
+        MediaLimits: {
+            items: components["schemas"]["MediaLimit"][];
+        };
+        MediaLimit: {
+            /** @enum {string} */
+            kind: "image" | "video" | "pdf" | "document";
+            mime: string[];
+            max_bytes: number;
+            max_width?: number | null;
+            max_height?: number | null;
+            max_duration_ms?: number | null;
+        };
+        Partner: {
+            /** Format: uuid */
+            id: string;
+            /** @description Identifiant stable unique. */
+            code?: string;
+            /** Format: uuid */
+            logo_media_id?: string | null;
+            /** Format: uri */
+            website_url?: string | null;
+            position: number;
+            is_active: boolean;
+            is_fallback?: boolean;
+            /** @description Nom et description par langue (`fr`, `en`). */
+            translations?: {
+                [key: string]: {
+                    name?: string;
+                    description?: string | null;
+                };
+            };
+        };
+        PartnerUpsert: {
+            code?: string;
+            /** Format: uuid */
+            logo_media_id?: string | null;
+            /** Format: uri */
+            website_url?: string | null;
+            position?: number;
+            /** @default true */
+            is_active: boolean;
+            translations: {
+                [key: string]: {
+                    name?: string;
+                    description?: string | null;
+                };
+            };
+        };
+        PartnerList: {
+            items: components["schemas"]["Partner"][];
+        };
+        /**
+         * @description Média attaché à une publication. `cover_media_id` et `media_count` de
+         *     `PublicationDetail` sont **dérivés** de cette liste : la couverture est
+         *     le média de plus petite `position` (son `poster_media_id` s'il s'agit
+         *     d'une vidéo), `media_count` en est la longueur. Aucun des deux n'est
+         *     modifiable directement.
+         */
+        PublicationMedia: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            publication_id?: string;
+            /** @description Unique par publication ; un doublon renvoie `409 POSITION_CONFLICT`. */
+            position: number;
+            /** @enum {string} */
+            source: "upload" | "external";
+            /** @enum {string} */
+            kind?: "image" | "video";
+            /**
+             * Format: uuid
+             * @description Obligatoire si `source=upload`.
+             */
+            media_id?: string | null;
+            /**
+             * Format: uri
+             * @description Obligatoire si `source=external` (YouTube, Vimeo, CDN).
+             */
+            external_url?: string | null;
+            /**
+             * Format: uuid
+             * @description Vignette d'une vidéo ; sert de couverture si elle est en position 0.
+             */
+            poster_media_id?: string | null;
+            /** @description Texte alternatif par langue (`fr`, `en`). */
+            alt: {
+                [key: string]: string;
+            };
+            /** @description Légende par langue (`fr`, `en`). */
+            caption: {
+                [key: string]: string;
+            };
+            /** @description Durée d'une vidéo ; dérivée du fichier pour `source=upload`. */
+            duration_ms?: number | null;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        PublicationMediaUpsert: {
+            position: number;
+            /** @enum {string} */
+            source: "upload" | "external";
+            /** @enum {string} */
+            kind?: "image" | "video";
+            /** Format: uuid */
+            media_id?: string | null;
+            /** Format: uri */
+            external_url?: string | null;
+            /** Format: uuid */
+            poster_media_id?: string | null;
+            alt?: {
+                [key: string]: string;
+            };
+            caption?: {
+                [key: string]: string;
+            };
+        };
+        PublicationMediaList: {
+            items: components["schemas"]["PublicationMedia"][];
+            media_count: number;
+            /** Format: uuid */
+            cover_media_id: string | null;
         };
         ContentVersion: {
             /** Format: uuid */
@@ -1699,6 +2494,13 @@ export interface components {
             default_lang?: string;
             role_codes?: string[];
         };
+        /**
+         * @description Rôle et permissions effectives. Les permissions de `viewer` restent
+         *     **à confirmer** : le seed ne lui en accorde aucune, alors que le
+         *     Backoffice a besoin de `pages:view` et `publications:view` pour que le
+         *     compte de démonstration voie les écrans. Point ouvert pour le Backend,
+         *     sans effet sur le contrat tant que la décision n'est pas prise.
+         */
         Role: {
             /** Format: uuid */
             id?: string;
@@ -1789,6 +2591,9 @@ export interface components {
             /** Format: uuid */
             parent_id?: string | null;
             position?: number;
+            /** @default true */
+            is_active: boolean;
+            translations?: components["schemas"]["NodeTranslations"];
         };
         AdminLoginRequest: {
             /** Format: email */
@@ -1797,6 +2602,11 @@ export interface components {
             password: string;
             /** @description Code TOTP. Requis au second essai si `status=mfa_required`. */
             totp_code?: string;
+            /**
+             * @description Code de secours à usage unique, alternative à `totp_code` quand
+             *     l'application d'authentification est inaccessible.
+             */
+            recovery_code?: string;
         };
         AdminLoginAuthenticated: {
             /** @enum {string} */
@@ -1812,9 +2622,44 @@ export interface components {
         /**
          * @description Discriminateur `status`. `authenticated` pose les cookies `session_id`
          *     et `csrf_token`. `mfa_required` n'en pose aucun ; le client renvoie
-         *     le même login avec `totp_code`.
+         *     le même login avec `totp_code` ou `recovery_code`.
+         *     `mfa_enrollment_required` n'en pose aucun non plus : le compte détient
+         *     un rôle à MFA obligatoire sans TOTP enrôlé, et le client conduit
+         *     l'enrôlement avec `enrollment_token`.
          */
-        AdminLoginResponse: components["schemas"]["AdminLoginAuthenticated"] | components["schemas"]["AdminLoginMfaRequired"];
+        AdminLoginResponse: components["schemas"]["AdminLoginAuthenticated"] | components["schemas"]["AdminLoginMfaRequired"] | components["schemas"]["AdminLoginMfaEnrollmentRequired"];
+        /**
+         * @description Rôle à MFA obligatoire (`super_admin`, `admin`, `crm`) sans MFA enrôlé.
+         *     Aucun cookie de session : `enrollment_token` (5 min, usage unique)
+         *     n'ouvre que les endpoints `/admin/auth/mfa/enroll*`.
+         */
+        AdminLoginMfaEnrollmentRequired: {
+            /** @enum {string} */
+            status: "mfa_enrollment_required";
+            enrollment_token: string;
+            required_role: string;
+        };
+        AdminMfaEnrollment: {
+            /** @description Secret TOTP base32, renvoyé une seule fois. */
+            secret: string;
+            /** Format: uri */
+            otpauth_uri: string;
+            /** @enum {integer} */
+            digits: 6;
+            /** @enum {integer} */
+            period: 30;
+            /** @enum {string} */
+            algorithm: "SHA1";
+        };
+        RecoveryCodes: {
+            /** @description Dix codes à usage unique, affichés une seule fois. */
+            recovery_codes: string[];
+            /** Format: date-time */
+            generated_at: string;
+        };
+        AdminMfaEnrollmentConfirmed: components["schemas"]["AdminLoginAuthenticated"] & {
+            recovery_codes: string[];
+        };
         AdminSessionUser: {
             /** Format: uuid */
             id: string;
@@ -1825,6 +2670,11 @@ export interface components {
             default_lang?: string;
             must_reset_password: boolean;
             mfa_enabled?: boolean;
+            /**
+             * @description Vrai quand un rôle du compte impose le MFA et qu'aucun TOTP n'est
+             *     enrôlé : l'interface propose l'enrôlement avant tout autre écran.
+             */
+            mfa_enrollment_required?: boolean;
             roles?: string[];
             permissions: components["schemas"]["Permission"][];
         };
@@ -1976,6 +2826,11 @@ export interface components {
         allLangs: boolean;
         ifNoneMatch: string;
         idempotencyKey: string;
+        /**
+         * @description Révision de page lue par le client (verrou optimiste). Une valeur
+         *     périmée renvoie `409 CONFLICT` avec l'état courant en `detail`.
+         */
+        revision: number;
     };
     requestBodies: never;
     headers: never;
@@ -2260,6 +3115,29 @@ export interface operations {
                 };
             };
             404: components["responses"]["Eproblem"];
+        };
+    };
+    listPartners: {
+        parameters: {
+            query?: {
+                /** @description BCP-47 (fr, en) */
+                lang?: components["parameters"]["lang"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Partenaires actifs */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PartnerList"];
+                };
+            };
         };
     };
     getPublicSettings: {
@@ -2701,6 +3579,144 @@ export interface operations {
             422: components["responses"]["Eproblem"];
         };
     };
+    adminMfaEnroll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Jeton court (5 min, usage unique) du login à MFA obligatoire. */
+                    enrollment_token?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Secret TOTP à afficher une seule fois */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminMfaEnrollment"];
+                };
+            };
+            401: components["responses"]["Eproblem"];
+            403: components["responses"]["Eproblem"];
+            409: components["responses"]["Eproblem"];
+            410: components["responses"]["Eproblem"];
+            429: components["responses"]["Eproblem"];
+        };
+    };
+    adminMfaEnrollConfirm: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Nom figé. Doit égaler la valeur du cookie `csrf_token`.
+                 *     Obligatoire sur les mutations `/admin/**` (sauf login, forgot, reset, activate).
+                 */
+                "X-CSRF-Token": components["parameters"]["csrfHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    totp_code: string;
+                    enrollment_token?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description MFA activé */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminMfaEnrollmentConfirmed"];
+                };
+            };
+            401: components["responses"]["Eproblem"];
+            403: components["responses"]["Eproblem"];
+            409: components["responses"]["Eproblem"];
+            410: components["responses"]["Eproblem"];
+            422: components["responses"]["Eproblem"];
+            429: components["responses"]["Eproblem"];
+        };
+    };
+    adminMfaRegenerateRecoveryCodes: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Nom figé. Doit égaler la valeur du cookie `csrf_token`.
+                 *     Obligatoire sur les mutations `/admin/**` (sauf login, forgot, reset, activate).
+                 */
+                "X-CSRF-Token": components["parameters"]["csrfHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: password */
+                    password: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Nouveaux codes de secours */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecoveryCodes"];
+                };
+            };
+            401: components["responses"]["Eproblem"];
+            403: components["responses"]["Eproblem"];
+            409: components["responses"]["Eproblem"];
+            422: components["responses"]["Eproblem"];
+            429: components["responses"]["Eproblem"];
+        };
+    };
+    adminResetUserMfa: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Nom figé. Doit égaler la valeur du cookie `csrf_token`.
+                 *     Obligatoire sur les mutations `/admin/**` (sauf login, forgot, reset, activate).
+                 */
+                "X-CSRF-Token": components["parameters"]["csrfHeader"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description MFA réinitialisé, sessions révoquées */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Eproblem"];
+            403: components["responses"]["Eproblem"];
+            404: components["responses"]["Eproblem"];
+        };
+    };
     adminDashboard: {
         parameters: {
             query?: never;
@@ -2970,6 +3986,113 @@ export interface operations {
             422: components["responses"]["Eproblem"];
         };
     };
+    adminListPublicationMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Médias de la publication */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicationMediaList"];
+                };
+            };
+            404: components["responses"]["Eproblem"];
+        };
+    };
+    adminAddPublicationMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicationMediaUpsert"];
+            };
+        };
+        responses: {
+            /** @description Média attaché */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicationMedia"];
+                };
+            };
+            403: components["responses"]["Eproblem"];
+            404: components["responses"]["Eproblem"];
+            409: components["responses"]["Eproblem"];
+            422: components["responses"]["Eproblem"];
+        };
+    };
+    adminRemovePublicationMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Média détaché */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Eproblem"];
+            404: components["responses"]["Eproblem"];
+        };
+    };
+    adminUpdatePublicationMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicationMediaUpsert"];
+            };
+        };
+        responses: {
+            /** @description Média mis à jour */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicationMedia"];
+                };
+            };
+            403: components["responses"]["Eproblem"];
+            404: components["responses"]["Eproblem"];
+            409: components["responses"]["Eproblem"];
+            422: components["responses"]["Eproblem"];
+        };
+    };
     adminGetTree: {
         parameters: {
             query?: {
@@ -3013,6 +4136,36 @@ export interface operations {
                 content?: never;
             };
             403: components["responses"]["Eproblem"];
+        };
+    };
+    adminUpdateNode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    is_active?: boolean;
+                    position?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Nœud mis à jour */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Eproblem"];
+            409: components["responses"]["Eproblem"];
+            422: components["responses"]["Eproblem"];
         };
     };
     adminMoveNode: {
@@ -3241,20 +4394,29 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Section créée */
+            /** @description Section créée, page renvoyée avec sa nouvelle révision */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Section"];
+                    "application/json": components["schemas"]["SectionMutationResult"];
                 };
             };
+            403: components["responses"]["Eproblem"];
+            409: components["responses"]["Eproblem"];
+            422: components["responses"]["Eproblem"];
         };
     };
     adminDeleteSection: {
         parameters: {
-            query?: never;
+            query: {
+                /**
+                 * @description Révision de page lue par le client (verrou optimiste). Une valeur
+                 *     périmée renvoie `409 CONFLICT` avec l'état courant en `detail`.
+                 */
+                revision: components["parameters"]["revision"];
+            };
             header?: never;
             path: {
                 id: string;
@@ -3270,6 +4432,8 @@ export interface operations {
                 };
                 content?: never;
             };
+            403: components["responses"]["Eproblem"];
+            409: components["responses"]["Eproblem"];
         };
     };
     adminUpdateSection: {
@@ -3286,7 +4450,7 @@ export interface operations {
                 "application/json": {
                     position?: number;
                     is_active?: boolean;
-                    config?: Record<string, never>;
+                    revision: number;
                 };
             };
         };
@@ -3296,8 +4460,182 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SectionMutationResult"];
+                };
             };
+            403: components["responses"]["Eproblem"];
+            409: components["responses"]["Eproblem"];
+            422: components["responses"]["Eproblem"];
+        };
+    };
+    adminPutSectionContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                lang: "fr" | "en";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionContentUpdate"];
+            };
+        };
+        responses: {
+            /** @description Données enregistrées */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionMutationResult"];
+                };
+            };
+            403: components["responses"]["Eproblem"];
+            404: components["responses"]["Eproblem"];
+            409: components["responses"]["Eproblem"];
+            422: components["responses"]["Eproblem"];
+        };
+    };
+    adminListSectionTypes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Catalogue des types */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionTypeList"];
+                };
+            };
+        };
+    };
+    adminSubmitPageReview: {
+        parameters: {
+            query?: {
+                /** @description BCP-47 (fr, en) */
+                lang?: components["parameters"]["lang"];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PageTransitionRequest"];
+            };
+        };
+        responses: {
+            /** @description Page en relecture */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDetail"];
+                };
+            };
+            403: components["responses"]["Eproblem"];
+            409: components["responses"]["Eproblem"];
+            422: components["responses"]["Eproblem"];
+        };
+    };
+    adminApprovePage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PageTransitionRequest"];
+            };
+        };
+        responses: {
+            /** @description Page approuvée */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDetail"];
+                };
+            };
+            403: components["responses"]["Eproblem"];
+            409: components["responses"]["Eproblem"];
+        };
+    };
+    adminRejectPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PageTransitionRequest"];
+            };
+        };
+        responses: {
+            /** @description Page renvoyée en brouillon */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDetail"];
+                };
+            };
+            403: components["responses"]["Eproblem"];
+            409: components["responses"]["Eproblem"];
+            422: components["responses"]["Eproblem"];
+        };
+    };
+    adminPublishPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PageTransitionRequest"];
+            };
+        };
+        responses: {
+            /** @description Page publiée */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDetail"];
+                };
+            };
+            403: components["responses"]["Eproblem"];
+            409: components["responses"]["Eproblem"];
+            422: components["responses"]["Eproblem"];
         };
     };
     adminListSectors: {
@@ -3680,8 +5018,12 @@ export interface operations {
     adminListMedia: {
         parameters: {
             query?: {
-                kind?: "image" | "pdf" | "document";
+                kind?: "image" | "video" | "pdf" | "document";
                 search?: string;
+                usage?: "used" | "unused";
+                created_from?: string;
+                created_to?: string;
+                sort?: "created_at" | "-created_at" | "size_bytes" | "-size_bytes";
                 limit?: number;
                 offset?: number;
             };
@@ -3701,6 +5043,26 @@ export interface operations {
                         items?: components["schemas"]["MediaItem"][];
                         total?: number;
                     };
+                };
+            };
+        };
+    };
+    adminMediaLimits: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Limites par dossier */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaLimits"];
                 };
             };
         };
@@ -3776,6 +5138,138 @@ export interface operations {
                 content?: never;
             };
             409: components["responses"]["Eproblem"];
+        };
+    };
+    adminReplaceMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Média remplacé */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaItem"];
+                };
+            };
+            403: components["responses"]["Eproblem"];
+            404: components["responses"]["Eproblem"];
+            415: components["responses"]["Eproblem"];
+            422: components["responses"]["Eproblem"];
+        };
+    };
+    adminListPartners: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Liste des partenaires */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PartnerList"];
+                };
+            };
+        };
+    };
+    adminCreatePartner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PartnerUpsert"];
+            };
+        };
+        responses: {
+            /** @description Partenaire créé */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Partner"];
+                };
+            };
+            403: components["responses"]["Eproblem"];
+            409: components["responses"]["Eproblem"];
+            422: components["responses"]["Eproblem"];
+        };
+    };
+    adminDeletePartner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Partenaire supprimé */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Eproblem"];
+            404: components["responses"]["Eproblem"];
+        };
+    };
+    adminUpdatePartner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PartnerUpsert"];
+            };
+        };
+        responses: {
+            /** @description Partenaire mis à jour */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Partner"];
+                };
+            };
+            403: components["responses"]["Eproblem"];
+            404: components["responses"]["Eproblem"];
+            409: components["responses"]["Eproblem"];
+            422: components["responses"]["Eproblem"];
         };
     };
     adminListRedirects: {

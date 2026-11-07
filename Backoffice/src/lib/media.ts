@@ -5,12 +5,13 @@ import type { MediaItem } from '@/services/api/types';
 export const MEDIA_LANGS = ['fr', 'en'] as const;
 
 /** Types de média acceptés par le contrat (`MediaItem.kind`). */
-export const MEDIA_KINDS = ['image', 'pdf', 'document'] as const;
+export const MEDIA_KINDS = ['image', 'video', 'pdf', 'document'] as const;
 export type MediaKind = (typeof MEDIA_KINDS)[number];
 
 /** Types MIME acceptés au téléversement, groupés par `kind`. */
 export const ACCEPTED_MIME: Record<MediaKind, string[]> = {
   image: ['image/png', 'image/jpeg', 'image/webp', 'image/avif'],
+  video: ['video/mp4', 'video/webm'],
   pdf: ['application/pdf'],
   document: ['text/plain', 'text/markdown', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
 };

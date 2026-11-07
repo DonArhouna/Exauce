@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: EXAUCE Backend — Contrat API v1
-  version: 1.0.0-M3.1
+  version: 1.0.0-M3.2
   description: |
     Contrat d'API de référence pour le Backend (FastAPI + PostgreSQL) d'EXAUCE
     Audit & Conseils SAS.
@@ -277,6 +277,24 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/PageDetail'}
         '404': {$ref: '#/components/responses/Eproblem'}
+
+  /partners:
+    get:
+      operationId: listPartners
+      tags: [public-content]
+      summary: Partenaires actifs, dans l'ordre d'affichage
+      description: |
+        Alimente le bloc « partenaires » de l'accueil. Seuls les partenaires
+        actifs sont renvoyés, triés par `position`. Réponse mono-langue avec
+        repli explicite (`is_fallback`) comme les autres contenus publics.
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        '200':
+          description: Partenaires actifs
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PartnerList'}
 
   /settings/public:
     get:
@@ -619,6 +637,145 @@ paths:
               schema: {$ref: '#/components/schemas/Problem'}
         '422': {$ref: '#/components/responses/Eproblem'}
 
+  # ── Authentification : MFA obligatoire, codes de secours, réinitialisation ──
+  /admin/auth/mfa/enroll:
+    post:
+      operationId: adminMfaEnroll
+      tags: [admin-auth]
+      summary: Démarre l'enrôlement TOTP (secret et URI otpauth)
+      description: |
+        Premier appel de l'enrôlement. Accepte soit une session active, soit
+        l'`enrollment_token` reçu au login avec `status=mfa_enrollment_required`
+        (aucun cookie de session dans ce second cas).
+        Le secret n'est renvoyé qu'une fois : il n'est pas relisible ensuite.
+        Un enrôlement déjà actif est refusé par `409 MFA_ALREADY_ENABLED`.
+      security:
+        - SessionCookie: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enrollment_token:
+                  type: string
+                  description: Jeton court (5 min, usage unique) du login à MFA obligatoire.
+      responses:
+        '200':
+          description: Secret TOTP à afficher une seule fois
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminMfaEnrollment'}
+        '401': {$ref: '#/components/responses/Eproblem'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+        '410': {$ref: '#/components/responses/Eproblem'}
+        '429': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/auth/mfa/enroll/confirm:
+    post:
+      operationId: adminMfaEnrollConfirm
+      tags: [admin-auth]
+      summary: Valide le premier code TOTP et remet les codes de secours
+      description: |
+        Vérifie `totp_code` contre le secret en cours d'enrôlement, active le MFA
+        et génère dix codes de secours à usage unique, affichés une seule fois.
+        Si l'appel vient d'un login (`enrollment_token`), la session est créée
+        comme dans `POST /admin/auth/login` : cookies `session_id` et
+        `csrf_token`, corps enrichi des codes de secours.
+      parameters:
+        - $ref: '#/components/parameters/csrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [totp_code]
+              properties:
+                totp_code:
+                  type: string
+                  pattern: '^[0-9]{6}$'
+                enrollment_token:
+                  type: string
+      responses:
+        '200':
+          description: MFA activé
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminMfaEnrollmentConfirmed'}
+        '401': {$ref: '#/components/responses/Eproblem'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+        '410': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
+        '429': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/auth/mfa/recovery-codes:
+    post:
+      operationId: adminMfaRegenerateRecoveryCodes
+      tags: [admin-auth]
+      summary: Régénère les codes de secours (mot de passe exigé)
+      description: |
+        Invalide tous les codes précédents et renvoie dix nouveaux codes à usage
+        unique. Le mot de passe courant est exigé : les codes de secours sont
+        l'ultime moyen d'accès, la régénération est donc une opération sensible.
+        Le MFA doit être actif (`409 MFA_ENROLLMENT_REQUIRED` sinon).
+      security:
+        - SessionCookie: []
+          CsrfHeader: []
+      parameters:
+        - $ref: '#/components/parameters/csrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: {type: string, format: password, minLength: 1}
+      responses:
+        '200':
+          description: Nouveaux codes de secours
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RecoveryCodes'}
+        '401': {$ref: '#/components/responses/Eproblem'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
+        '429': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/users/{id}/mfa/reset:
+    post:
+      operationId: adminResetUserMfa
+      tags: [admin-users]
+      summary: Réinitialise le MFA d'un compte (téléphone perdu)
+      description: |
+        Désactive le secret TOTP, invalide les codes de secours et révoque toutes
+        les sessions du compte. Au prochain login, le compte reçoit
+        `mfa_enrollment_required` s'il détient un rôle à MFA obligatoire
+        (`super_admin`, `admin`, `crm`), sinon un login simple.
+        L'auto-réinitialisation est refusée (`403`) : un compte ne peut pas
+        lever son propre second facteur.
+      security:
+        - SessionCookie: []
+          CsrfHeader: []
+      x-permission: [users, edit, default]
+      parameters:
+        - $ref: '#/components/parameters/csrfHeader'
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '204': {description: 'MFA réinitialisé, sessions révoquées'}
+        '401': {$ref: '#/components/responses/Eproblem'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '404': {$ref: '#/components/responses/Eproblem'}
+
   /admin/reports/dashboard:
     get:
       operationId: adminDashboard
@@ -872,6 +1029,117 @@ paths:
         '409': {$ref: '#/components/responses/Eproblem'}
         '422': {$ref: '#/components/responses/Eproblem'}
 
+  # ── Médias d'une publication (galerie, vidéos, couverture dérivée) ──
+  /admin/publications/{id}/media:
+    get:
+      operationId: adminListPublicationMedia
+      tags: [admin-content]
+      summary: Médias d'une publication, ordonnés, avec couverture dérivée
+      description: |
+        Renvoie la galerie complète. `media_count` et `cover_media_id` sont
+        **dérivés** de la liste (voir `PublicationMedia`) : le client ne les
+        calcule pas et ne les écrit jamais.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      x-permission: [publications, view, default]
+      responses:
+        '200':
+          description: Médias de la publication
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PublicationMediaList'}
+        '404': {$ref: '#/components/responses/Eproblem'}
+    post:
+      operationId: adminAddPublicationMedia
+      tags: [admin-content]
+      summary: Attache un média à une publication (téléversé ou externe)
+      description: |
+        `source=upload` exige `media_id` (média de la médiathèque) ;
+        `source=external` exige `external_url` (YouTube, Vimeo, CDN) et
+        `kind=video`. `alt` et `caption` sont par langue.
+        Une `position` déjà prise renvoie `409 POSITION_CONFLICT` ; la couverture
+        et `media_count` sont recalculés après l'ajout.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PublicationMediaUpsert'}
+      x-permission: [publications, edit, default]
+      responses:
+        '201':
+          description: Média attaché
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PublicationMedia'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '404': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/publications/{id}/media/{media_id}:
+    patch:
+      operationId: adminUpdatePublicationMedia
+      tags: [admin-content]
+      summary: Modifie l'ordre, la source ou les textes d'un média de publication
+      description: |
+        Mise à jour partielle. Changer `position` réordonne la galerie et peut
+        changer la couverture dérivée ; un doublon renvoie `409
+        POSITION_CONFLICT`. `alt` et `caption` s'écrivent par langue.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - name: media_id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PublicationMediaUpsert'}
+      x-permission: [publications, edit, default]
+      responses:
+        '200':
+          description: Média mis à jour
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PublicationMedia'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '404': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
+    delete:
+      operationId: adminRemovePublicationMedia
+      tags: [admin-content]
+      summary: Détache un média d'une publication
+      description: |
+        Le média lui-même reste dans la médiathèque. La couverture et
+        `media_count` sont recalculés ; une publication publiée le reste (la
+        republication du site est un job distinct).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - name: media_id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      x-permission: [publications, edit, default]
+      responses:
+        '204': {description: Média détaché}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '404': {$ref: '#/components/responses/Eproblem'}
   /admin/content/tree:
     get:
       operationId: adminGetTree
@@ -899,6 +1167,39 @@ paths:
       responses:
         '201': {description: 'Nœud créé'}
         '403': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/tree/{id}:
+    patch:
+      operationId: adminUpdateNode
+      tags: [admin-content]
+      summary: Activation et position d'un nœud de l'arborescence (EF-508)
+      description: |
+        `is_active` pilote la visibilité publique du nœud et de sa descendance ;
+        `position` fixe son rang dans son parent. Les ancres publiques sont
+        dérivées de `source_key` et ne sont jamais modifiables : seule la
+        traduction (`title`, `slug`) les fait évoluer.
+        Le renommage passe par `PUT /admin/content/node/{id}/translation/{lang}`.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                is_active: {type: boolean}
+                position: {type: integer, minimum: 0}
+      x-permission: [tree, move, default]
+      responses:
+        '200': {description: 'Nœud mis à jour'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
 
   /admin/tree/{id}/move:
     post:
@@ -1094,6 +1395,12 @@ paths:
       operationId: adminAddSection
       tags: [admin-pages]
       summary: Ajout d'une section typée sur une page
+      description: |
+        Ajoute un bloc à la position demandée. `revision` est la révision de page
+        lue par le client : une valeur périmée renvoie `409 CONFLICT`.
+        Un type absent du catalogue renvoie `422 VALIDATION_ERROR`, un type dont
+        `editable=false` renvoie `409 SECTION_TYPE_NOT_EDITABLE`.
+        La réponse contient la page entière pour conserver `revision` et l'ordre.
       parameters:
         - name: id
           in: path
@@ -1107,16 +1414,23 @@ paths:
       x-permission: [pages, edit, default]
       responses:
         '201':
-          description: Section créée
+          description: Section créée, page renvoyée avec sa nouvelle révision
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/Section'}
+              schema: {$ref: '#/components/schemas/SectionMutationResult'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
 
   /admin/sections/{id}:
     patch:
       operationId: adminUpdateSection
       tags: [admin-pages]
-      summary: Mise à jour d'une section (ordre position, activation, config JSON)
+      summary: Structure d'une section (position, activation)
+      description: |
+        Ne touche pas aux textes : `PUT /admin/sections/{id}/content/{lang}`
+        écrit les données d'une langue. `revision` (page) protège l'ordre ;
+        `position` doit rester unique dans la page, sinon `409 POSITION_CONFLICT`.
       parameters:
         - name: id
           in: path
@@ -1128,25 +1442,232 @@ paths:
           application/json:
             schema:
               type: object
+              required: [revision]
               properties:
-                position: {type: integer}
+                position: {type: integer, minimum: 0}
                 is_active: {type: boolean}
-                config: {type: object}
+                revision: {type: integer, minimum: 0}
       x-permission: [pages, edit, default]
       responses:
-        '200': {description: 'Section mise à jour'}
+        '200':
+          description: Section mise à jour
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SectionMutationResult'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
     delete:
       operationId: adminDeleteSection
       tags: [admin-pages]
       summary: Suppression d'une section
+      description: |
+        `revision` est obligatoire en paramètre de requête. La suppression d'une
+        section d'une page publiée est réservée à `pages:delete` (admin) ; un
+        rédacteur reçoit `403 FORBIDDEN`.
       parameters:
         - name: id
           in: path
           required: true
           schema: {type: string, format: uuid}
+        - $ref: '#/components/parameters/revision'
       x-permission: [pages, delete, default]
       responses:
         '204': {description: 'Section supprimée'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/sections/{id}/content/{lang}:
+    put:
+      operationId: adminPutSectionContent
+      tags: [admin-pages]
+      summary: Écriture des données d'une section pour une langue
+      description: |
+        Remplace les valeurs d'une seule langue ; l'autre n'est pas touchée.
+        La permission est vérifiée **par langue** : un rédacteur limité au
+        français reçoit `403 NOT_PERMITTED_LANG` en écrivant `en`.
+        Les règles de validation viennent du catalogue (`GET
+        /admin/section-types`) : champ requis, longueur maximale, listes.
+        Un refus est `422 VALIDATION_ERROR` avec `errors[].field` en chemin
+        pointé (`items.0.label`).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - name: lang
+          in: path
+          required: true
+          schema: {type: string, enum: [fr, en]}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SectionContentUpdate'}
+      x-permission: [pages, edit, lang]
+      responses:
+        '200':
+          description: Données enregistrées
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SectionMutationResult'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '404': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/section-types:
+    get:
+      operationId: adminListSectionTypes
+      tags: [admin-pages]
+      summary: Catalogue des types de section et de leurs schémas (EF-501)
+      description: |
+        Source unique de vérité des formulaires de section : le client génère
+        les champs depuis `fields` et n'a aucun code par type. Le catalogue est
+        servi depuis la table `section_types` (seed de 21 codes), pas depuis le
+        code applicatif. `editable=false` signale un type hors du périmètre
+        d'édition : l'écran l'affiche en repli lecture seule, et une écriture
+        renvoie `409 SECTION_TYPE_NOT_EDITABLE`.
+      x-permission: [pages, view, default]
+      responses:
+        '200':
+          description: Catalogue des types
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SectionTypeList'}
+
+  # ── Workflow éditorial d'une page ──
+  # draft --submit-review--> in_review --approve--> approved --publish--> published
+  # in_review --reject--> draft ; archived est terminal (restauration admin).
+  # Chaque transition exige `revision` (verrou optimiste) et renvoie la page
+  # complète avec sa nouvelle révision.
+  /admin/pages/{id}/submit-review:
+    post:
+      operationId: adminSubmitPageReview
+      tags: [admin-pages]
+      summary: Soumet la page à relecture (draft → in_review)
+      description: |
+        Transition `draft → in_review`. `revision` obligatoire : une valeur
+        périmée renvoie `409 CONFLICT` avec l'état courant en `detail`, et le
+        client recharge. Un statut incompatible renvoie `409 INVALID_TRANSITION`.
+        La permission est vérifiée par langue quand `lang` est fourni.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - $ref: '#/components/parameters/lang'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PageTransitionRequest'}
+      x-permission: [pages, edit, default]
+      responses:
+        '200':
+          description: Page en relecture
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PageDetail'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/pages/{id}/approve:
+    post:
+      operationId: adminApprovePage
+      tags: [admin-pages]
+      summary: Approuve une page en relecture (in_review → approved)
+      description: |
+        Transition `in_review → approved`. **Pas d'auto-approbation** : le
+        compte qui a soumis la page ne peut pas l'approuver, même s'il détient
+        `pages:review` ; le refus est `403 AUTO_APPROVAL_FORBIDDEN`.
+        `revision` obligatoire, `409 INVALID_TRANSITION` si le statut n'est pas
+        `in_review`.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PageTransitionRequest'}
+      x-permission: [pages, review, default]
+      responses:
+        '200':
+          description: Page approuvée
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PageDetail'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/pages/{id}/reject:
+    post:
+      operationId: adminRejectPage
+      tags: [admin-pages]
+      summary: Rejette une page en relecture et la renvoie en brouillon
+      description: |
+        Transition `in_review → draft`. `comment` est **obligatoire** : le motif
+        est conservé dans l'historique et affiché au rédacteur ; son absence
+        renvoie `422 VALIDATION_ERROR` sur le champ `comment`.
+        `revision` obligatoire, `409 INVALID_TRANSITION` sinon.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PageTransitionRequest'}
+      x-permission: [pages, review, default]
+      responses:
+        '200':
+          description: Page renvoyée en brouillon
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PageDetail'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/pages/{id}/publish:
+    post:
+      operationId: adminPublishPage
+      tags: [admin-pages]
+      summary: Publie une page approuvée (approved → published)
+      description: |
+        Transition `approved → published`. La publication reste une action
+        distincte de l'approbation (`pages:publish`). Refus possibles :
+        `409 INVALID_TRANSITION` si la page n'est pas approuvée ;
+        `409 SECTION_MEDIA_ALT_MISSING` si une image non décorative n'a pas de
+        texte alternatif dans chaque langue publiée, avec `errors[].field` en
+        `sections[].config.media.alt.<lang>` ; `422` si
+        `banners_pending=true` (bandeaux légaux non finalisés).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PageTransitionRequest'}
+      x-permission: [pages, publish, default]
+      responses:
+        '200':
+          description: Page publiée
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PageDetail'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
 
   /admin/sectors:
     get:
@@ -1422,13 +1943,32 @@ paths:
       operationId: adminListMedia
       tags: [admin-media]
       summary: Médiathèque — liste paginée avec filtres et recherche (EF-801..803)
+      description: |
+        La médiathèque regroupe visuellement par dossier, mais ce dossier se
+        déduit de `kind` : `image` → images, `video` → videos, `pdf` et
+        `document` → documents. Aucun champ `folder` n'est stocké. Les filtres
+        d'usage et de date, ainsi que le tri, alimentent la barre de filtres.
+        Un média `deleted` n'apparaît jamais. `usages` reste vide en liste :
+        il n'est renseigné que sur `GET /admin/media/{id}`.
       parameters:
         - name: kind
           in: query
-          schema: {type: string, enum: [image, pdf, document]}
+          schema: {type: string, enum: [image, video, pdf, document]}
         - name: search
           in: query
           schema: {type: string}
+        - name: usage
+          in: query
+          schema: {type: string, enum: [used, unused]}
+        - name: created_from
+          in: query
+          schema: {type: string, format: date}
+        - name: created_to
+          in: query
+          schema: {type: string, format: date}
+        - name: sort
+          in: query
+          schema: {type: string, enum: [created_at, -created_at, size_bytes, -size_bytes]}
         - name: limit
           in: query
           schema: {type: integer, default: 20}
@@ -1448,6 +1988,25 @@ paths:
                     type: array
                     items: {$ref: '#/components/schemas/MediaItem'}
                   total: {type: integer}
+
+  /admin/media/limits:
+    get:
+      operationId: adminMediaLimits
+      tags: [admin-media]
+      summary: Limites de téléversement par dossier, lues dans la configuration
+      description: |
+        Alimente l'aide de l'écran de téléversement et le contrôle préalable,
+        sans aucune limite recopiée en dur dans le client : les valeurs viennent
+        de la configuration du serveur. Le serveur reste l'autorité : un fichier
+        hors limite est refusé par `415` avec `errors[0].code` valant
+        `MIME_NOT_ALLOWED`, `TOO_LARGE` ou `INFECTED`.
+      x-permission: [media, view, default]
+      responses:
+        '200':
+          description: Limites par dossier
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MediaLimits'}
 
   /admin/media/upload:
     post:
@@ -1503,6 +2062,131 @@ paths:
       responses:
         '204': {description: 'Média supprimé'}
         '409': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/media/{id}/replace:
+    post:
+      operationId: adminReplaceMedia
+      tags: [admin-media]
+      summary: Remplace le fichier d'un média en conservant ses références
+      description: |
+        Même `id`, mêmes usages : l'ancien fichier passe en `status=replaced`.
+        L'analyse antivirus s'applique comme au premier envoi (`415` avec
+        `errors[0].code` : `MIME_NOT_ALLOWED`, `TOO_LARGE`, `INFECTED`).
+        Pour une vidéo, `poster_media_id` et `duration_ms` sont recalculés.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: {type: string, format: binary}
+      x-permission: [media, edit, default]
+      responses:
+        '200':
+          description: Média remplacé
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MediaItem'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '404': {$ref: '#/components/responses/Eproblem'}
+        '415': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
+
+  # ── Partenaires (bloc de l'accueil, module `pages`) ──
+  /admin/partners:
+    get:
+      operationId: adminListPartners
+      tags: [admin-content]
+      summary: Partenaires, tous statuts, dans l'ordre d'affichage
+      description: |
+        Les partenaires alimentent le bloc « partenaires » de l'accueil. La
+        permission est celle des pages (`pages:view`) : ils font partie du
+        contenu éditorial, pas d'un module séparé.
+      x-permission: [pages, view, default]
+      responses:
+        '200':
+          description: Liste des partenaires
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PartnerList'}
+    post:
+      operationId: adminCreatePartner
+      tags: [admin-content]
+      summary: Crée un partenaire
+      description: |
+        `code` est un identifiant stable unique : un doublon renvoie `409
+        CONFLICT`. `position` situe le partenaire dans le bloc ; `translations`
+        porte le nom et la description par langue (`fr`, `en`).
+        La publication du partenaire suit celle de la page d'accueil.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PartnerUpsert'}
+      x-permission: [pages, edit, default]
+      responses:
+        '201':
+          description: Partenaire créé
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Partner'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/partners/{id}:
+    patch:
+      operationId: adminUpdatePartner
+      tags: [admin-content]
+      summary: Modifie un partenaire (nom, logo, lien, ordre, activation)
+      description: |
+        Mise à jour partielle : seuls les champs fournis changent. Le logo doit
+        être un média du dossier `images` (`422 VALIDATION_ERROR` sinon).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PartnerUpsert'}
+      x-permission: [pages, edit, default]
+      responses:
+        '200':
+          description: Partenaire mis à jour
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Partner'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '404': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
+    delete:
+      operationId: adminDeletePartner
+      tags: [admin-content]
+      summary: Supprime un partenaire
+      description: |
+        Suppression logique, réservée à `pages:delete` (admin) : un rédacteur
+        désactive le partenaire (`is_active=false`) au lieu de le supprimer.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      x-permission: [pages, delete, default]
+      responses:
+        '204': {description: 'Partenaire supprimé'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '404': {$ref: '#/components/responses/Eproblem'}
 
   /admin/redirects:
     get:
@@ -1819,7 +2503,14 @@ components:
       in: header
       required: true
       schema: {type: string, format: uuid}
-
+    revision:
+      name: revision
+      in: query
+      required: true
+      description: |
+        Révision de page lue par le client (verrou optimiste). Une valeur
+        périmée renvoie `409 CONFLICT` avec l'état courant en `detail`.
+      schema: {type: integer, minimum: 0}
   securitySchemes:
     SessionCookie:
       type: apiKey
@@ -1879,6 +2570,15 @@ components:
             - TOKEN_EXPIRED
             - NOT_IMPLEMENTED
             - SERVER_ERROR
+            - MFA_ALREADY_ENABLED
+            - MFA_ENROLLMENT_REQUIRED
+            - MFA_CODE_INVALID
+            - RECOVERY_CODE_INVALID
+            - AUTO_APPROVAL_FORBIDDEN
+            - SECTION_TYPE_NOT_EDITABLE
+            - SECTION_MEDIA_ALT_MISSING
+            - MEDIA_IN_USE
+            - POSITION_CONFLICT
         detail: {type: string}
         correlation_id: {type: string}
         errors:
@@ -1939,11 +2639,18 @@ components:
         slug: {type: string}
         title: {type: string}
         tagline: {type: string, nullable: true}
+        source_key:
+          type: string
+          nullable: true
+          description: Clé stable d'ancrage public, dérivée du seed ; jamais modifiable.
+        position: {type: integer}
+        is_active: {type: boolean}
         is_fallback: {type: boolean}
+        translations:
+          $ref: '#/components/schemas/NodeTranslations'
         domains:
           type: array
           items: {$ref: '#/components/schemas/Domain'}
-
     Domain:
       type: object
       properties:
@@ -1951,30 +2658,42 @@ components:
         slug: {type: string}
         title: {type: string}
         intro: {type: string, nullable: true}
+        source_key: {type: string, nullable: true}
+        position: {type: integer}
+        is_active: {type: boolean}
         is_fallback: {type: boolean}
+        translations:
+          $ref: '#/components/schemas/NodeTranslations'
         groups:
           type: array
           items: {$ref: '#/components/schemas/Group'}
-
     Group:
       type: object
       properties:
         id: {type: string, format: uuid}
         slug: {type: string}
         title: {type: string}
+        source_key: {type: string, nullable: true}
+        position: {type: integer}
+        is_active: {type: boolean}
         is_fallback: {type: boolean}
+        translations:
+          $ref: '#/components/schemas/NodeTranslations'
         services:
           type: array
           items: {$ref: '#/components/schemas/PrestationItem'}
-
     PrestationItem:
       type: object
       properties:
         id: {type: string, format: uuid}
         slug: {type: string}
         title: {type: string}
+        source_key: {type: string, nullable: true}
+        position: {type: integer}
+        is_active: {type: boolean}
         is_fallback: {type: boolean}
-
+        translations:
+          $ref: '#/components/schemas/NodeTranslations'
     DomainDetail:
       type: object
       properties:
@@ -2109,7 +2828,20 @@ components:
           properties:
             body: {$ref: '#/components/schemas/Localized'}
             author_name: {type: string, nullable: true}
-
+            media:
+              type: array
+              description: 'Médias ordonnés : galerie et vidéos, par `position`.'
+              items: {$ref: '#/components/schemas/PublicationMedia'}
+            media_count:
+              type: integer
+              description: Dérivé de `media` (lecture seule).
+            cover_media_id:
+              type: string
+              format: uuid
+              nullable: true
+              description: |
+                Dérivé (lecture seule) : média de plus petite `position`, ou son
+                `poster_media_id` s'il s'agit d'une vidéo.
     PublicationList:
       type: object
       required: [items]
@@ -2141,10 +2873,13 @@ components:
         is_in_nav: {type: boolean}
         nav_position: {type: integer, nullable: true}
         is_system: {type: boolean}
-        status: {type: string}
+        status:
+          type: string
+          enum: [draft, in_review, approved, published, archived]
 
     PageDetail:
       type: object
+      required: [id, status, revision, sections]
       properties:
         id: {type: string, format: uuid}
         page_key: {type: string}
@@ -2152,36 +2887,95 @@ components:
         is_in_nav: {type: boolean}
         nav_position: {type: integer, nullable: true}
         is_system: {type: boolean}
-        status: {type: string}
+        status:
+          type: string
+          enum: [draft, in_review, approved, published, archived]
         banners_pending: {type: boolean}
+        revision:
+          type: integer
+          description: |
+            Révision de la page. À renvoyer dans **toute** mutation (section,
+            workflow) ; une révision périmée renvoie `409 CONFLICT`.
         title: {$ref: '#/components/schemas/Localized'}
+        titles:
+          type: object
+          description: |
+            Titre par langue (`fr`, `en`), pour l'édition côte à côte. `title`
+            reste la valeur de la langue demandée avec son `is_fallback`.
+          additionalProperties: {type: string}
+        slugs:
+          type: object
+          description: Slug par langue (`fr`, `en`).
+          additionalProperties: {type: string}
+        section_count:
+          type: integer
+          description: Nombre de sections, dérivé de `sections`.
         sections:
           type: array
           items: {$ref: '#/components/schemas/Section'}
-
     Section:
       type: object
       properties:
         id: {type: string, format: uuid}
         section_type: {type: string}
-        source_key: {type: string, nullable: true}
+        source_key:
+          type: string
+          nullable: true
+          description: |
+            Clé d'ancre publique. Dérivée du seed pour les blocs existants et
+            jamais modifiable : elle change avec `section_type`, pas avec les textes.
         position: {type: integer}
         is_active: {type: boolean}
-        config: {type: object}
+        config:
+          $ref: '#/components/schemas/SectionConfig'
         data:
           type: object
-          description: Données traduites de la section (hero, stats, CTA...)
+          description: |
+            Données du type, **par langue** : `{ "fr": {...}, "en": {...} }`.
+            Les champs sont ceux du catalogue (`GET /admin/section-types`).
+            Une langue absente signifie « non traduite », pas « vide ».
+          additionalProperties:
+            type: object
+            additionalProperties: true
 
     SectionUpsert:
       type: object
-      required: [section_type, position]
+      required: [section_type, position, revision]
       properties:
-        section_type: {type: string}
+        section_type: {type: string, description: Code du catalogue (`GET /admin/section-types`).}
         source_key: {type: string, nullable: true}
-        position: {type: integer}
+        position: {type: integer, minimum: 0}
         is_active: {type: boolean, default: true}
-        config: {type: object}
+        config: {$ref: '#/components/schemas/SectionConfig'}
+        data:
+          type: object
+          description: Données initiales par langue (`fr`, `en`).
+          additionalProperties:
+            type: object
+            additionalProperties: true
+        revision:
+          type: integer
+          description: Révision de page lue par le client (verrou optimiste).
 
+    SectionContentUpdate:
+      type: object
+      required: [data, revision]
+      properties:
+        data:
+          type: object
+          description: Valeurs des champs du type, pour une seule langue.
+          additionalProperties: true
+        revision: {type: integer, minimum: 0}
+
+    SectionMutationResult:
+      type: object
+      required: [page, section]
+      description: |
+        Mutation de section : la page entière accompagne la section pour que le
+        client conserve `revision` et l'ordre sans seconde requête.
+      properties:
+        page: {$ref: '#/components/schemas/PageDetail'}
+        section: {$ref: '#/components/schemas/Section'}
     PublicSettings:
       type: object
       description: Coordonnées et SEO publics (EF-106)
@@ -2214,16 +3008,301 @@ components:
       type: object
       properties:
         id: {type: string, format: uuid}
-        kind: {type: string, enum: [image, pdf, document]}
+        kind: {type: string, enum: [image, video, pdf, document]}
         storage_key: {type: string}
         url: {type: string}
         mime: {type: string}
         size_bytes: {type: integer}
         status: {type: string, enum: [active, replaced, deleted]}
-        alt: {type: string, nullable: true}
+        alt:
+          type: string
+          nullable: true
+          description: Valeur de la langue demandée ; avec `all_langs=true`, lire `translations`.
         caption: {type: string, nullable: true}
+        translations:
+          type: object
+          description: |
+            Textes par langue (`fr`, `en`). L'écriture passe par
+            `PUT /admin/content/media/{id}/translation/{lang}`.
+          additionalProperties:
+            type: object
+            properties:
+              alt: {type: string, nullable: true}
+              caption: {type: string, nullable: true}
+        usage_count:
+          type: integer
+          description: Nombre de contenus qui référencent ce média.
+        usages:
+          type: array
+          description: Renseigné sur `GET /admin/media/{id}`, vide dans la liste.
+          items: {$ref: '#/components/schemas/MediaUsage'}
+        scan_status: {type: string, enum: [pending, clean, infected]}
+        duration_ms: {type: integer, nullable: true}
+        width: {type: integer, nullable: true}
+        height: {type: integer, nullable: true}
+        created_at: {type: string, format: date-time}
+    # ── Catalogue des types de section ──
+    SectionTypeList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/SectionType'}
+
+    SectionType:
+      type: object
+      required: [code, editable, fields]
+      properties:
+        code: {type: string}
+        label: {$ref: '#/components/schemas/Localized'}
+        usage:
+          type: string
+          description: Pages d'usage prévues par la modélisation éditoriale (doc 16 §3.4).
+        editable:
+          type: boolean
+          description: |
+            Faux = type hors périmètre d'édition (repli lecture seule). Une
+            écriture sur un tel type renvoie `409 SECTION_TYPE_NOT_EDITABLE`.
+        media_slots:
+          type: array
+          description: Emplacements média que le type accepte, pour l'éditeur.
+          items: {type: string, enum: [image, gallery, video]}
+        fields:
+          type: array
+          items: {$ref: '#/components/schemas/SectionField'}
+
+    SectionField:
+      type: object
+      required: [key, kind, label, required]
+      description: |
+        Description d'un champ de section : le client génère le contrôle depuis
+        `kind` et n'a aucune liste de champs codée en dur par type.
+      properties:
+        key: {type: string}
+        kind: {type: string, enum: [text, textarea, list, media, video, number, boolean]}
+        label: {$ref: '#/components/schemas/Localized'}
+        required: {type: boolean}
+        max_length: {type: integer, nullable: true}
+        item_fields:
+          type: array
+          description: Champs de chaque élément quand `kind=list`.
+          items: {$ref: '#/components/schemas/SectionField'}
+
+    SectionConfig:
+      type: object
+      description: |
+        Configuration non traduite d'une section : médias, galerie, vidéo.
+        Versionné et décrit, pour qu'aucun bloc média ne soit codé en dur.
+      properties:
+        media: {$ref: '#/components/schemas/SectionMedia'}
+        gallery:
+          type: array
+          items: {$ref: '#/components/schemas/SectionMedia'}
+        video: {$ref: '#/components/schemas/SectionVideo'}
+
+    SectionMedia:
+      type: object
+      required: [media_id, decorative]
+      properties:
+        media_id: {type: string, format: uuid}
+        decorative: {type: boolean}
+        alt:
+          type: object
+          description: Obligatoire si `decorative=false`, une entrée par langue publiée.
+          additionalProperties: {type: string}
+        caption:
+          type: object
+          additionalProperties: {type: string}
+
+    SectionVideo:
+      type: object
+      required: [provider, video_id]
+      properties:
+        provider: {type: string, enum: [youtube, vimeo, upload]}
+        video_id: {type: string}
+        url: {type: string, format: uri}
+        poster_media_id: {type: string, format: uuid, nullable: true}
+        caption: {type: object, additionalProperties: {type: string}}
+        transcription: {type: object, additionalProperties: {type: string}}
+
+    # ── Arborescence des services ──
+    NodeTranslations:
+      type: object
+      description: |
+        Traductions d'un nœud, par langue (`fr`, `en`). Renseigné avec
+        `all_langs=true` sur `GET /admin/content/tree`, sinon absent.
+      additionalProperties:
+        type: object
+        properties:
+          title: {type: string}
+          slug: {type: string}
+
+    # ── Workflow éditorial ──
+    PageTransitionRequest:
+      type: object
+      required: [revision]
+      properties:
+        revision:
+          type: integer
+          description: Révision de la page lue par le client (verrou optimiste).
+        comment:
+          type: string
+          maxLength: 1000
+          description: Obligatoire pour `reject` (motif), facultatif ailleurs.
+
+    # ── Médiathèque ──
+    MediaUsage:
+      type: object
+      required: [entity_type, entity_id, title, edit_path]
+      properties:
+        entity_type: {type: string, enum: [page_section, page, publication, node]}
+        entity_id: {type: string, format: uuid}
+        title: {type: string}
+        edit_path:
+          type: string
+          description: Route du Backoffice pour ouvrir le contenu qui référence le média.
+
+    MediaLimits:
+      type: object
+      required: [items]
+      description: |
+        Limites de téléversement lues dans la configuration du serveur, jamais
+        recopiées en dur dans le client.
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/MediaLimit'}
+
+    MediaLimit:
+      type: object
+      required: [kind, mime, max_bytes]
+      properties:
+        kind: {type: string, enum: [image, video, pdf, document]}
+        mime:
+          type: array
+          items: {type: string}
+        max_bytes: {type: integer}
+        max_width: {type: integer, nullable: true}
+        max_height: {type: integer, nullable: true}
+        max_duration_ms: {type: integer, nullable: true}
+
+    # ── Partenaires ──
+    Partner:
+      type: object
+      required: [id, position, is_active]
+      properties:
+        id: {type: string, format: uuid}
+        code: {type: string, description: Identifiant stable unique.}
+        logo_media_id: {type: string, format: uuid, nullable: true}
+        website_url: {type: string, format: uri, nullable: true}
+        position: {type: integer}
+        is_active: {type: boolean}
+        is_fallback: {type: boolean}
+        translations:
+          type: object
+          description: Nom et description par langue (`fr`, `en`).
+          additionalProperties:
+            type: object
+            properties:
+              name: {type: string}
+              description: {type: string, nullable: true}
+
+    PartnerUpsert:
+      type: object
+      required: [translations]
+      properties:
+        code: {type: string}
+        logo_media_id: {type: string, format: uuid, nullable: true}
+        website_url: {type: string, format: uri, nullable: true}
+        position: {type: integer, minimum: 0}
+        is_active: {type: boolean, default: true}
+        translations:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              name: {type: string}
+              description: {type: string, nullable: true}
+
+    PartnerList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Partner'}
+
+    # ── Médias d'une publication ──
+    PublicationMedia:
+      type: object
+      required: [id, position, source, alt, caption]
+      description: |
+        Média attaché à une publication. `cover_media_id` et `media_count` de
+        `PublicationDetail` sont **dérivés** de cette liste : la couverture est
+        le média de plus petite `position` (son `poster_media_id` s'il s'agit
+        d'une vidéo), `media_count` en est la longueur. Aucun des deux n'est
+        modifiable directement.
+      properties:
+        id: {type: string, format: uuid}
+        publication_id: {type: string, format: uuid}
+        position:
+          type: integer
+          minimum: 0
+          description: Unique par publication ; un doublon renvoie `409 POSITION_CONFLICT`.
+        source: {type: string, enum: [upload, external]}
+        kind: {type: string, enum: [image, video]}
+        media_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Obligatoire si `source=upload`.
+        external_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Obligatoire si `source=external` (YouTube, Vimeo, CDN).
+        poster_media_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Vignette d'une vidéo ; sert de couverture si elle est en position 0.
+        alt:
+          type: object
+          description: Texte alternatif par langue (`fr`, `en`).
+          additionalProperties: {type: string}
+        caption:
+          type: object
+          description: Légende par langue (`fr`, `en`).
+          additionalProperties: {type: string}
+        duration_ms:
+          type: integer
+          nullable: true
+          description: Durée d'une vidéo ; dérivée du fichier pour `source=upload`.
         created_at: {type: string, format: date-time}
 
+    PublicationMediaUpsert:
+      type: object
+      required: [position, source]
+      properties:
+        position: {type: integer, minimum: 0}
+        source: {type: string, enum: [upload, external]}
+        kind: {type: string, enum: [image, video]}
+        media_id: {type: string, format: uuid, nullable: true}
+        external_url: {type: string, format: uri, nullable: true}
+        poster_media_id: {type: string, format: uuid, nullable: true}
+        alt: {type: object, additionalProperties: {type: string}}
+        caption: {type: object, additionalProperties: {type: string}}
+
+    PublicationMediaList:
+      type: object
+      required: [items, media_count, cover_media_id]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/PublicationMedia'}
+        media_count: {type: integer}
+        cover_media_id: {type: string, format: uuid, nullable: true}
     ContentVersion:
       type: object
       properties:
@@ -2305,6 +3384,12 @@ components:
 
     Role:
       type: object
+      description: |
+        Rôle et permissions effectives. Les permissions de `viewer` restent
+        **à confirmer** : le seed ne lui en accorde aucune, alors que le
+        Backoffice a besoin de `pages:view` et `publications:view` pour que le
+        compte de démonstration voie les écrans. Point ouvert pour le Backend,
+        sans effet sur le contrat tant que la décision n'est pas prise.
       properties:
         id: {type: string, format: uuid}
         code: {type: string}
@@ -2398,8 +3483,10 @@ components:
       properties:
         node_type: {type: string, enum: [family, domain, group, service]}
         parent_id: {type: string, format: uuid, nullable: true}
-        position: {type: integer}
-
+        position: {type: integer, minimum: 0}
+        is_active: {type: boolean, default: true}
+        translations:
+          $ref: '#/components/schemas/NodeTranslations'
     AdminLoginRequest:
       type: object
       required: [email, password]
@@ -2411,7 +3498,12 @@ components:
           minLength: 6
           maxLength: 8
           description: Code TOTP. Requis au second essai si `status=mfa_required`.
-
+        recovery_code:
+          type: string
+          minLength: 8
+          description: |
+            Code de secours à usage unique, alternative à `totp_code` quand
+            l'application d'authentification est inaccessible.
     AdminLoginAuthenticated:
       type: object
       required: [status, user, csrf_token]
@@ -2432,11 +3524,60 @@ components:
       description: |
         Discriminateur `status`. `authenticated` pose les cookies `session_id`
         et `csrf_token`. `mfa_required` n'en pose aucun ; le client renvoie
-        le même login avec `totp_code`.
+        le même login avec `totp_code` ou `recovery_code`.
+        `mfa_enrollment_required` n'en pose aucun non plus : le compte détient
+        un rôle à MFA obligatoire sans TOTP enrôlé, et le client conduit
+        l'enrôlement avec `enrollment_token`.
       oneOf:
         - $ref: '#/components/schemas/AdminLoginAuthenticated'
         - $ref: '#/components/schemas/AdminLoginMfaRequired'
+        - $ref: '#/components/schemas/AdminLoginMfaEnrollmentRequired'
 
+    AdminLoginMfaEnrollmentRequired:
+      type: object
+      required: [status, enrollment_token, required_role]
+      description: |
+        Rôle à MFA obligatoire (`super_admin`, `admin`, `crm`) sans MFA enrôlé.
+        Aucun cookie de session : `enrollment_token` (5 min, usage unique)
+        n'ouvre que les endpoints `/admin/auth/mfa/enroll*`.
+      properties:
+        status: {type: string, enum: [mfa_enrollment_required]}
+        enrollment_token: {type: string}
+        required_role: {type: string}
+
+    AdminMfaEnrollment:
+      type: object
+      required: [secret, otpauth_uri, digits, period, algorithm]
+      properties:
+        secret:
+          type: string
+          description: Secret TOTP base32, renvoyé une seule fois.
+        otpauth_uri: {type: string, format: uri}
+        digits: {type: integer, enum: [6]}
+        period: {type: integer, enum: [30]}
+        algorithm: {type: string, enum: [SHA1]}
+
+    RecoveryCodes:
+      type: object
+      required: [recovery_codes, generated_at]
+      properties:
+        recovery_codes:
+          type: array
+          minItems: 10
+          maxItems: 10
+          description: Dix codes à usage unique, affichés une seule fois.
+          items: {type: string}
+        generated_at: {type: string, format: date-time}
+
+    AdminMfaEnrollmentConfirmed:
+      allOf:
+        - $ref: '#/components/schemas/AdminLoginAuthenticated'
+        - type: object
+          required: [recovery_codes]
+          properties:
+            recovery_codes:
+              type: array
+              items: {type: string}
     AdminSessionUser:
       type: object
       required: [id, email, display_name, is_active, must_reset_password, permissions]
@@ -2448,13 +3589,17 @@ components:
         default_lang: {type: string}
         must_reset_password: {type: boolean}
         mfa_enabled: {type: boolean}
+        mfa_enrollment_required:
+          type: boolean
+          description: |
+            Vrai quand un rôle du compte impose le MFA et qu'aucun TOTP n'est
+            enrôlé : l'interface propose l'enrôlement avant tout autre écran.
         roles:
           type: array
           items: {type: string}
         permissions:
           type: array
           items: {$ref: '#/components/schemas/Permission'}
-
     AdminMeResponse:
       type: object
       required: [user, csrf_token]
