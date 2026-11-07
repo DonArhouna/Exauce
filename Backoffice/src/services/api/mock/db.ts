@@ -78,6 +78,7 @@ const EDITOR_PERMISSIONS: Permission[] = [
   'publications:edit',
   'media:view',
   'media:create',
+  'media:edit',
   'offices:view',
   'team:view',
   'settings:view',

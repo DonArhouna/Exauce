@@ -27,8 +27,10 @@ Dernière mise à jour : écran « Pages et sections ».
   `ROLE_PERMISSIONS`) ne donne à `admin` que `pages:publish`,
   `publications:publish` et huit modules, **sans `media` ni `leads`**. Le mock
   suit la décision, pas le seed. À transmettre au Backend.
-- **`editor` et `media`** : le seed donne `media` complet à `editor`. Décision
-  non prise à ce jour → **point à confirmer** pour le propriétaire.
+- **`editor` et `media`** : décision du propriétaire — `media:view`,
+  `media:create`, `media:edit`, **sans `media:delete`** (suppression réservée à
+  `admin`). Le seed actuel donne `media` complet à `editor` ; à transmettre au
+  Backend.
 - **`viewer`** : le seed ne donne aucune permission. Le compte de démo
   `lecteur@exauceac.com` du mock conserve `pages:view` et `publications:view`
   (nécessaire aux tests du tableau de bord et de l'écran Pages). Écart connu.
