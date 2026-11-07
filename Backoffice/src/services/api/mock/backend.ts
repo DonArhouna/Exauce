@@ -28,6 +28,19 @@ import {
   type MockSession,
 } from './db';
 import { getMockDashboard } from './dashboard';
+import {
+  addSection,
+  deleteSection,
+  findPage,
+  listPages,
+  pageDetail,
+  transitionPage,
+  updatePage,
+  updateSection,
+  type MutationResult,
+  type WorkflowAction,
+} from './pages';
+import { listSectionTypes } from './sectionTypes';
 
 export interface MockRequest {
   method: string;
@@ -84,10 +97,47 @@ function currentAccount(): { session: MockSession; account: MockAccount } | null
   return { session, account };
 }
 
-function can(account: MockAccount, module: string, action: string): boolean {
+function can(account: MockAccount, module: string, action: string, lang?: string): boolean {
   return account.user.permissions.some(
-    (permission) => permission.module === module && permission.action === action,
+    (permission) =>
+      permission.module === module &&
+      permission.action === action &&
+      (lang === undefined || permission.lang == null || permission.lang === lang),
   );
+}
+
+function requirePages(
+  module: string,
+  action: string,
+  lang?: string,
+): { account: MockAccount } | MockResponse {
+  const current = currentAccount();
+  if (!current) return problem(401, 'SESSION_EXPIRED', 'Session expirée');
+  if (!can(current.account, module, action, lang)) {
+    return problem(403, 'FORBIDDEN', 'Permission insuffisante');
+  }
+  return { account: current.account };
+}
+
+/** Traduit un refus de mutation du contenu en réponse RFC 7807. */
+type MutationFailure = Extract<MutationResult<unknown>, { ok: false }>;
+
+function mutationFailure(result: MutationFailure): MockResponse {
+  if (result.code === 'NOT_FOUND') return problem(404, 'CONTENT_NOT_FOUND', 'Contenu inconnu');
+  if (result.code === 'CONFLICT') {
+    return problem(409, 'CONFLICT', 'Le contenu a été modifié entre-temps : rechargez la page.');
+  }
+  return {
+    ...problem(422, 'VALIDATION_ERROR', result.detail ?? 'Données invalides'),
+    body: {
+      type: 'https://exauceac.com/errors/validation_error',
+      title: 'validation error',
+      status: 422,
+      code: 'VALIDATION_ERROR',
+      detail: result.detail ?? 'Données invalides',
+      errors: result.errors,
+    },
+  };
 }
 
 function requireSessionAndCsrf(request: MockRequest): MockResponse | null {
@@ -409,6 +459,135 @@ function removeMedia(request: MockRequest, id: string): MockResponse {
   return { status: 204 };
 }
 
+// ── Pages et sections (mock aligné sur le seed) ─────────────────
+function pagesList(): MockResponse {
+  const guard = requirePages('pages', 'view');
+  if ('status' in guard) return guard;
+  return { status: 200, body: listPages() };
+}
+
+function pagesDetail(id: string): MockResponse {
+  const guard = requirePages('pages', 'view');
+  if ('status' in guard) return guard;
+  const page = findPage(id);
+  return page ? { status: 200, body: pageDetail(page) } : problem(404, 'CONTENT_NOT_FOUND', 'Page inconnue');
+}
+
+function pagesPatch(request: MockRequest, id: string): MockResponse {
+  const guard = requirePages('pages', 'edit');
+  if ('status' in guard) return guard;
+  const failure = requireSessionAndCsrf(request);
+  if (failure) return failure;
+  const page = findPage(id);
+  if (!page) return problem(404, 'CONTENT_NOT_FOUND', 'Page inconnue');
+  const payload = (request.body ?? {}) as { revision?: number };
+  if (typeof payload.revision !== 'number') {
+    return problem(422, 'VALIDATION_ERROR', 'Révision absente');
+  }
+  const result = updatePage(id, {
+    revision: payload.revision,
+    is_in_nav: typeof (request.body as { is_in_nav?: boolean }).is_in_nav === 'boolean'
+      ? (request.body as { is_in_nav: boolean }).is_in_nav
+      : undefined,
+    nav_position:
+      (request.body as { nav_position?: number | null }).nav_position === undefined
+        ? undefined
+        : (request.body as { nav_position: number | null }).nav_position,
+  });
+  return result.ok ? { status: 200, body: result.value } : mutationFailure(result);
+}
+
+function sectionsCreate(request: MockRequest, pageId: string): MockResponse {
+  const guard = requirePages('pages', 'edit');
+  if ('status' in guard) return guard;
+  const failure = requireSessionAndCsrf(request);
+  if (failure) return failure;
+  const payload = (request.body ?? {}) as {
+    revision?: number;
+    section_type?: string;
+    position?: number;
+    is_active?: boolean;
+  };
+  if (!payload.section_type || typeof payload.revision !== 'number') {
+    return problem(422, 'VALIDATION_ERROR', 'Type de section ou révision absent');
+  }
+  const result = addSection(pageId, {
+    revision: payload.revision,
+    section_type: payload.section_type,
+    position: payload.position,
+    is_active: payload.is_active,
+  });
+  return result.ok
+    ? { status: 201, body: { page: result.value.page, section: result.value.section } }
+    : mutationFailure(result);
+}
+
+function sectionPatch(request: MockRequest, id: string): MockResponse {
+  const body = (request.body ?? {}) as {
+    revision?: number;
+    lang?: 'fr' | 'en';
+    position?: number;
+    is_active?: boolean;
+    config?: Record<string, unknown>;
+    data?: Record<string, unknown>;
+  };
+  const guard = requirePages('pages', 'edit', body.lang);
+  if ('status' in guard) return guard;
+  const failure = requireSessionAndCsrf(request);
+  if (failure) return failure;
+  if (typeof body.revision !== 'number') return problem(422, 'VALIDATION_ERROR', 'Révision absente');
+
+  const result = updateSection(id, {
+    revision: body.revision,
+    position: body.position,
+    is_active: body.is_active,
+    config: body.config,
+    lang: body.lang,
+    data: body.data,
+  });
+  return result.ok
+    ? { status: 200, body: { page: result.value.page, section: result.value.section } }
+    : mutationFailure(result);
+}
+
+function sectionDelete(request: MockRequest, id: string): MockResponse {
+  const guard = requirePages('pages', 'delete');
+  if ('status' in guard) return guard;
+  const failure = requireSessionAndCsrf(request);
+  if (failure) return failure;
+  const revision = Number((request.body as { revision?: number } | undefined)?.revision);
+  if (!Number.isFinite(revision)) return problem(422, 'VALIDATION_ERROR', 'Révision absente');
+  const result = deleteSection(id, revision);
+  return result.ok ? { status: 200, body: result.value } : mutationFailure(result);
+}
+
+function pageWorkflow(request: MockRequest, id: string): MockResponse {
+  const body = (request.body ?? {}) as { action?: WorkflowAction; revision?: number; comment?: string };
+  const action = body.action;
+  if (!action || !['submit_review', 'approve', 'reject', 'publish'].includes(action)) {
+    return problem(422, 'VALIDATION_ERROR', 'Action inconnue');
+  }
+  const required: Record<WorkflowAction, string> = {
+    submit_review: 'edit',
+    approve: 'review',
+    reject: 'review',
+    publish: 'publish',
+  };
+  const guard = requirePages('pages', required[action]);
+  if ('status' in guard) return guard;
+  const failure = requireSessionAndCsrf(request);
+  if (failure) return failure;
+  if (typeof body.revision !== 'number') return problem(422, 'VALIDATION_ERROR', 'Révision absente');
+  const result = transitionPage(id, action, body.revision, guard.account.user.id, body.comment);
+  return result.ok ? { status: 200, body: result.value } : mutationFailure(result);
+}
+
+function sectionTypes(): MockResponse {
+  const guard = requirePages('pages', 'view');
+  if ('status' in guard) return guard;
+  return { status: 200, body: { items: listSectionTypes() } };
+}
+
 /** Routeur du backend mock : toute route non couverte renvoie 501. */
 export async function mockRequest(request: MockRequest): Promise<MockResponse> {
   await delay();
@@ -416,6 +595,24 @@ export async function mockRequest(request: MockRequest): Promise<MockResponse> {
 
   if (route === 'POST /admin/publication-jobs') return triggerPublication(request);
   if (route === 'GET /admin/publication-jobs/current') return publicationStatus();
+  if (route === 'GET /admin/pages') return pagesList();
+  if (route === 'GET /admin/section-types') return sectionTypes();
+
+  const pageWorkflowMatch = request.path.match(/^\/admin\/pages\/([^/]+)\/workflow$/);
+  if (pageWorkflowMatch && request.method === 'POST') {
+    return pageWorkflow(request, pageWorkflowMatch[1]);
+  }
+
+  const pageSections = request.path.match(/^\/admin\/pages\/([^/]+)\/sections$/);
+  if (pageSections && request.method === 'POST') return sectionsCreate(request, pageSections[1]);
+
+  const pageId = request.path.match(/^\/admin\/pages\/([^/]+)$/);
+  if (pageId && request.method === 'GET') return pagesDetail(pageId[1]);
+  if (pageId && request.method === 'PATCH') return pagesPatch(request, pageId[1]);
+
+  const sectionId = request.path.match(/^\/admin\/sections\/([^/]+)$/);
+  if (sectionId && request.method === 'PATCH') return sectionPatch(request, sectionId[1]);
+  if (sectionId && request.method === 'DELETE') return sectionDelete(request, sectionId[1]);
 
   const mediaId = request.path.match(new RegExp('^/admin/media/([^/]+)$'));
   if (mediaId && request.method === 'GET') return mediaDetail(mediaId[1]);

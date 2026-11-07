@@ -6,6 +6,7 @@ import type {
   MediaItem,
   PublicationSiteStatus,
 } from '../types';
+import { resetPages } from './pages';
 
 export interface MockAccount {
   user: AdminSessionUser;
@@ -95,6 +96,36 @@ const LECTEUR_PERMISSIONS: Permission[] = [
   return { module, action, lang: null };
 });
 
+/**
+ * Administrateur : matrice arbitrée par le propriétaire (doc 03 §1) — pages,
+ * tree, publications, users, offices, team, settings, seo, audit, media, leads.
+ * Le seed Backend est en retard sur cette décision (voir docs/mock-divergences.md).
+ */
+const ADMIN_MODULES = [
+  'pages',
+  'tree',
+  'publications',
+  'users',
+  'offices',
+  'team',
+  'settings',
+  'seo',
+  'audit',
+  'media',
+  'leads',
+];
+
+const ADMIN_PERMISSIONS: Permission[] = ADMIN_MODULES.flatMap((module) =>
+  ACTIONS.map((action) => ({ module, action, lang: null })),
+);
+
+/** Rédacteur limité au français : vérifie le RBAC par langue. */
+const EDITOR_FR_PERMISSIONS: Permission[] = [
+  { module: 'pages', action: 'view', lang: 'fr' },
+  { module: 'pages', action: 'edit', lang: 'fr' },
+  { module: 'pages', action: 'delete', lang: 'fr' },
+];
+
 function makeUser(
   id: string,
   email: string,
@@ -148,6 +179,28 @@ function createInitialAccounts(): MockAccount[] {
         { mfaEnabled: true },
       ),
       password: 'exauce-mfa-2026',
+    },
+    {
+      user: makeUser(
+        '66666666-6666-4666-8666-666666666666',
+        'admin@exauceac.com',
+        'Compte administrateur',
+        ['admin'],
+        ADMIN_PERMISSIONS,
+      ),
+      password: 'exauce-admin-2026',
+    },
+    {
+      // Démo : rédacteur restreint au français, pour vérifier la lecture seule
+      // de la colonne EN et le refus serveur sur la langue non autorisée.
+      user: makeUser(
+        '77777777-7777-4777-8777-777777777777',
+        'redacteur-fr@exauceac.com',
+        'Compte rédacteur FR',
+        ['editor'],
+        EDITOR_FR_PERMISSIONS,
+      ),
+      password: 'exauce-redacteur-fr-2026',
     },
     {
       // Démo uniquement : compte restreint (ni leads:view, ni audit:view) pour
@@ -532,4 +585,5 @@ export function resetMockBackend(): void {
   publicationStatus = initialStatus();
   media = initialMedia();
   mediaUsages = initialMediaUsages();
+  resetPages();
 }

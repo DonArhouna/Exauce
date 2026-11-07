@@ -8,6 +8,8 @@ import ForgotPasswordPage from '@/features/auth/pages/ForgotPasswordPage';
 import LoginPage from '@/features/auth/pages/LoginPage';
 import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage';
 import DashboardPage from '@/features/dashboard/pages/DashboardPage';
+import PageEditPage from '@/features/pages/PageEditPage';
+import PagesListPage from '@/features/pages/PagesListPage';
 import { DASHBOARD_PATH } from '@/lib/navigation';
 import { RequireAuth, RequirePermission } from './guards';
 
@@ -28,7 +30,23 @@ export function AppRoutes() {
           {/* Tableau de bord : tout utilisateur authentifié ; les blocs sont
               filtrés par permission côté UI et côté serveur. */}
           <Route path={DASHBOARD_PATH} element={<DashboardPage />} />
-          {NAV_ITEMS.filter((item) => item.path !== DASHBOARD_PATH).map((item) => (
+          <Route
+            path="/pages"
+            element={
+              <RequirePermission module="pages" action="view">
+                <PagesListPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/pages/:id"
+            element={
+              <RequirePermission module="pages" action="view">
+                <PageEditPage />
+              </RequirePermission>
+            }
+          />
+          {NAV_ITEMS.filter((item) => item.path !== DASHBOARD_PATH && item.path !== '/pages').map((item) => (
             <Route
               key={item.path}
               path={item.path}
