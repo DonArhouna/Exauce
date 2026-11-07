@@ -42,6 +42,12 @@ AUTH_USERS: dict[str, tuple[str, str | None]] = {
 }
 MFA_EMAIL = "auth-mfa@exauceac.com"
 
+#: E-mail « inconnu » des tests d'anti-énumération (jamais créé en base).
+AUTH_UNKNOWN_EMAIL = "auth-unknown@exauceac.com"
+
+#: E-mails dont les tentatives de connexion sont purgées entre deux runs.
+PURGE_EMAILS = (*AUTH_USERS, AUTH_UNKNOWN_EMAIL)
+
 #: Rôles semés (doc 06 §6.2) — recréés si la base n'a pas encore été seedée.
 SEEDED_ROLES: dict[str, str] = {
     "super_admin": "Super-admin",
@@ -114,7 +120,7 @@ async def auth_env() -> AsyncIterator[dict[str, Any]]:
 
         # Purge des comptes de test résiduels (crash précédent), puis création.
         await session.execute(delete(User).where(User.email.in_(AUTH_USERS)))
-        await session.execute(delete(LoginAttempt).where(LoginAttempt.email.in_(AUTH_USERS)))
+        await session.execute(delete(LoginAttempt).where(LoginAttempt.email.in_(PURGE_EMAILS)))
         users: dict[str, Any] = {}
         for email, (role, password) in AUTH_USERS.items():
             user = User(
@@ -135,7 +141,7 @@ async def auth_env() -> AsyncIterator[dict[str, Any]]:
         yield {"session": session, "users": users}
     finally:
         await session.execute(delete(User).where(User.email.in_(AUTH_USERS)))
-        await session.execute(delete(LoginAttempt).where(LoginAttempt.email.in_(AUTH_USERS)))
+        await session.execute(delete(LoginAttempt).where(LoginAttempt.email.in_(PURGE_EMAILS)))
         await session.commit()
         await session.close()
         await connection.close()

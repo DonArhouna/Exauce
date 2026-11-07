@@ -15,7 +15,13 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pyotp
-from conftest import AUTH_PASSWORD, AUTH_USERS, MFA_EMAIL, TOTP_SECRET
+from conftest import (
+    AUTH_PASSWORD,
+    AUTH_UNKNOWN_EMAIL,
+    AUTH_USERS,
+    MFA_EMAIL,
+    TOTP_SECRET,
+)
 from fastapi.testclient import TestClient
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -78,7 +84,7 @@ async def test_login_failure_is_identical_for_unknown_email_and_bad_password(
     client: TestClient, auth_env
 ) -> None:  # noqa: ANN001
     unknown = client.post(
-        "/api/v1/admin/auth/login", json={"email": "inconnu@exauceac.com", "password": "x" * 14}
+        "/api/v1/admin/auth/login", json={"email": AUTH_UNKNOWN_EMAIL, "password": "x" * 14}
     )
     bad_password = client.post(
         "/api/v1/admin/auth/login", json={"email": EDITOR, "password": "x" * 14}
@@ -370,9 +376,7 @@ async def test_unknown_activation_token_is_410(client: TestClient, auth_env) -> 
 async def test_password_forgot_never_reveals_account(client: TestClient, auth_env) -> None:  # noqa: ANN001
     session: AsyncSession = auth_env["session"]
     known = client.post("/api/v1/admin/auth/password-forgot", json={"email": EDITOR})
-    unknown = client.post(
-        "/api/v1/admin/auth/password-forgot", json={"email": "inconnu@exauceac.com"}
-    )
+    unknown = client.post("/api/v1/admin/auth/password-forgot", json={"email": AUTH_UNKNOWN_EMAIL})
     assert known.status_code == unknown.status_code == 202
     assert known.json() == unknown.json() == {"status": "accepted"}
 
