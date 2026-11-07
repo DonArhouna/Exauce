@@ -82,9 +82,9 @@ def test_payload_parity_table() -> None:
     }
     assert len(payload.languages) == 2
 
-    # Permissions (doc 10 §2 + décisions 2026-11-03) : 95 / 195 (doc 06 §6.2).
+    # Permissions (doc 10 §2 + décisions 2026-11-07) : 95 / 204 (doc 06 §6.2).
     assert len(payload.permissions) == 95
-    assert len(payload.role_permissions) == 195
+    assert len(payload.role_permissions) == 204
     triples = [(p["module"], p["action"], p["lang"]) for p in payload.permissions]
     assert len(set(triples)) == len(triples), "triplet (module, action, lang) duplique"
     links = [
@@ -206,8 +206,12 @@ async def session() -> AsyncIterator[AsyncSession]:
 
 @pytest.fixture()
 async def seeded(session: AsyncSession) -> AsyncSession:
-    """Seed applique en transaction (rejouée a la sortie)."""
-    await run_seed(session, with_demo=True)
+    """Seed applique en transaction (rejouée a la sortie).
+
+    `reconcile_permissions=True` : opt-in explicite pour que la parité voie
+    l'état du payload même sur une base dev déjà seedée (liens périmés).
+    """
+    await run_seed(session, with_demo=True, reconcile_permissions=True)
     return session
 
 
@@ -258,9 +262,9 @@ async def test_db_parity_counts(seeded: AsyncSession) -> None:
     assert await _count(seeded, SiteSetting) == 10
     assert await _count(seeded, SiteSetting, SiteSetting.group_key == "legal") == 0
 
-    # Permissions (doc 10 §2 + décisions 2026-11-03) : 95 / 195 (doc 06 §6.2).
+    # Permissions (doc 10 §2 + décisions 2026-11-07) : 95 / 204 (doc 06 §6.2).
     assert await _count(seeded, Permission) == 95
-    assert await _count(seeded, RolePermission) == 195
+    assert await _count(seeded, RolePermission) == 204
     # Comptes : fondateur + 5 comptes de démo (--with-demo, Q-104/Q-105).
     assert await _count(seeded, User) == 6
     assert await _count(seeded, User, User.password_hash.is_(None)) == 6
@@ -422,6 +426,7 @@ async def test_db_permission_matrix(seeded: AsyncSession) -> None:
 
     # Rôles à privilège et rôle Lecteur (aucune permission).
     assert len(expected["super_admin"]) == 95  # toutes les permissions
-    assert len(expected["admin"]) == 55  # ses 9 modules
+    assert len(expected["admin"]) == 65  # ses 11 modules (9 + media + leads)
+    assert len(expected["editor"]) == 25  # pages/tree/publications/media (sans delete média)
     assert len(expected["crm"]) == 11  # leads + clients
     assert expected.get("viewer", set()) == set()  # « Lecteur » : aucune permission

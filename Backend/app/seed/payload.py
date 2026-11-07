@@ -159,8 +159,9 @@ PERMISSIONS_MATRIX: dict[str, tuple[tuple[str, ...], bool]] = {
 }
 
 #: rôle -> {module: actions ou None = toutes les actions du module}.
-#: Décisions 2026-11-03 (page 10 §2) : super_admin = tout ; admin = ses
-#: 9 modules ; editor/reviewer = répartition pages+tree+publications+media ;
+#: Décisions 2026-11-03 (page 10 §2), complétées le 2026-11-07 : super_admin =
+#: tout ; admin = ses 11 modules (9 + media + leads) ; editor/reviewer =
+#: répartition pages+tree+publications+media (editor sans delete média) ;
 #: crm = leads+clients ; viewer = aucune permission.
 ROLE_PERMISSIONS: dict[str, dict[str, tuple[str, ...] | None]] = {
     "super_admin": dict.fromkeys(PERMISSIONS_MATRIX),
@@ -168,6 +169,8 @@ ROLE_PERMISSIONS: dict[str, dict[str, tuple[str, ...] | None]] = {
         "pages": ("publish",),
         "tree": None,
         "publications": ("publish",),
+        "media": None,
+        "leads": None,
         "users": None,
         "offices": None,
         "team": None,
@@ -179,7 +182,7 @@ ROLE_PERMISSIONS: dict[str, dict[str, tuple[str, ...] | None]] = {
         "pages": ("view", "create", "edit", "delete"),
         "tree": ("view", "create", "edit"),
         "publications": ("view", "create", "edit", "delete"),
-        "media": None,
+        "media": ("view", "create", "edit"),
     },
     "reviewer": {
         "pages": ("view", "review"),

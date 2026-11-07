@@ -21,7 +21,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from app.core.config import get_settings
-from app.models.auth import Permission, RolePermission, User
+from app.models.auth import Permission, Role, RolePermission, User
 from app.models.content import ContentNode, Page, PageSection, Publication
 from app.models.i18n import EntityTranslation
 from app.seed import SeedStats, build_payload, run_seed
@@ -36,7 +36,7 @@ def test_payload_without_demo_has_no_publications() -> None:
     assert len(build_payload(with_demo=True).demo_users) == 5
     # Permissions : registre fermé, identique en production (pas de démo dedans).
     assert len(production.permissions) == 95
-    assert len(production.role_permissions) == 195
+    assert len(production.role_permissions) == 204
 
 
 async def test_demo_and_production_are_exclusive() -> None:
@@ -138,3 +138,97 @@ async def test_production_run_inserts_no_publications(session: AsyncSession) -> 
     assert after == before == 3
     assert "publications" not in stats.created
     assert "publications" not in stats.updated
+
+
+# ------------------------------------------ réconciliation des permissions ---
+
+
+async def _link(
+    session: AsyncSession, *, role_code: str, module: str, action: str
+) -> tuple[Role, Permission, RolePermission]:
+    role = (await session.execute(select(Role).where(Role.code == role_code))).scalar_one()
+    perm = (
+        await session.execute(
+            select(Permission).where(
+                Permission.module == module,
+                Permission.action == action,
+                Permission.lang.is_(None),
+            )
+        )
+    ).scalar_one()
+    existing = (
+        await session.execute(
+            select(RolePermission).filter_by(role_id=role.id, permission_id=perm.id)
+        )
+    ).scalar_one_or_none()
+    if existing is not None:
+        return role, perm, existing
+    link = RolePermission(role_id=role.id, permission_id=perm.id)
+    session.add(link)
+    await session.flush()
+    return role, perm, link
+
+
+async def test_reconcile_permissions_is_opt_in(
+    session: AsyncSession, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Lien périmé : conservé par défaut, affiché puis retiré avec l'option."""
+    await run_seed(session, with_demo=True)
+    role, perm, _ = await _link(session, role_code="editor", module="media", action="delete")
+
+    await run_seed(session, with_demo=True)  # défaut : aucune suppression
+    stale = (
+        await session.execute(
+            select(RolePermission).filter_by(role_id=role.id, permission_id=perm.id)
+        )
+    ).scalar_one_or_none()
+    assert stale is not None
+
+    stats = await run_seed(session, with_demo=True, reconcile_permissions=True)
+    captured = capsys.readouterr()
+    assert "reconcile: editor media:delete" in captured.out
+    assert stats.deleted.get("role_permissions") == 1
+    gone = (
+        await session.execute(
+            select(RolePermission).filter_by(role_id=role.id, permission_id=perm.id)
+        )
+    ).scalar_one_or_none()
+    assert gone is None
+
+
+async def test_reconcile_permissions_never_touches_custom_roles(
+    session: AsyncSession, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Un rôle hors des 6 rôles semés conserve ses liens, même en réconciliation."""
+    await run_seed(session, with_demo=True)
+    custom = (
+        await session.execute(select(Role).where(Role.code == "custom_auditor"))
+    ).scalar_one_or_none()
+    if custom is None:
+        custom = Role(code="custom_auditor", label="Auditeur externe")
+        session.add(custom)
+        await session.flush()
+    perm = (
+        await session.execute(
+            select(Permission).where(
+                Permission.module == "media",
+                Permission.action == "view",
+                Permission.lang.is_(None),
+            )
+        )
+    ).scalar_one()
+    existing = (
+        await session.execute(
+            select(RolePermission).filter_by(role_id=custom.id, permission_id=perm.id)
+        )
+    ).scalar_one_or_none()
+    if existing is None:
+        session.add(RolePermission(role_id=custom.id, permission_id=perm.id))
+        await session.flush()
+
+    await run_seed(session, with_demo=True, reconcile_permissions=True)
+    kept = (
+        await session.execute(select(RolePermission).filter_by(role_id=custom.id))
+    ).scalar_one_or_none()
+    assert kept is not None
+    assert "custom_auditor" not in capsys.readouterr().out

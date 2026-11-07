@@ -46,10 +46,14 @@ class SeedStats:
 
     created: dict[str, int] = field(default_factory=dict)
     updated: dict[str, int] = field(default_factory=dict)
+    deleted: dict[str, int] = field(default_factory=dict)
 
     def add(self, entity: str, *, created: bool) -> None:
         target = self.created if created else self.updated
         target[entity] = target.get(entity, 0) + 1
+
+    def add_deleted(self, entity: str) -> None:
+        self.deleted[entity] = self.deleted.get(entity, 0) + 1
 
     @property
     def total_created(self) -> int:
@@ -111,8 +115,14 @@ async def run_seed(
     *,
     with_demo: bool = False,
     production: bool = False,
+    reconcile_permissions: bool = False,
 ) -> SeedStats:
-    """Applique le seed complet (doc 06 §6.2) — sans commit."""
+    """Applique le seed complet (doc 06 §6.2) — sans commit.
+
+    `reconcile_permissions=True` (opt-in CLI `--reconcile-permissions`) retire
+    les liens `role_permissions` des **6 rôles semés** absents du payload,
+    après les avoir affichés. Par défaut, aucun lien n'est supprimé.
+    """
     if with_demo and production:
         raise ValueError("--with-demo et --production sont mutuellement exclusifs")
     payload = build_payload(with_demo=with_demo and not production)
@@ -187,6 +197,39 @@ async def run_seed(
             entity="role_permissions",
             stats=stats,
         )
+
+    # Réconciliation **opt-in** : le seed est autoritaire pour les 6 rôles
+    # semés, mais la suppression d'un lien retiré de ROLE_PERMISSIONS (ex.
+    # `editor`/`media:delete`) doit être demandée explicitement. Un rôle hors
+    # des rôles semés n'est jamais touché.
+    if reconcile_permissions:
+        desired_links = {
+            (
+                role_ids[link["role_code"]],
+                permission_ids[(link["module"], link["action"], link["lang"])],
+            )
+            for link in payload.role_permissions
+        }
+        role_code_by_id = {role_id: code for code, role_id in role_ids.items()}
+        permission_by_id = {
+            permission_id: triple for triple, permission_id in permission_ids.items()
+        }
+        existing_links = (
+            await session.execute(
+                select(RolePermission).where(RolePermission.role_id.in_(set(role_ids.values())))
+            )
+        ).scalars()
+        for row in existing_links:
+            if (row.role_id, row.permission_id) in desired_links:
+                continue
+            role_code = role_code_by_id[row.role_id]
+            perm_module, perm_action, perm_lang = permission_by_id.get(
+                row.permission_id, ("?", "?", None)
+            )
+            suffix = f" (lang={perm_lang})" if perm_lang else ""
+            print(f"reconcile: {role_code} {perm_module}:{perm_action}{suffix}")
+            await session.delete(row)
+            stats.add_deleted("role_permissions")
 
     # --- Compte fondateur (avant les publications : author_id, Q-105/U1) ---
     founder = payload.founder
