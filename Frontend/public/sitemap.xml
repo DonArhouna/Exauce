@@ -28,6 +28,11 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/publications" />
   </url>
   <url>
+    <loc>https://www.exauceac.com/fr/partenaires</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/partenaires" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/partners" />
+  </url>
+  <url>
     <loc>https://www.exauceac.com/fr/a-propos</loc>
     <xhtml:link rel="alternate" hreflang="fr" href="https://www.exauceac.com/fr/a-propos" />
     <xhtml:link rel="alternate" hreflang="en" href="https://www.exauceac.com/en/about-us" />

@@ -13,6 +13,7 @@ const PAGE_HREFS = (l: Lang): Record<keyof typeof PAGE_SLUGS, string> => ({
   interventions: pagePath(l, 'interventions'),
   sectors: pagePath(l, 'sectors'),
   publications: pagePath(l, 'publications'),
+  partners: pagePath(l, 'partners'),
   about: pagePath(l, 'about'),
   contact: pagePath(l, 'contact'),
   clientArea: pagePath(l, 'clientArea'),

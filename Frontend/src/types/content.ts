@@ -106,3 +106,12 @@ export interface Location {
   email?: string;
 }
 
+/** Partenaire fictif — TODO API: remplacer par l'entité partner du backend. */
+export interface Partner {
+  id: string;
+  name: string;              // nom générique fictif, ex. "Partenaire Alpha"
+  logo: string;              // chemin local dans /public/partners/
+  alt: LocalizedText;        // texte alternatif FR/EN
+  description: LocalizedText;
+  url?: string;              // lien optionnel (ex. site fictif)
+}

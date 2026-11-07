@@ -15,7 +15,8 @@
     "searchHint": "Appuyez sur Échap pour fermer",
     "menu": "Menu",
     "close": "Fermer",
-    "language": "Langue"
+    "language": "Langue",
+    "partners": "Partenaires"
   },
   "common": {
     "ourServices": "Nos services",
@@ -216,5 +217,23 @@
   "meta": {
     "homeTitle": "EXAUCE Audit & Conseils SAS — Expertise comptable, audit et conseil à Dakar",
     "homeDescription": "Cabinet d’expertise comptable, de conseil, d’audit et de formation à Dakar, Sénégal — membre de l’ONECCA du Sénégal."
+  },
+  "partners": {
+    "pageTitle": "Partenaires — EXAUCE Audit & Conseils",
+    "heroTitle": "Nos partenaires",
+    "introText": "EXAUCE Audit & Conseils SAS développe des partenariats avec des organisations qui partagent ses valeurs d’exigence, d’innovation et de service aux entreprises.",
+    "trustedTitle": "Ceux qui nous font confiance",
+    "trustedIntro": "Ils sont à nos côtés dans notre mission de conseil et d’accompagnement.",
+    "partnersTitle": "Nos partenaires",
+    "partnersIntro": "Découvrez les organisations avec lesquelles nous collaborons pour apporter des solutions complètes à nos clients.",
+    "ctaTitle": "Vous souhaitez devenir partenaire ?",
+    "ctaText": "Parlons de votre projet de collaboration.",
+    "ctaButton": "Contactez-nous",
+    "visitSite": "Visiter le site",
+    "pauseMarquee": "Mettre en pause le défilement",
+    "playMarquee": "Reprendre le défilement",
+    "logoOf": "Logo de {{name}}",
+    "notice": "Les noms et logos présentés sont des exemples de démonstration. Ils ne représentent aucun partenariat réel.",
+    "seoDescription": "Découvrez les partenaires d’EXAUCE Audit & Conseils SAS, cabinet d’expertise comptable à Dakar."
   }
 }

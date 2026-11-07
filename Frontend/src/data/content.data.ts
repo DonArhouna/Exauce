@@ -1,4 +1,4 @@
-import type { InterventionType, Location, Publication, PublicationCategory, Sector, ServiceFamily } from '@/types/content';
+import type { InterventionType, Location, Partner, Publication, PublicationCategory, Sector, ServiceFamily } from '@/types/content';
 
 /**
  * ORGANISATION — informations stables du cabinet (docx, niveau 1).
@@ -599,3 +599,95 @@ export const PUBLICATIONS_MOCK: Publication[] = [
   },
 ];
 
+
+// TODO API: remplacer PARTNERS_MOCK par GET /partners
+export const PARTNERS_MOCK: Partner[] = [
+  {
+    id: 'partner-1',
+    name: 'Partenaire Alpha',
+    logo: '/partners/partner-1.svg',
+    alt: { fr: 'Logo Partenaire Alpha', en: 'Partner Alpha logo' },
+    description: {
+      fr: "Exemple de partenariat — organisme fictif de financement et d'appui aux entreprises.",
+      en: 'Sample partnership — fictional business support and financing organisation.',
+    },
+    url: undefined,
+  },
+  {
+    id: 'partner-2',
+    name: 'Partenaire Beta',
+    logo: '/partners/partner-2.svg',
+    alt: { fr: 'Logo Partenaire Beta', en: 'Partner Beta logo' },
+    description: {
+      fr: "Exemple de partenariat — institution fictive d'accompagnement et de développement des PME.",
+      en: 'Sample partnership — fictional institution for SME development and support.',
+    },
+    url: undefined,
+  },
+  {
+    id: 'partner-3',
+    name: 'Partenaire Gamma',
+    logo: '/partners/partner-3.svg',
+    alt: { fr: 'Logo Partenaire Gamma', en: 'Partner Gamma logo' },
+    description: {
+      fr: 'Exemple de partenariat — organisme fictif de certification et de conformité réglementaire.',
+      en: 'Sample partnership — fictional certification and regulatory compliance body.',
+    },
+    url: undefined,
+  },
+  {
+    id: 'partner-4',
+    name: 'Partenaire Delta',
+    logo: '/partners/partner-4.svg',
+    alt: { fr: 'Logo Partenaire Delta', en: 'Partner Delta logo' },
+    description: {
+      fr: "Exemple de partenariat — réseau fictif d'experts-comptables et de cabinets de conseil.",
+      en: 'Sample partnership — fictional network of chartered accountants and advisory firms.',
+    },
+    url: undefined,
+  },
+  {
+    id: 'partner-5',
+    name: 'Partenaire Epsilon',
+    logo: '/partners/partner-5.svg',
+    alt: { fr: 'Logo Partenaire Epsilon', en: 'Partner Epsilon logo' },
+    description: {
+      fr: 'Exemple de partenariat — fonds fictif de garantie et de soutien à la création entreprise.',
+      en: 'Sample partnership — fictional guarantee fund and business creation support.',
+    },
+    url: undefined,
+  },
+  {
+    id: 'partner-6',
+    name: 'Partenaire Zeta',
+    logo: '/partners/partner-6.svg',
+    alt: { fr: 'Logo Partenaire Zeta', en: 'Partner Zeta logo' },
+    description: {
+      fr: "Exemple de partenariat — chambre fictive de commerce et d'industrie sous-régionale.",
+      en: 'Sample partnership — fictional sub-regional chamber of commerce and industry.',
+    },
+    url: undefined,
+  },
+  {
+    id: 'partner-7',
+    name: 'Partenaire Eta',
+    logo: '/partners/partner-7.svg',
+    alt: { fr: 'Logo Partenaire Eta', en: 'Partner Eta logo' },
+    description: {
+      fr: "Exemple de partenariat — organisme fictif de formation professionnelle et d'insertion.",
+      en: 'Sample partnership — fictional vocational training and employment organisation.',
+    },
+    url: undefined,
+  },
+  {
+    id: 'partner-8',
+    name: 'Partenaire Theta',
+    logo: '/partners/partner-8.svg',
+    alt: { fr: 'Logo Partenaire Theta', en: 'Partner Theta logo' },
+    description: {
+      fr: "Exemple de partenariat — association fictive d'entrepreneurs et de dirigeants d'entreprise.",
+      en: 'Sample partnership — fictional association of entrepreneurs and business leaders.',
+    },
+    url: undefined,
+  },
+];

@@ -98,6 +98,7 @@ export function useNavItems(lang: Lang): NavItem[] {
       badgeKicker: t('nav.publications'),
       megaColumns: publicationColumns,
     },
+    { key: 'partners', label: t('nav.partners'), href: pageHref(lang, 'partners') },
     { key: 'about', label: t('nav.about'), href: pageHref(lang, 'about') },
     { key: 'contact', label: t('nav.contact'), href: pageHref(lang, 'contact') },
   ];

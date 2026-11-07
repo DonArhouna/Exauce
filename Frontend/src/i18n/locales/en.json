@@ -15,7 +15,8 @@
     "searchHint": "Press Escape to close",
     "menu": "Menu",
     "close": "Close",
-    "language": "Language"
+    "language": "Language",
+    "partners": "Partners"
   },
   "common": {
     "ourServices": "Our services",
@@ -216,5 +217,23 @@
   "meta": {
     "homeTitle": "EXAUCE Audit & Conseils SAS — Accounting, audit and advisory services in Dakar",
     "homeDescription": "Accounting, consulting, audit and training firm in Dakar, Senegal — member of the ONECCA of Senegal."
+  },
+  "partners": {
+    "pageTitle": "Partners — EXAUCE Audit & Conseils",
+    "heroTitle": "Our partners",
+    "introText": "EXAUCE Audit & Conseils SAS develops partnerships with organisations that share its values of excellence, innovation and service to businesses.",
+    "trustedTitle": "Those who trust us",
+    "trustedIntro": "They stand by our side in our consulting and support mission.",
+    "partnersTitle": "Our partners",
+    "partnersIntro": "Discover the organisations we collaborate with to provide comprehensive solutions to our clients.",
+    "ctaTitle": "Would you like to become a partner?",
+    "ctaText": "Let’s talk about your collaboration project.",
+    "ctaButton": "Contact us",
+    "visitSite": "Visit site",
+    "pauseMarquee": "Pause scrolling",
+    "playMarquee": "Resume scrolling",
+    "logoOf": "Logo of {{name}}",
+    "notice": "The names and logos shown are demonstration examples. They do not represent any real partnership.",
+    "seoDescription": "Discover the partners of EXAUCE Audit & Conseils SAS, a chartered accountancy firm in Dakar."
   }
 }

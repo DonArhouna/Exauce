@@ -22,6 +22,7 @@ const ClientAreaPage = lazy(() => import('@/pages/ClientAreaPage'));
 const LegalPage = lazy(() => import('@/pages/LegalPage'));
 const PublicationDetailPage = lazy(() => import('@/pages/PublicationDetailPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
+const PartnersPage = lazy(() => import('@/pages/PartnersPage'));
 
 /** Layout : header + footer + overlay recherche, langue synchronisée avec l’URL. */
 function LayoutWithLang({ children }: { children: React.ReactNode }) {
@@ -98,6 +99,8 @@ export default function App() {
                 <Route path="legal-notice" element={<LegalPage />} />
                 <Route path="a-propos" element={<AboutPage />} />
                 <Route path="about-us" element={<AboutPage />} />
+                <Route path="partenaires" element={<PartnersPage />} />
+                <Route path="partners" element={<PartnersPage />} />
                 {/* Redirection 301/replace : ancienne page Localisations -> Contact */}
                 <Route path="localisations" element={<LocationsRedirect />} />
                 <Route path="locations" element={<LocationsRedirect />} />
