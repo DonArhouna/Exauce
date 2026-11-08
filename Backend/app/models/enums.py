@@ -65,6 +65,7 @@ class EntityType(StrEnum):
     SECTOR = "sector"
     OFFICE = "office"
     TEAM_MEMBER = "team_member"
+    PARTNER = "partner"
 
 
 #: Vocabulaire `permissions.module` (registre aligné sur la page 10).

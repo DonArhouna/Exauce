@@ -34,6 +34,7 @@ from app.models.content import (
     Sector,
 )
 from app.models.i18n import EntityTranslation, Language, Redirect
+from app.models.partners import Partner
 from app.models.site import Office, SiteSetting, TeamMember
 from app.seed import build_payload, run_seed
 from app.seed.payload import DATA_DIR
@@ -53,11 +54,13 @@ def test_payload_parity_table() -> None:
         nodes[node["node_type"]] = nodes.get(node["node_type"], 0) + 1
     assert nodes == {"family": 2, "domain": 10, "group": 20, "service": 94}
 
-    assert len(payload.pages) == 10
-    assert sum(1 for page in payload.pages if page["is_in_nav"]) == 7
-    assert len(payload.section_types) == 21
-    assert len(payload.sections) == 29
+    assert len(payload.pages) == 11
+    assert sum(1 for page in payload.pages if page["is_in_nav"]) == 8
+    assert len(payload.section_types) == 23
+    assert len(payload.sections) == 33
     assert sum(1 for s in payload.sections if s["page_key"] == "home") == 10
+    partners_sections = [s for s in payload.sections if s["page_key"] == "partners"]
+    assert [s["source_key"] for s in partners_sections] == ["header", "marquee", "grid", "cta"]
     legal = [s for s in payload.sections if s["page_key"] == "legal_notice"]
     assert len(legal) == 3 and all(s["section_type"] == "legal_document" for s in legal)
 
@@ -69,6 +72,14 @@ def test_payload_parity_table() -> None:
     assert all(p["status"] == "draft" for p in payload.publications)
     assert len(payload.offices) == 1 and payload.offices[0]["is_headquarters"]
     assert len(payload.team_members) == 1 and payload.team_members[0]["is_founder"]
+    assert len(payload.partners) == 8
+    assert [p["position"] for p in payload.partners] == list(range(1, 9))
+    assert all(p["is_active"] and p["logo_media_id"] is None for p in payload.partners)
+    assert all(
+        p["translations"][lang]["data"]["description"]
+        for p in payload.partners
+        for lang in ("fr", "en")
+    )
     assert len(payload.redirects) == 4
     assert all(r["status_code"] == 301 for r in payload.redirects)
     assert len(payload.roles) == 6
@@ -233,10 +244,10 @@ async def test_db_parity_counts(seeded: AsyncSession) -> None:
     )
     assert by_type == {"family": 2, "domain": 10, "group": 20, "service": 94}
 
-    assert await _count(seeded, Page) == 10
-    assert await _count(seeded, Page, Page.is_in_nav.is_(True)) == 7
-    assert await _count(seeded, SectionType) == 21
-    assert await _count(seeded, PageSection) == 29
+    assert await _count(seeded, Page) == 11
+    assert await _count(seeded, Page, Page.is_in_nav.is_(True)) == 8
+    assert await _count(seeded, SectionType) == 23
+    assert await _count(seeded, PageSection) == 33
     assert (
         await _count(
             seeded,
@@ -255,6 +266,8 @@ async def test_db_parity_counts(seeded: AsyncSession) -> None:
     assert await _count(seeded, Office, Office.is_headquarters.is_(True)) == 1
     assert await _count(seeded, TeamMember) == 1
     assert await _count(seeded, TeamMember, TeamMember.is_founder.is_(True)) == 1
+    assert await _count(seeded, Partner) == 8
+    assert await _count(seeded, Partner, Partner.is_active.is_(True)) == 8
     assert await _count(seeded, Redirect) == 4
     assert await _count(seeded, Redirect, Redirect.status_code == 301) == 4
     assert await _count(seeded, Language) == 2
@@ -316,6 +329,7 @@ async def test_db_translations_match_payload(seeded: AsyncSession) -> None:
         "team_member": key_map(
             (await seeded.execute(select(TeamMember.source_key, TeamMember.id))).all()
         ),
+        "partner": key_map((await seeded.execute(select(Partner.source_key, Partner.id))).all()),
         "publication": key_map(
             (await seeded.execute(select(Publication.source_key, Publication.id))).all()
         ),
@@ -349,6 +363,7 @@ async def test_db_translations_match_payload(seeded: AsyncSession) -> None:
         ("category", payload.categories),
         ("office", payload.offices),
         ("team_member", payload.team_members),
+        ("partner", payload.partners),
         ("publication", payload.publications),
     ):
         for entity in entities:

@@ -26,7 +26,7 @@ Pour résoudre ce constat, deux options d'architecture sont envisageables.
 
 ### 2.1 Principe et fonctionnement
 Lors de la publication ou du déploiement en production, un script de prérendu automatisé (ex. `@prerenderer/rollup` ou script Vite SSG) parcourt la liste des **29 URLs publiques** déclarées par l'API (après fusion de Localisations dans Contact) :
-- 10 pages institutionnelles (accueil, services, interventions, secteurs, publications, à propos, contact unifié, mentions légales, etc.) en FR et EN ;
+- 11 pages institutionnelles (accueil, services, interventions, secteurs, publications, partenaires, à propos, contact unifié, mentions légales, etc.) en FR et EN ;
 - 10 domaines d'intervention ;
 - 3 publications d'exemple ;
 - 2 types d'intervention.

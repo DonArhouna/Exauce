@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, create_async_engine
 
 from app.core.config import get_settings
 
-# Tables du dictionnaire §2 et des diagrammes §1 du doc 06 (35).
+# Tables du dictionnaire §2 et des diagrammes §1 du doc 06 (36).
 DOC06_TABLES = frozenset(
     {
         "audit_log",
@@ -45,6 +45,7 @@ DOC06_TABLES = frozenset(
         "outbox_emails",
         "page_sections",
         "pages",
+        "partners",
         "permissions",
         "publications",
         "redirects",

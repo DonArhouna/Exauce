@@ -1,6 +1,6 @@
 {
   "_source": "Analyse/modelisation/docs/16-modele-editorial.md (sections 3.1 et 3.4)",
-  "count": 21,
+  "count": 23,
   "types": [
     {
       "code": "hero",
@@ -251,6 +251,29 @@
       ],
       "editorial_note": "",
       "config_note": ""
+    },
+    {
+      "code": "partners_marquee",
+      "usage": "partenaires",
+      "translated_raw": "`title`, `intro`",
+      "translated_fields": [
+        "title",
+        "intro"
+      ],
+      "editorial_note": "titre, intro du bandeau de logos",
+      "config_note": "défilement continu, logos actifs dans l'ordre"
+    },
+    {
+      "code": "partners_grid",
+      "usage": "partenaires",
+      "translated_raw": "`title`, `intro`, `notice`",
+      "translated_fields": [
+        "title",
+        "intro",
+        "notice"
+      ],
+      "editorial_note": "titre, intro, mention des exemples fictifs",
+      "config_note": "grille des partenaires actifs, ordre `position`"
     }
   ]
 }

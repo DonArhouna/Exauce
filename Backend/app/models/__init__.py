@@ -65,6 +65,7 @@ from app.models.leads import (
     OutboxEmail,
 )
 from app.models.media import Media, MediaRef, MediaVariant
+from app.models.partners import Partner
 from app.models.site import Office, SiteSetting, TeamMember
 
 __all__ = [
@@ -104,6 +105,7 @@ __all__ = [
     "Page",
     "PageSection",
     "PageTemplate",
+    "Partner",
     "Permission",
     "Publication",
     "Redirect",

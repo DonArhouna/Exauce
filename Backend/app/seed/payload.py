@@ -40,8 +40,9 @@ PAGES: tuple[tuple[str, str, bool, int | None, bool, str, bool], ...] = (
     ("interventions", "standard", True, 2, False, "published", False),
     ("sectors", "standard", True, 3, False, "published", False),
     ("publications", "standard", True, 4, False, "published", False),
-    ("about", "standard", True, 5, False, "published", False),
-    ("contact", "contact", True, 6, False, "published", False),
+    ("partners", "standard", True, 5, False, "published", False),
+    ("about", "standard", True, 6, False, "published", False),
+    ("contact", "contact", True, 7, False, "published", False),
     ("legal_notice", "legal", False, None, True, "draft", True),
     ("client_area", "coming_soon", False, None, False, "published", False),
     ("not_found", "coming_soon", False, None, True, "published", False),
@@ -54,6 +55,7 @@ PAGE_SLUGS: dict[str, dict[str, str | None]] = {
     "interventions": {"fr": "interventions", "en": "interventions"},
     "sectors": {"fr": "secteurs", "en": "sectors"},
     "publications": {"fr": "publications", "en": "publications"},
+    "partners": {"fr": "partenaires", "en": "partners"},
     "about": {"fr": "a-propos", "en": "about-us"},
     "contact": {"fr": "contact", "en": "contact"},
     "legal_notice": {"fr": "mentions-legales", "en": "legal-notice"},
@@ -87,6 +89,10 @@ SECTION_INSTANCES: tuple[tuple[str, str, str], ...] = (
     ("about", "values", "values_grid"),
     ("about", "founder_card", "founder_card"),
     ("publications", "header", "page_header"),
+    ("partners", "header", "page_header"),
+    ("partners", "marquee", "partners_marquee"),
+    ("partners", "grid", "partners_grid"),
+    ("partners", "cta", "cta"),
     ("contact", "contact_form", "contact_form"),  # position 1 (doc 16 §3.4)
     ("contact", "offices_grid", "offices_grid"),  # position 2 (doc 16 §3.4)
     ("client_area", "coming_soon", "coming_soon"),
@@ -102,6 +108,141 @@ REDIRECTS: tuple[tuple[str, str, str], ...] = (
     ("/fr/locations", "/fr/contact#implantations", "fr"),
     ("/en/localisations", "/en/contact#implantations", "en"),
 )
+
+# --- Partenaires (11e page, mission Frontend 2026-11-07) -------------------
+# Source : `PARTNERS_MOCK` du Frontend (contenu fictif assumé) + locales
+# `partners.*`. `logo_media_id` reste NULL : les logos fournis sont des SVG
+# (refusés par la note média) et aucun fichier n'est disponible ; le
+# back-office les téléversera ensuite.
+PARTNERS: tuple[dict[str, Any], ...] = (
+    {
+        "source_key": "partner-1",
+        "name": "Partenaire Alpha",
+        "description": {
+            "fr": "Exemple de partenariat — organisme fictif de financement et d'appui aux entreprises.",
+            "en": "Sample partnership — fictional business support and financing organisation.",
+        },
+    },
+    {
+        "source_key": "partner-2",
+        "name": "Partenaire Beta",
+        "description": {
+            "fr": "Exemple de partenariat — institution fictive d'accompagnement et de développement des PME.",
+            "en": "Sample partnership — fictional institution for SME development and support.",
+        },
+    },
+    {
+        "source_key": "partner-3",
+        "name": "Partenaire Gamma",
+        "description": {
+            "fr": "Exemple de partenariat — organisme fictif de certification et de conformité réglementaire.",
+            "en": "Sample partnership — fictional certification and regulatory compliance body.",
+        },
+    },
+    {
+        "source_key": "partner-4",
+        "name": "Partenaire Delta",
+        "description": {
+            "fr": "Exemple de partenariat — réseau fictif d'experts-comptables et de cabinets de conseil.",
+            "en": "Sample partnership — fictional network of chartered accountants and advisory firms.",
+        },
+    },
+    {
+        "source_key": "partner-5",
+        "name": "Partenaire Epsilon",
+        "description": {
+            "fr": "Exemple de partenariat — fonds fictif de garantie et de soutien à la création entreprise.",
+            "en": "Sample partnership — fictional guarantee fund and business creation support.",
+        },
+    },
+    {
+        "source_key": "partner-6",
+        "name": "Partenaire Zeta",
+        "description": {
+            "fr": "Exemple de partenariat — chambre fictive de commerce et d'industrie sous-régionale.",
+            "en": "Sample partnership — fictional sub-regional chamber of commerce and industry.",
+        },
+    },
+    {
+        "source_key": "partner-7",
+        "name": "Partenaire Eta",
+        "description": {
+            "fr": "Exemple de partenariat — organisme fictif de formation professionnelle et d'insertion.",
+            "en": "Sample partnership — fictional vocational training and employment organisation.",
+        },
+    },
+    {
+        "source_key": "partner-8",
+        "name": "Partenaire Theta",
+        "description": {
+            "fr": "Exemple de partenariat — association fictive d'entrepreneurs et de dirigeants d'entreprise.",
+            "en": "Sample partnership — fictional association of entrepreneurs and business leaders.",
+        },
+    },
+)
+
+#: Copie de la page Partenaires (locales Frontend `partners.*`).
+PARTNERS_PAGE_COPY: dict[str, dict[str, str]] = {
+    "fr": {
+        "nav_label": "Partenaires",
+        "title": "Partenaires — EXAUCE Audit & Conseils",
+        "intro": "EXAUCE Audit & Conseils SAS développe des partenariats avec des organisations qui partagent ses valeurs d’exigence, d’innovation et de service aux entreprises.",
+    },
+    "en": {
+        "nav_label": "Partners",
+        "title": "Partners — EXAUCE Audit & Conseils",
+        "intro": "EXAUCE Audit & Conseils SAS develops partnerships with organisations that share its values of excellence, innovation and service to businesses.",
+    },
+}
+
+#: Copie des sections de la page Partenaires (source_key -> langue -> data).
+PARTNERS_SECTION_COPY: dict[str, dict[str, dict[str, str]]] = {
+    "header": {
+        "fr": {
+            "kicker": "Partenaires",
+            "title": "Nos partenaires",
+            "intro": "EXAUCE Audit & Conseils SAS développe des partenariats avec des organisations qui partagent ses valeurs d’exigence, d’innovation et de service aux entreprises.",
+        },
+        "en": {
+            "kicker": "Partners",
+            "title": "Our partners",
+            "intro": "EXAUCE Audit & Conseils SAS develops partnerships with organisations that share its values of excellence, innovation and service to businesses.",
+        },
+    },
+    "marquee": {
+        "fr": {
+            "title": "Ceux qui nous font confiance",
+            "intro": "Ils sont à nos côtés dans notre mission de conseil et d’accompagnement.",
+        },
+        "en": {
+            "title": "Those who trust us",
+            "intro": "They stand by our side in our consulting and support mission.",
+        },
+    },
+    "grid": {
+        "fr": {
+            "title": "Nos partenaires",
+            "intro": "Découvrez les organisations avec lesquelles nous collaborons pour apporter des solutions complètes à nos clients.",
+            "notice": "Les noms et logos présentés sont des exemples de démonstration. Ils ne représentent aucun partenariat réel.",
+        },
+        "en": {
+            "title": "Our partners",
+            "intro": "Discover the organisations we collaborate with to provide comprehensive solutions to our clients.",
+            "notice": "The names and logos shown are demonstration examples. They do not represent any real partnership.",
+        },
+    },
+    "cta": {
+        "fr": {
+            "title": "Vous souhaitez devenir partenaire ?",
+            "text": "Parlons de votre projet de collaboration.",
+        },
+        "en": {
+            "title": "Would you like to become a partner?",
+            "text": "Let’s talk about your collaboration project.",
+        },
+    },
+}
+
 
 # --- Roles (codes doc 06 L656 ; libellés = acteurs doc 03 §1) --------------
 # `viewer` : aucun acteur doc 03 — « Lecteur » derive de doc 01 (a confirmer).
@@ -222,6 +363,7 @@ class SeedPayload:
     categories: list[dict[str, Any]] = field(default_factory=list)
     offices: list[dict[str, Any]] = field(default_factory=list)
     team_members: list[dict[str, Any]] = field(default_factory=list)
+    partners: list[dict[str, Any]] = field(default_factory=list)
     settings: list[dict[str, Any]] = field(default_factory=list)
     publications: list[dict[str, Any]] = field(default_factory=list)
     redirects: list[dict[str, Any]] = field(default_factory=list)
@@ -601,6 +743,42 @@ def _build_team_members() -> list[dict[str, Any]]:
     ]
 
 
+def _build_partners() -> list[dict[str, Any]]:
+    """8 partenaires fictifs du Frontend, ordre = ordre d'affichage."""
+    return [
+        {
+            "source_key": partner["source_key"],
+            "name": partner["name"],
+            "logo_media_id": None,
+            "website_url": None,
+            "position": position,
+            "is_active": True,
+            "translations": {
+                lang: {
+                    "slug": None,
+                    "status": "published",
+                    "data": {"description": partner["description"][lang]},
+                }
+                for lang in LANGS
+            },
+        }
+        for position, partner in enumerate(PARTNERS, 1)
+    ]
+
+
+def _apply_partners_copy(payload: SeedPayload) -> None:
+    """Copie FR/EN de la page Partenaires et de ses 4 sections."""
+    page = next(p for p in payload.pages if p["page_key"] == "partners")
+    for lang in LANGS:
+        page["translations"][lang]["data"].update(PARTNERS_PAGE_COPY[lang])
+    for section in payload.sections:
+        if section["page_key"] != "partners":
+            continue
+        copy = PARTNERS_SECTION_COPY.get(section["source_key"], {})
+        for lang in LANGS:
+            section["translations"][lang]["data"].update(copy.get(lang, {}))
+
+
 def _build_publications(content: dict[str, Any]) -> list[dict[str, Any]]:
     """3 publications « Exemple » (Q-104) — uniquement avec --with-demo."""
     publications: list[dict[str, Any]] = []
@@ -782,6 +960,7 @@ def build_payload(*, with_demo: bool = False) -> SeedPayload:
         settings=_build_settings(rows),
         offices=_build_offices(content),
         team_members=_build_team_members(),
+        partners=_build_partners(),
         intervention_types=_build_intervention_types(content),
         categories=_build_categories(content),
         sectors=_build_sectors(content),
@@ -804,6 +983,7 @@ def build_payload(*, with_demo: bool = False) -> SeedPayload:
 
     _apply_editorial(rows, payload)
     _apply_base(payload, content)
+    _apply_partners_copy(payload)
 
     payload.editorial_targets = len(rows)
     payload.editorial_keys = len({row["key"] for row in rows})

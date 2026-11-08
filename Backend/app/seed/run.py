@@ -33,6 +33,7 @@ from app.models.content import (
     Sector,
 )
 from app.models.i18n import EntityTranslation, Language, Redirect
+from app.models.partners import Partner
 from app.models.site import Office, SiteSetting, TeamMember
 from app.seed.payload import build_payload
 
@@ -408,6 +409,23 @@ async def run_seed(
             stats=stats,
         )
         jobs.append(("team_member", instance.id, member["translations"]))
+
+    for partner in payload.partners:
+        instance = await _upsert(
+            session,
+            Partner,
+            key={"source_key": partner["source_key"]},
+            attrs={
+                "name": partner["name"],
+                "logo_media_id": partner["logo_media_id"],
+                "website_url": partner["website_url"],
+                "position": partner["position"],
+                "is_active": partner["is_active"],
+            },
+            entity="partners",
+            stats=stats,
+        )
+        jobs.append(("partner", instance.id, partner["translations"]))
 
     for setting in payload.settings:
         instance = await _upsert(

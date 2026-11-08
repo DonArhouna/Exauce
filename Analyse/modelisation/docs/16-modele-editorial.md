@@ -147,7 +147,7 @@ nouveau bloc. Les blocs typés évitent les deux écueils.
 - `pages` : chaque page publique est une ligne (`page_key` stable), soit
   `home`, `services`, `interventions`, `sectors`, `publications`, `about`,
   `legal_notice`, `contact`, `client_area`, `not_found`
-  (**10 pages**). La page `contact` regroupe le formulaire et la section « Nos implantations » (fusion de l'ancienne page Localisations). Le frontend actuel ne sert qu'**une** URL légale : les
+  (**11 pages**, dont `partners`). La page `contact` regroupe le formulaire et la section « Nos implantations » (fusion de l'ancienne page Localisations). Le frontend actuel ne sert qu'**une** URL légale : les
   mentions, la confidentialité et les cookies sont **trois sections**
   `legal_document` de `legal_notice`, pas trois pages. Éclater ces textes en
   trois URLs indexables reste une option (Q-102, doc 13). Les pages
@@ -193,6 +193,8 @@ libellés sont en i18n back-office. Il est semé par migration et peut être
 | `offices_grid` | contact (section implantations, position 2) | `title`, `intro`, `empty_text` |
 | `legal_document` | mentions, confidentialité, cookies | `body`, `banner_text` |
 | `coming_soon` | espace client | `title`, `text`, `cta_label` |
+| `partners_marquee` | partenaires | `title`, `intro` |
+| `partners_grid` | partenaires | `title`, `intro`, `notice` |
 
 *Les schémas exacts sont versionnés dans `section_types.config_schema` et
 `section_types.translation_schema` (migration initiale), puis figés par les

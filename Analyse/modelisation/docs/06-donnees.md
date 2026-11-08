@@ -526,7 +526,7 @@ médias et utilisateurs.*
 | Colonne | Type | Contraintes | Description | Exemple |
 |---|---|---|---|---|
 | id | UUID | PK | Identifiant | — |
-| entity_type | VARCHAR(32) | NN, CHECK liste fermée | `node` `page` `page_section` `publication` `category` `media` `setting` `interventiontype` `sector` `office` `team_member` | `node` |
+| entity_type | VARCHAR(32) | NN, CHECK liste fermée | `node` `page` `page_section` `publication` `category` `media` `setting` `interventiontype` `sector` `office` `team_member` `partner` | `node` |
 | entity_id | UUID | NN | ID de l'entité traduite | — |
 | lang | VARCHAR(10) | NN, FK languages.code | Langue de la ligne | `en` |
 | slug | VARCHAR(180) | UQ par (entity_type, lang) ; `NULL` interdit pour les entités routées | Slug dans cette langue ; `NULL` seulement pour `page_section` et `setting` | `payroll` |
@@ -588,7 +588,7 @@ et les règles contradictoires.
 | Colonne | Type | Contraintes | Description |
 |---|---|---|---|
 | id | UUID | PK | — |
-| page_key | VARCHAR(40) | NN, UQ | Registre fermé : `home`, `services`, `interventions`, `sectors`, `publications`, `about`, `legal_notice`, `contact`, `client_area`, `not_found` (10 pages ; les 3 textes légaux sont des sections de `legal_notice`, la page `contact` fusionne formulaire et implantations géographiques) |
+| page_key | VARCHAR(40) | NN, UQ | Registre fermé : `home`, `services`, `interventions`, `sectors`, `publications`, `partners`, `about`, `legal_notice`, `contact`, `client_area`, `not_found` (11 pages ; les 3 textes légaux sont des sections de `legal_notice`, la page `contact` fusionne formulaire et implantations géographiques) |
 | template | VARCHAR(20) | NN, ck home/standard/legal/contact/coming_soon | Gabarit de rendu attendu par le frontend |
 | source_key | VARCHAR(60) | `NULL`, UQ partiel | Clé de migration (idempotence du seed) |
 | is_in_nav | BOOLEAN | NN, def false | Présence dans le menu principal |
@@ -833,6 +833,22 @@ Traductions (`entity_type='team_member'`) : `full_name`, `role`, `bio`,
 `photo_alt`. La section `founder_card` ne porte que le texte d'introduction
 et le repli, jamais le nom ni la biographie (source unique).
 
+**Table `partners`** — propriétaire : Contenu (partenaires, 11e page).
+
+| Colonne | Type | Contraintes | Description |
+|---|---|---|---|
+| id | UUID | PK | — |
+| source_key | VARCHAR(60) | `NULL`, UQ partiel | Clé de migration (`partner-1`…) |
+| name | VARCHAR(120) | NN | Nom affiché |
+| logo_media_id | UUID | FK medias, `NULL`, RESTRICT | Logo (média image) |
+| website_url | VARCHAR(500) | `NULL` | Lien externe optionnel |
+| position | SMALLINT | NN | Ordre d'affichage |
+| is_active | BOOLEAN | NN, def true | Masquer sans supprimer |
+| created_at / updated_at | TIMESTAMPTZ | NN | — |
+
+Traductions (`entity_type='partner'`) : `description` (par langue). Le logo
+réutilise le média (`alt` par langue) ; aucun fichier n'est semé en phase 1.
+
 **Table `redirects`** : `id PK`, `old_path VARCHAR(500) NN UQ`,
 `target_path NN`, `status_code ck 301/302`, `auto_generated BOOLEAN NN`,
 `created_at`.
@@ -1021,9 +1037,9 @@ Le seed est orchestré par un **script Python CLI dédié et idempotent** (`pyth
 1. **Langues** : `fr` (défaut, active), `en` (active).
 2. **`content_nodes`** : 2 familles → 10 domaines → 20 groupes → 94 prestations, positions conservées 1..N par parent, `source_key` = id frontend.
 3. **`entity_translations` des nœuds** : une ligne par (nœud, `fr`) et une par (nœud, `en`), slugs identiques à ceux du frontend (`fr/services/accompagnement/…` ↔ `en/services/support/…`).
-4. **`pages`** : **10 lignes** — `home`, `services`, `interventions`, `sectors`, `publications`, `about`, `contact`, `legal_notice`, `client_area`, `not_found` — dont 7 en navigation (`is_in_nav=true`). Statut `draft` + `banners_pending` pour la page légale.
-5. **`section_types`** : les 21 codes du catalogue (doc 16 §3.4).
-6. **`page_sections`** : **29 blocs** — accueil 10, services 5, interventions 2, à propos 5, publications 1, contact 2 (`contact_form`, `offices_grid`), espace client 1, page légale 3 (`mentions`, `privacy`, `cookies`).
+4. **`pages`** : **11 lignes** — `home`, `services`, `interventions`, `sectors`, `publications`, `partners`, `about`, `contact`, `legal_notice`, `client_area`, `not_found` — dont 8 en navigation (`is_in_nav=true`). Statut `draft` + `banners_pending` pour la page légale.
+5. **`section_types`** : les 23 codes du catalogue (doc 16 §3.4, dont `partners_marquee` et `partners_grid`).
+6. **`page_sections`** : **33 blocs** — accueil 10, services 5, interventions 2, partenaires 4, à propos 5, publications 1, contact 2 (`contact_form`, `offices_grid`), espace client 1, page légale 3 (`mentions`, `privacy`, `cookies`).
 7. **`categories`** : 6 (`governance`, `audit`, `finance`, `hr`, `it`, `legal`).
 8. **`publications`** : les 3 « Exemple » (`source_key='pub-1..3'`, statut `draft`, `is_demo=true`), importées uniquement avec `--with-demo` (exclues en `--production`, Q-104).
 9. **`intervention_types`** : `recurrentes` / `ponctuelles` + traductions (dont les phrases signature `home.signature.*`).
@@ -1050,10 +1066,11 @@ Le seed est orchestré par un **script Python CLI dédié et idempotent** (`pyth
 | `COUNT(... 'group')` | 20 |
 | `COUNT(... 'service')` | 94 |
 | slugs FR/EN des nœuds vs `PAGE_SLUGS` + slugs du frontend | 100 % identiques |
-| `pages` / dont `is_in_nav` | **10 / 7** |
+| `pages` / dont `is_in_nav` | **11 / 8** |
 | `page_sections` de la page légale (`legal_document`) | 3 |
-| `section_types` / `page_sections` | 21 / **29** |
+| `section_types` / `page_sections` | 23 / **33** |
 | `page_sections` de l'accueil | 10 |
+| `partners` (dont actifs) | 8 / 8 |
 | secteurs / sous-catégories | 3 / 9 |
 | `categories` / publications importées (mode dev) | 6 / 3 (`is_demo=true`) |
 | `offices` / dont siège | 1 / 1 |
