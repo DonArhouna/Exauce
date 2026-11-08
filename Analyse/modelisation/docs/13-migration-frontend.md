@@ -333,6 +333,16 @@ devenir des invariants de l'API.
 - **Publications** : les 3 fiches sont `draft` mais présentes dans le sitemap
   et affichées. Si l'API applique le statut, le sitemap tombe à 26 URLs (ou 25) et la
   page publications se vide : décision Q-104 avant le seed, pas après.
+- **Implémentation Backend (2026-11-07)** : `GET /api/v1/sitemap.xml`
+  n'émet que les publications `status='published'` (les 3 démos `draft` sont
+  donc exclues). La colonne `is_demo` n'existe pas encore en base : elle est
+  prévue par la migration 0002, et d'ici là le statut `draft` est le garde-fou.
+  Recompte : **27 URLs** avec le seed dev/démo (10 pages dont `partners`,
+  2 familles, 10 domaines, 2 interventions, 3 secteurs, 0 publication) ;
+  **30 URLs** en production quand 3 publications réelles sont publiées.
+  `not_found` est exclue ; `legal_notice` et `client_area` restent incluses
+  (Q-103 ouverte). Format : une entrée `<url>` par paire logique, `<loc>` FR
+  et `xhtml:link` FR/EN croisés (comme `generate-sitemap.mjs`).
 - **Alias** : les 5 paires FR/EN rendues sous les deux préfixes créent des
   doublons ; cible = 301 vers le slug canonique (Q-103).
 - **Canonical / hreflang** : `Page.tsx` calcule aujourd'hui les alternates

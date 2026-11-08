@@ -20,7 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import __version__
-from app.api import admin_auth, health
+from app.api import admin_auth, health, public_sitemap
 from app.core.config import Settings, get_settings
 from app.core.csrf import CsrfMiddleware
 from app.core.db import dispose_engine
@@ -124,6 +124,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(health.router, prefix=cfg.api_prefix)
     app.include_router(admin_auth.router, prefix=cfg.api_prefix)
+    app.include_router(public_sitemap.router, prefix=cfg.api_prefix)
     _apply_contract(app, _load_contract(cfg))
 
     return app
