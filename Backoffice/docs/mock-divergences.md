@@ -5,7 +5,7 @@ Ce fichier liste les points où le mock du Backoffice s'écarte volontairement d
 soit un manque de contrat à combler, soit une décision du propriétaire que le
 Backend n'a pas encore intégrée.
 
-Dernière mise à jour : écrans « Pages et sections », « Demandes de contact » et « Bureaux ».
+Dernière mise à jour : contenu réel du site chargé dans le mock (étape 2).
 
 ## 1. Contrat OpenAPI — manques à combler
 
@@ -88,3 +88,22 @@ l'écran n'appelle que ces cinq routes.
 | 4 | Pas de code d'erreur de doublon | création ou renommage avec un code existant → `409 OFFICE_CODE_TAKEN` | ajouter le code à `Problem.code` |
 
 Sans réponse du Backend, le mock reste l'autorité locale pour ces quatre points.
+
+## 7. Contenu des pages (étape 2)
+
+Le contenu du mock n'est plus inventé : il reprend celui du site public
+(`editorial_i18n.json`, `content_data.json`, locales `partners.*`). Il vit dans
+`src/services/api/mock/pagesSeed.ts` (11 pages, 32 blocs).
+
+| # | Écart | Ce que fait le mock | Proposition de contrat |
+|---|---|---|---|
+| 1 | `AdminPageDetail` ne porte que `title` | la page expose aussi `slug`, `revision` ; le panneau Page (étape 3) ajoutera `nav_label`, `intro`, `seo_*` | exposer ces champs par langue |
+| 2 | Le seed Backend garde `page_header` et `coming_soon` | ces blocs sont retirés du mock : le site ne les rend pas | les retirer du seed et du catalogue |
+| 3 | `hero` déclare `primary_cta`/`secondary_cta` | champs retirés : le site lit `common.*` | retirer du type, éditer les CTA dans Paramètres |
+| 4 | Les grilles déclarent une introduction | seuls `kicker` + `title` (et `text` pour `audit_grid`) | aligner `section_types.json` |
+| 5 | Pas de page Partenaires | 11ᵉ page + 4 blocs + 8 partenaires de démonstration | ajouter page, types et entité `partner` |
+| 6 | `stats` expose `value` | `value` est un décompte calculé (7/3/3/2), à passer en lecture seule | marquer `readOnly` au catalogue |
+| 7 | Un seul bureau publié | siège de Dakar, adresse en texte d'attente, e-mail et téléphones du site | aucune règle nouvelle |
+
+Les champs manquants au doc 15 et les changements Backend sont listés dans
+`docs/editorial-gaps.md`.

@@ -3,10 +3,10 @@
  * (`Backend/app/seed/payload.py` : `PAGES`, `SECTION_INSTANCES` et
  * `Backend/app/seed/data/section_types.json`).
  *
- * 10 pages dont 7 en navigation, 29 blocs (accueil 10, services 5,
- * interventions 2, à propos 5, publications 1, contact 2, espace client 1,
- * mentions 3), 21 types de sections. `legal_notice` est en brouillon avec
- * `banners_pending`.
+ * 11 pages dont 8 en navigation, 32 blocs (accueil 10, services 5,
+ * interventions 2, à propos 5, publications 1, partenaires 4, contact 2,
+ * mentions 3), 23 types de sections. `legal_notice` est en brouillon avec
+ * `banners_pending`. Le contenu éditorial vit dans `pagesSeed.ts`.
  *
  * Écarts assumés avec le contrat OpenAPI (documentés dans
  * `Backoffice/docs/mock-divergences.md`) : `data` est un objet `{ fr, en }`
@@ -20,6 +20,7 @@ import type {
   PageStatus,
   SectionValues,
 } from '../types';
+import { PAGE_SEED } from './pagesSeed';
 import { listSectionTypes, validateSectionData } from './sectionTypes';
 
 type MockLang = ContentLang;
@@ -45,374 +46,6 @@ export interface MockPage {
   sections: MockSection[];
 }
 
-interface SeedSection {
-  type: string;
-  source: string;
-  fr: Values;
-  en: Values;
-  config?: Values;
-  inactive?: boolean;
-}
-
-interface SeedPage {
-  key: string;
-  template: string;
-  nav: number | null;
-  system: boolean;
-  status: PageStatus;
-  banners?: boolean;
-  title: [string, string];
-  slug: [string | null, string | null];
-  sections: SeedSection[];
-}
-
-const SEED: SeedPage[] = [
-  {
-    key: 'home',
-    template: 'home',
-    nav: 0,
-    system: true,
-    status: 'published',
-    title: ['Accueil', 'Home'],
-    slug: ['', ''],
-    sections: [
-      {
-        type: 'hero',
-        source: 'hero',
-        fr: {
-          brand_line1: 'Exauce',
-          brand_line2: 'Audit & Conseil',
-          subtitle:
-            'Comptabilité, audit et conseil pour les entreprises qui veulent des comptes fiables et des décisions éclairées.',
-          primary_cta: 'Prendre rendez-vous',
-          secondary_cta: 'Nos services',
-        },
-        en: {
-          brand_line1: 'Exauce',
-          brand_line2: 'Audit & Advisory',
-          subtitle:
-            'Accounting, audit and advisory for companies that need reliable figures and informed decisions.',
-          primary_cta: 'Book a meeting',
-          secondary_cta: 'Our services',
-        },
-        config: { variant: 'split' },
-      },
-      {
-        type: 'trust_bar',
-        source: 'trust_bar',
-        fr: { items: [{ text: 'Experts-comptables' }, { text: 'Commissaires aux comptes' }, { text: 'Conseil fiscal' }] },
-        en: { items: [{ text: 'Chartered accountants' }, { text: 'Statutory auditors' }, { text: 'Tax advisory' }] },
-      },
-      {
-        type: 'about_preview',
-        source: 'about_preview',
-        fr: { kicker: 'Qui sommes-nous', title: 'Un cabinet de proximité', text: 'Une équipe pluridisciplinaire au service des PME.', cta_label: 'En savoir plus' },
-        en: { kicker: 'About us', title: 'A nearby firm', text: 'A multidisciplinary team serving SMEs.', cta_label: 'Learn more' },
-      },
-      {
-        type: 'domains_grid',
-        source: 'domains_grid',
-        fr: { kicker: 'Domaines', title: 'Nos domaines d’expertise' },
-        en: { kicker: 'Domains', title: 'Our areas of expertise' },
-      },
-      {
-        type: 'audit_grid',
-        source: 'audit_grid',
-        fr: { kicker: 'Audit', title: 'Audit légal et contractuel', text: 'Une démarche rigoureuse et documentée.' },
-        en: { kicker: 'Audit', title: 'Statutory and contractual audit', text: 'A rigorous, documented approach.' },
-      },
-      {
-        type: 'interventions_grid',
-        source: 'interventions_grid',
-        fr: { kicker: 'Interventions', title: 'Nos interventions' },
-        en: { kicker: 'Interventions', title: 'Our engagements' },
-      },
-      {
-        type: 'sectors_grid',
-        source: 'sectors_grid',
-        fr: { kicker: 'Secteurs', title: 'Secteurs accompagnés' },
-        en: { kicker: 'Sectors', title: 'Sectors we serve' },
-      },
-      {
-        type: 'stats',
-        source: 'stats',
-        fr: {
-          kicker: 'Le cabinet en chiffres',
-          items: [
-            { value: '18', label: 'années d’expérience' },
-            { value: '240', label: 'clients accompagnés' },
-            { value: '12', label: 'collaborateurs' },
-            { value: '3', label: 'bureaux' },
-          ],
-        },
-        en: {
-          kicker: 'The firm in figures',
-          items: [
-            { value: '18', label: 'years of experience' },
-            { value: '240', label: 'clients served' },
-            { value: '12', label: 'team members' },
-            { value: '3', label: 'offices' },
-          ],
-        },
-      },
-      {
-        type: 'publications_grid',
-        source: 'publications_grid',
-        fr: { kicker: 'Actualités', title: 'Dernières publications', cta_label: 'Tout voir', empty_text: 'Aucune publication.' },
-        en: { kicker: 'News', title: 'Latest publications', cta_label: 'See all', empty_text: 'No publication yet.' },
-      },
-      {
-        type: 'cta',
-        source: 'cta',
-        fr: {
-          title: 'Parlons de votre projet',
-          text: 'Un premier échange de trente minutes, sans engagement.',
-          secondary_label: 'Nous écrire',
-        },
-        en: {
-          title: 'Let’s talk about your project',
-          text: 'A first thirty-minute conversation, with no commitment.',
-          secondary_label: 'Contact us',
-        },
-      },
-    ],
-  },
-  {
-    key: 'services',
-    template: 'standard',
-    nav: 1,
-    system: false,
-    status: 'published',
-    title: ['Services', 'Services'],
-    slug: ['services', 'services'],
-    sections: [
-      {
-        type: 'page_header',
-        source: 'header',
-        fr: { kicker: 'Services', title: 'Nos services', intro: 'Comptabilité, audit, fiscalité et conseil en gestion.' },
-        en: { kicker: 'Services', title: 'Our services', intro: 'Accounting, audit, tax and management advisory.' },
-      },
-      {
-        type: 'modes',
-        source: 'modes',
-        fr: {
-          title: 'Nos modes d’intervention',
-          items: [
-            { title: 'Assistance', text: 'Nous tenons vos comptes et vous conseillons.' },
-            { title: 'Supervision', text: 'Nous contrôlons et fiabilisons vos travaux.' },
-          ],
-        },
-        en: {
-          title: 'How we work',
-          items: [
-            { title: 'Assistance', text: 'We keep your books and advise you.' },
-            { title: 'Supervision', text: 'We review and secure your work.' },
-          ],
-        },
-      },
-      {
-        type: 'domains_grid',
-        source: 'domains_grid',
-        fr: { kicker: 'Domaines', title: 'Domaines couverts' },
-        en: { kicker: 'Domains', title: 'Covered domains' },
-      },
-      {
-        type: 'audit_grid',
-        source: 'audit_grid',
-        fr: { kicker: 'Audit', title: 'Audit et certification', text: 'Des comptes certifiés sans réserve.' },
-        en: { kicker: 'Audit', title: 'Audit and certification', text: 'Unqualified certified accounts.' },
-      },
-      {
-        type: 'cta',
-        source: 'cta',
-        fr: { title: 'Besoin d’un accompagnement ?', text: 'Nous cadrons le périmètre avec vous.', secondary_label: 'Demander un devis' },
-        en: { title: 'Need support?', text: 'We scope the engagement with you.', secondary_label: 'Request a quote' },
-      },
-    ],
-  },
-  {
-    key: 'interventions',
-    template: 'standard',
-    nav: 2,
-    system: false,
-    status: 'published',
-    title: ['Interventions', 'Engagements'],
-    slug: ['interventions', 'interventions'],
-    sections: [
-      {
-        type: 'page_header',
-        source: 'header',
-        fr: { kicker: 'Interventions', title: 'Nos interventions', intro: 'Ponctuelles ou récurrentes, selon vos besoins.' },
-        en: { kicker: 'Engagements', title: 'Our engagements', intro: 'One-off or recurring, depending on your needs.' },
-      },
-      {
-        type: 'interventions_compare',
-        source: 'compare',
-        fr: {
-          title: 'Récurrent ou ponctuel',
-          head_label: 'Intervention',
-          caption: 'Comparatif indicatif.',
-          rows: [{ label: 'Tenue de comptabilité', recurring: 'Oui', oneoff: 'Non' }],
-        },
-        en: {
-          title: 'Recurring or one-off',
-          head_label: 'Engagement',
-          caption: 'Indicative comparison.',
-          rows: [{ label: 'Bookkeeping', recurring: 'Yes', oneoff: 'No' }],
-        },
-      },
-    ],
-  },
-  {
-    key: 'sectors',
-    template: 'standard',
-    nav: 3,
-    system: false,
-    status: 'published',
-    title: ['Secteurs', 'Sectors'],
-    slug: ['secteurs', 'sectors'],
-    sections: [],
-  },
-  {
-    key: 'publications',
-    template: 'standard',
-    nav: 4,
-    system: false,
-    status: 'published',
-    title: ['Publications', 'Publications'],
-    slug: ['publications', 'publications'],
-    sections: [
-      {
-        type: 'page_header',
-        source: 'header',
-        fr: { kicker: 'Publications', title: 'Actualités et analyses', intro: 'Nos notes de lecture réglementaire.' },
-        en: { kicker: 'Publications', title: 'News and analysis', intro: 'Our regulatory reading notes.' },
-      },
-    ],
-  },
-  {
-    key: 'about',
-    template: 'standard',
-    nav: 5,
-    system: false,
-    status: 'published',
-    title: ['À propos', 'About us'],
-    slug: ['a-propos', 'about-us'],
-    sections: [
-      {
-        type: 'page_header',
-        source: 'header',
-        fr: { kicker: 'Le cabinet', title: 'À propos d’Exauce', intro: 'Un cabinet indépendant, ancré en Afrique de l’Ouest.' },
-        en: { kicker: 'The firm', title: 'About Exauce', intro: 'An independent firm rooted in West Africa.' },
-      },
-      {
-        type: 'what_we_do',
-        source: 'what_we_do',
-        fr: { title: 'Ce que nous faisons', text: 'Nous fiabilisons l’information financière.' },
-        en: { title: 'What we do', text: 'We make financial information reliable.' },
-      },
-      {
-        type: 'steps',
-        source: 'how_we_work',
-        fr: { kicker: 'Méthode', items: [{ title: 'Cadrage', text: 'Comprendre vos enjeux.' }, { title: 'Exécution', text: 'Produire et documenter.' }] },
-        en: { kicker: 'Method', items: [{ title: 'Scoping', text: 'Understand your challenges.' }, { title: 'Delivery', text: 'Produce and document.' }] },
-      },
-      {
-        type: 'values_grid',
-        source: 'values',
-        fr: { title: 'Nos valeurs', empty_text: 'Aucune valeur publiée.', items: [{ title: 'Rigueur', text: 'La preuve avant l’opinion.' }] },
-        en: { title: 'Our values', empty_text: 'No value published.', items: [{ title: 'Rigour', text: 'Evidence before opinion.' }] },
-      },
-      {
-        type: 'founder_card',
-        source: 'founder_card',
-        fr: { kicker: 'Le fondateur', empty_text: 'Profil à venir.' },
-        en: { kicker: 'The founder', empty_text: 'Profile coming soon.' },
-      },
-    ],
-  },
-  {
-    key: 'contact',
-    template: 'contact',
-    nav: 6,
-    system: false,
-    status: 'published',
-    title: ['Contact', 'Contact'],
-    slug: ['contact', 'contact'],
-    sections: [
-      {
-        type: 'contact_form',
-        source: 'contact_form',
-        fr: { intro: 'Décrivez votre besoin, nous revenons vers vous sous 48 heures.', success_text: 'Merci, votre demande a été envoyée.' },
-        en: { intro: 'Describe your need and we will reply within 48 hours.', success_text: 'Thank you, your message has been sent.' },
-      },
-      {
-        type: 'offices_grid',
-        source: 'offices_grid',
-        fr: { title: 'Nos implantations', intro: 'Trois bureaux en Côte d’Ivoire.', empty_text: 'Aucun bureau publié.' },
-        en: { title: 'Our offices', intro: 'Three offices in Côte d’Ivoire.', empty_text: 'No office published.' },
-      },
-    ],
-  },
-  {
-    key: 'legal_notice',
-    template: 'legal',
-    nav: null,
-    system: true,
-    status: 'draft',
-    banners: true,
-    title: ['Mentions légales', 'Legal notice'],
-    slug: ['mentions-legales', 'legal-notice'],
-    sections: [
-      {
-        type: 'legal_document',
-        source: 'mentions',
-        fr: { body: 'Exauce Auditor & Conseil, société anonyme au capital de 10 000 000 FCFA, Abidjan, Côte d’Ivoire.', banner_text: 'Document en cours de validation juridique.' },
-        en: { body: 'Exauce Auditor & Conseil, a public limited company with capital of XOF 10,000,000, Abidjan, Côte d’Ivoire.', banner_text: 'Document pending legal review.' },
-      },
-      {
-        type: 'legal_document',
-        source: 'privacy',
-        fr: { body: 'Les données transmises via le formulaire de contact sont conservées 24 mois.', banner_text: '' },
-        en: { body: 'Data submitted through the contact form is kept for 24 months.', banner_text: '' },
-      },
-      {
-        type: 'legal_document',
-        source: 'cookies',
-        fr: { body: 'Le site n’utilise que des cookies techniques nécessaires à son fonctionnement.', banner_text: '' },
-        en: { body: 'The site only uses technical cookies required to operate.', banner_text: '' },
-      },
-    ],
-  },
-  {
-    key: 'client_area',
-    template: 'coming_soon',
-    nav: null,
-    system: false,
-    status: 'published',
-    title: ['Espace client', 'Customer area'],
-    slug: ['espace-client', 'customer-area'],
-    sections: [
-      {
-        type: 'coming_soon',
-        source: 'coming_soon',
-        fr: { title: 'Bientôt disponible', text: 'Votre espace documentaire arrive.', cta_label: 'Nous contacter' },
-        en: { title: 'Coming soon', text: 'Your document area is on its way.', cta_label: 'Contact us' },
-      },
-    ],
-  },
-  {
-    key: 'not_found',
-    template: 'coming_soon',
-    nav: null,
-    system: true,
-    status: 'published',
-    title: ['Page introuvable', 'Page not found'],
-    slug: [null, null],
-    sections: [],
-  },
-];
-
 function pageId(index: number): string {
   return `aaaaaaaa-000${index + 1}-4001-8001-00000000000${index + 1}`;
 }
@@ -424,7 +57,7 @@ function sectionId(index: number): string {
 
 function materialize(): MockPage[] {
   let sectionIndex = 0;
-  return SEED.map((seed, pageIndex) => ({
+  return PAGE_SEED.map((seed, pageIndex) => ({
     id: pageId(pageIndex),
     page_key: seed.key,
     template: seed.template,
@@ -442,7 +75,7 @@ function materialize(): MockPage[] {
       section_type: section.type,
       source_key: section.source,
       position: index + 1,
-      is_active: !section.inactive,
+      is_active: true,
       config: section.config ?? {},
       data: { fr: section.fr, en: section.en },
     })),

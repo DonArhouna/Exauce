@@ -32,71 +32,33 @@ function office(
   };
 }
 
+/**
+ * Le site public n'expose qu'un siège, à Dakar. L'adresse postale n'est pas
+ * encore validée par le cabinet : elle reste un texte d'attente visible, comme
+ * sur la page Contact (`contact.addressesComing`). Les coordonnées sont celles
+ * publiées par le site.
+ */
 function initialOffices(): AdminOffice[] {
   return [
     office(1, {
-      code: 'ABJ',
+      code: 'DKR',
       position: 1,
       is_headquarters: true,
       is_active: true,
-      phone_fixed: '+225 27 20 00 00 01',
-      phone_mobile: '+225 07 00 00 00 01',
-      email: 'abidjan@example.ci',
-      map_url: 'https://maps.example.ci/abidjan',
-      translations: {
-        fr: {
-          name: 'Siège d’Abidjan',
-          city: 'Abidjan',
-          address_lines: ['Immeuble Le Plateau, 4e étage', 'Rue du Commerce, Plateau', '01 BP 0000 Abidjan 01'],
-        },
-        en: {
-          name: 'Abidjan head office',
-          city: 'Abidjan',
-          address_lines: ['Le Plateau building, 4th floor', 'Rue du Commerce, Plateau', '01 BP 0000 Abidjan 01'],
-        },
-      },
-    }),
-    office(2, {
-      code: 'YAM',
-      position: 2,
-      is_headquarters: false,
-      is_active: true,
-      phone_fixed: '+225 27 30 00 00 02',
-      phone_mobile: null,
-      email: 'yamoussoukro@example.ci',
+      phone_fixed: '+221 33 814 51 24',
+      phone_mobile: '+221 77 099 31 83',
+      email: 'contact@exauceac.com',
       map_url: null,
       translations: {
         fr: {
-          name: 'Bureau de Yamoussoukro',
-          city: 'Yamoussoukro',
-          address_lines: ['Quartier Millionnaire', 'BP 0000 Yamoussoukro'],
+          name: 'Siège — Dakar (Sénégal)',
+          city: 'Dakar',
+          address_lines: ['Adresse du siège — à valider par le cabinet'],
         },
         en: {
-          name: 'Yamoussoukro office',
-          city: 'Yamoussoukro',
-          address_lines: ['Millionnaire district', 'BP 0000 Yamoussoukro'],
-        },
-      },
-    }),
-    office(3, {
-      code: 'BKE',
-      position: 3,
-      is_headquarters: false,
-      is_active: true,
-      phone_fixed: null,
-      phone_mobile: '+225 05 00 00 00 03',
-      email: null,
-      map_url: null,
-      translations: {
-        fr: {
-          name: 'Bureau de Bouaké',
-          city: 'Bouaké',
-          address_lines: ['Avenue Houphouët-Boigny'],
-        },
-        en: {
-          name: 'Bouaké office',
-          city: 'Bouaké',
-          address_lines: ['Avenue Houphouët-Boigny'],
+          name: 'Head Office — Dakar (Senegal)',
+          city: 'Dakar',
+          address_lines: ['Head office address — pending client confirmation'],
         },
       },
     }),
