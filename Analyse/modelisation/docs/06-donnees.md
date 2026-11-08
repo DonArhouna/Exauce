@@ -195,11 +195,29 @@ erDiagram
     timestamp expires_at
     boolean revoked
   }
+  login_attempts {
+    uuid id PK
+    varchar email
+    boolean succeeded
+    inet ip
+    timestamp at
+  }
+  invitations {
+    uuid id PK
+    uuid user_id FK
+    varchar token_hash "usage unique"
+    uuid created_by FK
+    timestamp expires_at
+    timestamp consumed_at "null si non utilise"
+  }
   users ||--o{ user_roles : ""
   roles ||--o{ user_roles : ""
   roles ||--o{ role_permissions : ""
   permissions ||--o{ role_permissions : ""
   users ||--o{ sessions : ""
+  users ||--o{ login_attempts : ""
+  users ||--o{ invitations : "user_id"
+  users ||--o{ invitations : "created_by"
 ```
 
 *Figure 3 : la granularité de permission est `module × action × lang`.*
@@ -288,6 +306,15 @@ erDiagram
     uuid author_id FK
     text note
     boolean internal
+  }
+  idempotency_keys {
+    uuid id PK
+    varchar key
+    varchar scope
+    varchar request_hash "sha256 du payload"
+    int response_status "null = en cours"
+    json response_body
+    timestamp expires_at
   }
   leads ||--o{ lead_notes : ""
 ```
@@ -499,7 +526,7 @@ médias et utilisateurs.*
 | Colonne | Type | Contraintes | Description | Exemple |
 |---|---|---|---|---|
 | id | UUID | PK | Identifiant | — |
-| entity_type | VARCHAR(32) | NN, CHECK liste fermée | `node` `page` `page_section` `publication` `category` `media` `setting` `interventiontype` `sector` `office` `team_member` | `node` |
+| entity_type | VARCHAR(32) | NN, CHECK liste fermée | `node` `page` `page_section` `publication` `category` `media` `setting` `interventiontype` `sector` `office` `team_member` `partner` | `node` |
 | entity_id | UUID | NN | ID de l'entité traduite | — |
 | lang | VARCHAR(10) | NN, FK languages.code | Langue de la ligne | `en` |
 | slug | VARCHAR(180) | UQ par (entity_type, lang) ; `NULL` interdit pour les entités routées | Slug dans cette langue ; `NULL` seulement pour `page_section` et `setting` | `payroll` |
@@ -561,7 +588,7 @@ et les règles contradictoires.
 | Colonne | Type | Contraintes | Description |
 |---|---|---|---|
 | id | UUID | PK | — |
-| page_key | VARCHAR(40) | NN, UQ | Registre fermé : `home`, `services`, `interventions`, `sectors`, `publications`, `about`, `legal_notice`, `contact`, `client_area`, `not_found` (10 pages ; les 3 textes légaux sont des sections de `legal_notice`, la page `contact` fusionne formulaire et implantations géographiques) |
+| page_key | VARCHAR(40) | NN, UQ | Registre fermé : `home`, `services`, `interventions`, `sectors`, `publications`, `partners`, `about`, `legal_notice`, `contact`, `client_area`, `not_found` (11 pages ; les 3 textes légaux sont des sections de `legal_notice`, la page `contact` fusionne formulaire et implantations géographiques) |
 | template | VARCHAR(20) | NN, ck home/standard/legal/contact/coming_soon | Gabarit de rendu attendu par le frontend |
 | source_key | VARCHAR(60) | `NULL`, UQ partiel | Clé de migration (idempotence du seed) |
 | is_in_nav | BOOLEAN | NN, def false | Présence dans le menu principal |
@@ -653,13 +680,18 @@ Les 3 secteurs et les 9 sous-catégories vivent dans `sectors` :
 | created_at / updated_at | TIMESTAMPTZ | NN | — |
 
 **Table `roles`** : `id UUID PK`, `code VARCHAR(30) UQ`, `label VARCHAR(60) NN`.
-Rôles semés : `super_admin`, `admin`, `editor`, `reviewer`, `crm`, `viewer`.
+Rôles semés (code $\rightarrow$ libellé, acteurs page 03 §5 + décision
+`viewer` 2026-11-03) : `super_admin` « Super-admin », `admin` «
+Administrateur », `editor` « Rédacteur », `reviewer` « Relecteur », `crm` «
+Chargé de relation clients », `viewer` « Lecteur ».
 
 **Table `permissions`** : `id UUID PK`, `module VARCHAR(24) NN`
 (registre aligné sur la page 10 : `pages`, `tree`, `publications`, `media`,
 `leads`, `clients`, `users`, `languages`, `offices`, `team`, `settings`,
 `seo`, `audit`, `backup`), `action VARCHAR(12) NN`
-(`view/create/edit/review/publish/delete/export/move/merge/deactivate`),
+(`view/create/edit/review/publish/delete/export/move/merge/deactivate` +
+`status/notes/anonymize/upload/activate/run` — les 6 dernières portées par
+la matrice page 10 §2, lignes `leads`, `clients`, `languages`, `backup`),
 `lang VARCHAR(10)` FK languages NULL = toutes.
 
 **Table `role_permissions`** : pair `(role_id FK, permission_id FK)` PK composite.
@@ -667,6 +699,20 @@ Rôles semés : `super_admin`, `admin`, `editor`, `reviewer`, `crm`, `viewer`.
 
 **Table `sessions`** : `id UUID PK`, `user_id FK`, `token_hash VARCHAR(64) NN UQ`,
 `created_at`, `expires_at NN`, `revoked_at`, `ip INET`, `user_agent`.
+
+**Table `login_attempts`** — amendement M3 (doc 09 §2.2) : `id UUID PK`,
+`email VARCHAR(255) NN`, `succeeded BOOLEAN NN`, `ip INET`,
+`at TIMESTAMPTZ NN` ; index `(email, at)`. Journal des tentatives qui pilote
+le verrouillage proportionnel (5 échecs → 5 min, doublement exponentiel,
+plafond 1 h), sans jamais distinguer « compte inconnu » et « mot de passe
+erroné » côté réponse.
+
+**Table `invitations`** — amendement M3 (Q-105/U1, contrat
+`/admin/auth/activate`) : `id UUID PK`, `user_id FK users NN`,
+`token_hash VARCHAR(64) NN UQ`, `created_by FK users NULL`, `expires_at NN`,
+`consumed_at`, `created_at`. Jeton signé à usage unique (TTL 7 jours) pour
+l'activation du fondateur (`password_hash=NULL`, `must_reset_password=true`)
+et des utilisateurs invités ; aucune route d'inscription publique (EF-401).
 
 ### 2.4 Contexte 4 · comptes clients (v2)
 
@@ -712,6 +758,15 @@ requested_by client_user_id FK, assigned_to users FK NULL).
 
 **Table `lead_notes`** : `id PK`, `lead_id FK NN`, `author_id FK users NN`,
 `note TEXT NN`, `internal BOOLEAN NN`, `created_at`.
+
+**Table `idempotency_keys`** — amendement M3 (doc 08 §5, écritures
+publiques) : `id UUID PK`, `key VARCHAR(128) NN`, `scope VARCHAR(60) NN`
+(ex. `POST /api/v1/contact`), `request_hash CHAR(64) NN` (SHA-256 du
+payload), `response_status SMALLINT NULL` (`NULL` = requête en cours),
+`response_body JSONB`, `created_at / updated_at`, `expires_at NN` ;
+UQ `(scope, key)`, index `(expires_at)` pour la purge des clés expirées.
+Rejeu de la réponse avec l'en-tête `X-Idempotent-Replayed: true` ;
+`409 IDEMPOTENT_REPLAY_CONFLICT` si même clé et payload différent.
 
 ### 2.6 Contexte 6 · médias
 
@@ -778,6 +833,22 @@ Traductions (`entity_type='team_member'`) : `full_name`, `role`, `bio`,
 `photo_alt`. La section `founder_card` ne porte que le texte d'introduction
 et le repli, jamais le nom ni la biographie (source unique).
 
+**Table `partners`** — propriétaire : Contenu (partenaires, 11e page).
+
+| Colonne | Type | Contraintes | Description |
+|---|---|---|---|
+| id | UUID | PK | — |
+| source_key | VARCHAR(60) | `NULL`, UQ partiel | Clé de migration (`partner-1`…) |
+| name | VARCHAR(120) | NN | Nom affiché |
+| logo_media_id | UUID | FK medias, `NULL`, RESTRICT | Logo (média image) |
+| website_url | VARCHAR(500) | `NULL` | Lien externe optionnel |
+| position | SMALLINT | NN | Ordre d'affichage |
+| is_active | BOOLEAN | NN, def true | Masquer sans supprimer |
+| created_at / updated_at | TIMESTAMPTZ | NN | — |
+
+Traductions (`entity_type='partner'`) : `description` (par langue). Le logo
+réutilise le média (`alt` par langue) ; aucun fichier n'est semé en phase 1.
+
 **Table `redirects`** : `id PK`, `old_path VARCHAR(500) NN UQ`,
 `target_path NN`, `status_code ck 301/302`, `auto_generated BOOLEAN NN`,
 `created_at`.
@@ -826,6 +897,9 @@ non réversible ou pseudonymisé de façon paramétrée — À VALIDER avec CDP)
 | redirects | UQ (old_path) ; (entity_type, entity_id) | pas de règle contradictoire, purge par entité |
 | leads | (status, created_at) | files de traitement |
 | sessions | (user_id), (expires_at) | révocation et purge |
+| login_attempts | (email, at) | verrouillage proportionnel après 5 échecs (page 09 §2.2) |
+| invitations | UQ (token_hash) | jeton d'activation à usage unique (Q-105, EF-401) |
+| idempotency_keys | UQ (scope, key) ; (expires_at) | rejoue/conflit `Idempotency-Key` (08 §5) + purge des clés expirées |
 | client_documents | (account_id, original_name) — **non unique** | l'unicité n'est PAS imposée (SC-404) |
 | media_refs | (ref_type, ref_id) | liste des référents à jour |
 | audit_log | (entity), (at) | consultabilité (EF-901) |
@@ -963,9 +1037,9 @@ Le seed est orchestré par un **script Python CLI dédié et idempotent** (`pyth
 1. **Langues** : `fr` (défaut, active), `en` (active).
 2. **`content_nodes`** : 2 familles → 10 domaines → 20 groupes → 94 prestations, positions conservées 1..N par parent, `source_key` = id frontend.
 3. **`entity_translations` des nœuds** : une ligne par (nœud, `fr`) et une par (nœud, `en`), slugs identiques à ceux du frontend (`fr/services/accompagnement/…` ↔ `en/services/support/…`).
-4. **`pages`** : **10 lignes** — `home`, `services`, `interventions`, `sectors`, `publications`, `about`, `contact`, `legal_notice`, `client_area`, `not_found` — dont 7 en navigation (`is_in_nav=true`). Statut `draft` + `banners_pending` pour la page légale.
-5. **`section_types`** : les 21 codes du catalogue (doc 16 §3.4).
-6. **`page_sections`** : **29 blocs** — accueil 10, services 5, interventions 2, à propos 5, publications 1, contact 2 (`contact_form`, `offices_grid`), espace client 1, page légale 3 (`mentions`, `privacy`, `cookies`).
+4. **`pages`** : **11 lignes** — `home`, `services`, `interventions`, `sectors`, `publications`, `partners`, `about`, `contact`, `legal_notice`, `client_area`, `not_found` — dont 8 en navigation (`is_in_nav=true`). Statut `draft` + `banners_pending` pour la page légale.
+5. **`section_types`** : les 23 codes du catalogue (doc 16 §3.4, dont `partners_marquee` et `partners_grid`).
+6. **`page_sections`** : **33 blocs** — accueil 10, services 5, interventions 2, partenaires 4, à propos 5, publications 1, contact 2 (`contact_form`, `offices_grid`), espace client 1, page légale 3 (`mentions`, `privacy`, `cookies`).
 7. **`categories`** : 6 (`governance`, `audit`, `finance`, `hr`, `it`, `legal`).
 8. **`publications`** : les 3 « Exemple » (`source_key='pub-1..3'`, statut `draft`, `is_demo=true`), importées uniquement avec `--with-demo` (exclues en `--production`, Q-104).
 9. **`intervention_types`** : `recurrentes` / `ponctuelles` + traductions (dont les phrases signature `home.signature.*`).
@@ -980,6 +1054,9 @@ Le seed est orchestré par un **script Python CLI dédié et idempotent** (`pyth
     - `/fr/locations` $\rightarrow$ `/fr/contact#implantations`
     - `/en/localisations` $\rightarrow$ `/en/contact#implantations`
 
+16. **`permissions` + `role_permissions`** : registre fermé de la matrice page 10 §2 (14 modules, actions du §2.3). Pour les modules langue-scopables (`pages`, `tree`, `publications`, `offices`, `team`, `settings`, `seo`) : deux permissions par action (`lang='fr'` et `lang='en'`) ; `lang=NULL` pour les autres. **95 permissions, 204 associations** — super_admin : toutes ; admin : ses 11 modules (9 + media + leads) ; editor : pages/tree/publications/media (sans delete média) ; reviewer : pages/publications ; crm : leads/clients ; **viewer : aucune** (décisions 2026-11-03 et 2026-11-07, détail page 10 §2).
+17. **Comptes de démo (uniquement `--with-demo`, jamais en `--production` — Q-104)** : `demo-admin`, `demo-editor`, `demo-reviewer`, `demo-crm`, `demo-viewer` (`@exauceac.com`), **sans mot de passe** : activation par invitation signée (MailHog en dev) ; l'invitation porte un secret TOTP pour les rôles à MFA obligatoire (`admin`, `crm`, `super_admin` — page 09 §2.1).
+
 **Test de parité (doit s'exécuter en CI)** :
 
 | Vérification | Valeur attendue |
@@ -989,16 +1066,19 @@ Le seed est orchestré par un **script Python CLI dédié et idempotent** (`pyth
 | `COUNT(... 'group')` | 20 |
 | `COUNT(... 'service')` | 94 |
 | slugs FR/EN des nœuds vs `PAGE_SLUGS` + slugs du frontend | 100 % identiques |
-| `pages` / dont `is_in_nav` | **10 / 7** |
+| `pages` / dont `is_in_nav` | **11 / 8** |
 | `page_sections` de la page légale (`legal_document`) | 3 |
-| `section_types` / `page_sections` | 21 / **29** |
+| `section_types` / `page_sections` | 23 / **33** |
 | `page_sections` de l'accueil | 10 |
+| `partners` (dont actifs) | 8 / 8 |
 | secteurs / sous-catégories | 3 / 9 |
 | `categories` / publications importées (mode dev) | 6 / 3 (`is_demo=true`) |
 | `offices` / dont siège | 1 / 1 |
 | `team_members` / dont fondateur | 1 / 1 |
 | compte fondateur `users` sans mot de passe par défaut (Q-105) | 1 (`must_reset_password=true`) |
-| clés i18n **éditoriales** (doc 15) couvertes par une cible en base | 125 / 125 |
+| `permissions` / `role_permissions` (matrice page 10 §2) | **95 / 204** |
+| comptes de démo back-office (`--with-demo` seulement) | 5 (0 en production) |
+| clés i18n **éditoriales** (doc 15) couvertes par une cible en base | **126 / 126** (127 cibles : `contact.address` ×2) |
 | clés i18n restantes après purge des clés mortes | 175 (FR = EN) |
 | `redirects` au seed (anciennes URLs Localisations - Q-103) | **4** |
 

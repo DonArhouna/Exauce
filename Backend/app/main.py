@@ -20,8 +20,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import __version__
-from app.api import health
+from app.api import admin_auth, health, public_content, public_sitemap
 from app.core.config import Settings, get_settings
+from app.core.csrf import CsrfMiddleware
 from app.core.db import dispose_engine
 from app.core.errors import (
     ApiError,
@@ -110,6 +111,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_headers=["*"],
         expose_headers=["X-Request-Id", "ETag", "Retry-After", "Server-Timing"],
     )
+    # CSRF (ADR-009) : sous le correlation id, au-dessus du CORS.
+    app.add_middleware(CsrfMiddleware)
     app.add_middleware(RequestContextMiddleware)
 
     app.add_exception_handler(Exception, unhandled_exception_handler)
@@ -120,6 +123,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.add_exception_handler(ApiError, api_error_handler)  # type: ignore[arg-type]
 
     app.include_router(health.router, prefix=cfg.api_prefix)
+    app.include_router(admin_auth.router, prefix=cfg.api_prefix)
+    app.include_router(public_content.router, prefix=cfg.api_prefix)
+    app.include_router(public_sitemap.router, prefix=cfg.api_prefix)
     _apply_contract(app, _load_contract(cfg))
 
     return app

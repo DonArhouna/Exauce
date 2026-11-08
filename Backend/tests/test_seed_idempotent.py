@@ -1,0 +1,234 @@
+"""Tests d'idempotence du seed — doc 06 §6.2 (re-execution sans effet).
+
+Deux niveaux :
+- test de payload (sans base) : sans `--with-demo`, aucune publication ;
+- tests d'intégration (base dev) : deux exécutions en succession dans la
+  même transaction (rejouée à la sortie) donnent 0 création / 0 mise à jour
+  et des IDs strictement identiques ; `production=True` après `with_demo`
+  ne crée aucune publication et ne supprime pas celles déjà présentes.
+
+Prérequis : `docker compose up -d db` puis `alembic upgrade head`. Sans base
+joignable, les tests d'intégration sont ignorés (skip).
+"""
+
+from __future__ import annotations
+
+from collections.abc import AsyncIterator
+from typing import Any
+
+import pytest
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+
+from app.core.config import get_settings
+from app.models.auth import Permission, Role, RolePermission, User
+from app.models.content import ContentNode, Page, PageSection, Publication
+from app.models.i18n import EntityTranslation
+from app.seed import SeedStats, build_payload, run_seed
+
+
+def test_payload_without_demo_has_no_publications() -> None:
+    """Mode production : ni publication, ni compte de démo (Q-104)."""
+    production = build_payload(with_demo=False)
+    assert production.publications == []
+    assert production.demo_users == []
+    assert len(build_payload(with_demo=True).publications) == 3
+    assert len(build_payload(with_demo=True).demo_users) == 5
+    # Permissions : registre fermé, identique en production (pas de démo dedans).
+    assert len(production.permissions) == 95
+    assert len(production.role_permissions) == 204
+
+
+async def test_demo_and_production_are_exclusive() -> None:
+    """`--with-demo` et `--production` sont mutuellement exclusifs (Q-104)."""
+    with pytest.raises(ValueError):
+        # session=None : le garde-fou est le tout premier calcul de run_seed.
+        await run_seed(None, with_demo=True, production=True)  # type: ignore[arg-type]
+
+
+@pytest.fixture()
+async def session() -> AsyncIterator[AsyncSession]:
+    """Session sur la base dev ; skip si PostgreSQL est injoignable."""
+    engine = create_async_engine(get_settings().database_url, pool_pre_ping=True)
+    try:
+        connection = await engine.connect()
+    except Exception as exc:  # noqa: BLE001 — types d'erreur réseau variés
+        await engine.dispose()
+        pytest.skip(
+            f"PostgreSQL injoignable ({exc.__class__.__name__}) — "
+            "'docker compose up -d db' puis 'alembic upgrade head'"
+        )
+    sess = AsyncSession(bind=connection)
+    try:
+        yield sess
+    finally:
+        await sess.rollback()
+        await sess.close()
+        await connection.close()
+        await engine.dispose()
+
+
+async def _snapshot(session: AsyncSession) -> dict[str, Any]:
+    """IDs + comptes de toutes les tables semées (comparaison entre passes)."""
+    counts: dict[str, int] = {}
+    for name, model in (
+        ("nodes", ContentNode),
+        ("pages", Page),
+        ("sections", PageSection),
+        ("publications", Publication),
+        ("translations", EntityTranslation),
+        ("permissions", Permission),
+        ("role_permissions", RolePermission),
+        ("users", User),
+    ):
+        stmt = select(func.count()).select_from(model)
+        counts[name] = int((await session.execute(stmt)).scalar_one())
+    ids = {
+        "node": sorted(
+            str(uid) for uid in (await session.execute(select(ContentNode.id))).scalars()
+        ),
+        "page": sorted(str(uid) for uid in (await session.execute(select(Page.id))).scalars()),
+        "translation": sorted(
+            f"{row.entity_type}:{row.entity_id}:{row.lang}"
+            for row in ((await session.execute(select(EntityTranslation))).scalars().all())
+        ),
+    }
+    return {"counts": counts, "ids": ids}
+
+
+def _is_zero(stats: SeedStats) -> bool:
+    return stats.total_created == 0 and sum(stats.updated.values()) == 0
+
+
+async def test_second_run_is_a_noop(session: AsyncSession) -> None:
+    """Deuxième exécution : 0 création, 0 mise à jour, IDs identiques."""
+    first = await run_seed(session, with_demo=True)
+    before = await _snapshot(session)
+
+    second = await run_seed(session, with_demo=True)
+    after = await _snapshot(session)
+
+    assert _is_zero(second), f"2e passe non nulle : {second}"
+    assert after == before, "la 2e passe a change des IDs ou des comptes"
+    assert first.total_created >= 0  # 1re passe : creations ou rien (base deja semee)
+
+
+async def test_rerun_restores_modified_rows(session: AsyncSession) -> None:
+    """Une ligne modifiée à la main est réalignée par le seed (updated=1)."""
+    await run_seed(session, with_demo=True)
+    page = (await session.execute(select(Page).where(Page.page_key == "services"))).scalar_one()
+    page.nav_position = 99
+    await session.flush()
+
+    stats = await run_seed(session, with_demo=True)
+    assert stats.updated.get("pages") == 1
+    assert page.nav_position == 1
+
+
+async def test_production_run_inserts_no_publications(session: AsyncSession) -> None:
+    """`production=True` après `with_demo` : 0 publication créée/supprimée."""
+    await run_seed(session, with_demo=True)
+    before = int(
+        (await session.execute(select(func.count()).select_from(Publication))).scalar_one()
+    )
+    assert before == 3
+
+    stats = await run_seed(session, production=True)
+    after = int((await session.execute(select(func.count()).select_from(Publication))).scalar_one())
+    assert after == before == 3
+    assert "publications" not in stats.created
+    assert "publications" not in stats.updated
+
+
+# ------------------------------------------ réconciliation des permissions ---
+
+
+async def _link(
+    session: AsyncSession, *, role_code: str, module: str, action: str
+) -> tuple[Role, Permission, RolePermission]:
+    role = (await session.execute(select(Role).where(Role.code == role_code))).scalar_one()
+    perm = (
+        await session.execute(
+            select(Permission).where(
+                Permission.module == module,
+                Permission.action == action,
+                Permission.lang.is_(None),
+            )
+        )
+    ).scalar_one()
+    existing = (
+        await session.execute(
+            select(RolePermission).filter_by(role_id=role.id, permission_id=perm.id)
+        )
+    ).scalar_one_or_none()
+    if existing is not None:
+        return role, perm, existing
+    link = RolePermission(role_id=role.id, permission_id=perm.id)
+    session.add(link)
+    await session.flush()
+    return role, perm, link
+
+
+async def test_reconcile_permissions_is_opt_in(
+    session: AsyncSession, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Lien périmé : conservé par défaut, affiché puis retiré avec l'option."""
+    await run_seed(session, with_demo=True)
+    role, perm, _ = await _link(session, role_code="editor", module="media", action="delete")
+
+    await run_seed(session, with_demo=True)  # défaut : aucune suppression
+    stale = (
+        await session.execute(
+            select(RolePermission).filter_by(role_id=role.id, permission_id=perm.id)
+        )
+    ).scalar_one_or_none()
+    assert stale is not None
+
+    stats = await run_seed(session, with_demo=True, reconcile_permissions=True)
+    captured = capsys.readouterr()
+    assert "reconcile: editor media:delete" in captured.out
+    assert stats.deleted.get("role_permissions") == 1
+    gone = (
+        await session.execute(
+            select(RolePermission).filter_by(role_id=role.id, permission_id=perm.id)
+        )
+    ).scalar_one_or_none()
+    assert gone is None
+
+
+async def test_reconcile_permissions_never_touches_custom_roles(
+    session: AsyncSession, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Un rôle hors des 6 rôles semés conserve ses liens, même en réconciliation."""
+    await run_seed(session, with_demo=True)
+    custom = (
+        await session.execute(select(Role).where(Role.code == "custom_auditor"))
+    ).scalar_one_or_none()
+    if custom is None:
+        custom = Role(code="custom_auditor", label="Auditeur externe")
+        session.add(custom)
+        await session.flush()
+    perm = (
+        await session.execute(
+            select(Permission).where(
+                Permission.module == "media",
+                Permission.action == "view",
+                Permission.lang.is_(None),
+            )
+        )
+    ).scalar_one()
+    existing = (
+        await session.execute(
+            select(RolePermission).filter_by(role_id=custom.id, permission_id=perm.id)
+        )
+    ).scalar_one_or_none()
+    if existing is None:
+        session.add(RolePermission(role_id=custom.id, permission_id=perm.id))
+        await session.flush()
+
+    await run_seed(session, with_demo=True, reconcile_permissions=True)
+    kept = (
+        await session.execute(select(RolePermission).filter_by(role_id=custom.id))
+    ).scalar_one_or_none()
+    assert kept is not None
+    assert "custom_auditor" not in capsys.readouterr().out

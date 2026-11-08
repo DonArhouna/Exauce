@@ -1,0 +1,279 @@
+{
+  "_source": "Analyse/modelisation/docs/16-modele-editorial.md (sections 3.1 et 3.4)",
+  "count": 23,
+  "types": [
+    {
+      "code": "hero",
+      "usage": "accueil",
+      "translated_raw": "`brand_line1`, `brand_line2`, `subtitle`, `primary_cta`, `secondary_cta`",
+      "translated_fields": [
+        "brand_line1",
+        "brand_line2",
+        "subtitle",
+        "primary_cta",
+        "secondary_cta"
+      ],
+      "editorial_note": "2 lignes de marque, sous-titre, libellés CTA",
+      "config_note": "variante, média de fond"
+    },
+    {
+      "code": "trust_bar",
+      "usage": "accueil",
+      "translated_raw": "`items[].text` (4)",
+      "translated_fields": [
+        "items[].text"
+      ],
+      "editorial_note": "4 textes de référence",
+      "config_note": "4 icônes"
+    },
+    {
+      "code": "about_preview",
+      "usage": "accueil",
+      "translated_raw": "`kicker`, `title`, `text`, `cta_label`",
+      "translated_fields": [
+        "kicker",
+        "title",
+        "text",
+        "cta_label"
+      ],
+      "editorial_note": "kicker, titre, texte, libellé CTA",
+      "config_note": "page liée, média"
+    },
+    {
+      "code": "domains_grid",
+      "usage": "accueil, services",
+      "translated_raw": "`kicker`, `title`",
+      "translated_fields": [
+        "kicker",
+        "title"
+      ],
+      "editorial_note": "kicker, titre",
+      "config_note": "limite, famille"
+    },
+    {
+      "code": "audit_grid",
+      "usage": "accueil, services",
+      "translated_raw": "`kicker`, `title`, `text`",
+      "translated_fields": [
+        "kicker",
+        "title",
+        "text"
+      ],
+      "editorial_note": "kicker, titre, texte",
+      "config_note": "famille"
+    },
+    {
+      "code": "interventions_grid",
+      "usage": "accueil",
+      "translated_raw": "`kicker`, `title`",
+      "translated_fields": [
+        "kicker",
+        "title"
+      ],
+      "editorial_note": "kicker, titre",
+      "config_note": "limite"
+    },
+    {
+      "code": "sectors_grid",
+      "usage": "accueil",
+      "translated_raw": "`kicker`, `title`",
+      "translated_fields": [
+        "kicker",
+        "title"
+      ],
+      "editorial_note": "kicker, titre",
+      "config_note": "limite"
+    },
+    {
+      "code": "stats",
+      "usage": "accueil",
+      "translated_raw": "`kicker`, `items[].label` (4)",
+      "translated_fields": [
+        "kicker",
+        "items[].label"
+      ],
+      "editorial_note": "kicker, 4 libellés",
+      "config_note": "sources de valeur (comptage/manuel)"
+    },
+    {
+      "code": "publications_grid",
+      "usage": "accueil",
+      "translated_raw": "`kicker`, `title`, `cta_label`, `empty_text`",
+      "translated_fields": [
+        "kicker",
+        "title",
+        "cta_label",
+        "empty_text"
+      ],
+      "editorial_note": "kicker, titre, libellé « tout voir », texte vide",
+      "config_note": "limite"
+    },
+    {
+      "code": "cta",
+      "usage": "transverse",
+      "translated_raw": "`title`, `text`, `secondary_label`",
+      "translated_fields": [
+        "title",
+        "text",
+        "secondary_label"
+      ],
+      "editorial_note": "titre, texte, libellé secondaire",
+      "config_note": "cible, variante"
+    },
+    {
+      "code": "page_header",
+      "usage": "pages internes",
+      "translated_raw": "`kicker`, `title`, `intro`",
+      "translated_fields": [
+        "kicker",
+        "title",
+        "intro"
+      ],
+      "editorial_note": "",
+      "config_note": ""
+    },
+    {
+      "code": "modes",
+      "usage": "services",
+      "translated_raw": "`title`, `items[].title`, `items[].text`",
+      "translated_fields": [
+        "title",
+        "items[].title",
+        "items[].text"
+      ],
+      "editorial_note": "",
+      "config_note": ""
+    },
+    {
+      "code": "values_grid",
+      "usage": "à propos",
+      "translated_raw": "`title`, `empty_text`, `items[].title`, `items[].text`",
+      "translated_fields": [
+        "title",
+        "empty_text",
+        "items[].title",
+        "items[].text"
+      ],
+      "editorial_note": "titre, items",
+      "config_note": "nombre de colonnes"
+    },
+    {
+      "code": "steps",
+      "usage": "à propos",
+      "translated_raw": "`kicker`, `items[].title`, `items[].text`",
+      "translated_fields": [
+        "kicker",
+        "items[].title",
+        "items[].text"
+      ],
+      "editorial_note": "titre, items",
+      "config_note": "variante"
+    },
+    {
+      "code": "what_we_do",
+      "usage": "à propos",
+      "translated_raw": "`kicker`, `text`",
+      "translated_fields": [
+        "kicker",
+        "text"
+      ],
+      "editorial_note": "",
+      "config_note": ""
+    },
+    {
+      "code": "founder_card",
+      "usage": "accueil, à propos",
+      "translated_raw": "`kicker`, `empty_text`",
+      "translated_fields": [
+        "kicker",
+        "empty_text"
+      ],
+      "editorial_note": "titre, texte de repli",
+      "config_note": "membre lié"
+    },
+    {
+      "code": "interventions_compare",
+      "usage": "interventions",
+      "translated_raw": "`title`, `head_label`, `caption`, `rows[].label`, `rows[].recurring`, `rows[].oneoff`",
+      "translated_fields": [
+        "title",
+        "head_label",
+        "caption",
+        "rows[].label",
+        "rows[].recurring",
+        "rows[].oneoff"
+      ],
+      "editorial_note": "",
+      "config_note": ""
+    },
+    {
+      "code": "contact_form",
+      "usage": "contact (position 1)",
+      "translated_raw": "`intro`, `success_text`",
+      "translated_fields": [
+        "intro",
+        "success_text"
+      ],
+      "editorial_note": "intro, texte de succès",
+      "config_note": "champs actifs"
+    },
+    {
+      "code": "offices_grid",
+      "usage": "contact (section implantations, position 2)",
+      "translated_raw": "`title`, `intro`, `empty_text`",
+      "translated_fields": [
+        "title",
+        "intro",
+        "empty_text"
+      ],
+      "editorial_note": "titre, intro",
+      "config_note": "bureau mis en avant"
+    },
+    {
+      "code": "legal_document",
+      "usage": "mentions, confidentialité, cookies",
+      "translated_raw": "`body`, `banner_text`",
+      "translated_fields": [
+        "body",
+        "banner_text"
+      ],
+      "editorial_note": "corps Markdown, texte du bandeau",
+      "config_note": "niveau de complétude"
+    },
+    {
+      "code": "coming_soon",
+      "usage": "espace client",
+      "translated_raw": "`title`, `text`, `cta_label`",
+      "translated_fields": [
+        "title",
+        "text",
+        "cta_label"
+      ],
+      "editorial_note": "",
+      "config_note": ""
+    },
+    {
+      "code": "partners_marquee",
+      "usage": "partenaires",
+      "translated_raw": "`title`, `intro`",
+      "translated_fields": [
+        "title",
+        "intro"
+      ],
+      "editorial_note": "titre, intro du bandeau de logos",
+      "config_note": "défilement continu, logos actifs dans l'ordre"
+    },
+    {
+      "code": "partners_grid",
+      "usage": "partenaires",
+      "translated_raw": "`title`, `intro`, `notice`",
+      "translated_fields": [
+        "title",
+        "intro",
+        "notice"
+      ],
+      "editorial_note": "titre, intro, mention des exemples fictifs",
+      "config_note": "grille des partenaires actifs, ordre `position`"
+    }
+  ]
+}

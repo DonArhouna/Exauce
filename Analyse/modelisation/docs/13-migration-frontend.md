@@ -50,9 +50,10 @@ société et les coordonnées d'un bureau.
 | `phoneMobile` | `+221 77 099 31 83` | `offices.hq.phone_mobile` | idem |
 | `city` | `Dakar` | `entity_translations(office, hq).city` | traduisible (`Dakar` identique FR/EN) |
 
-Les champs absents aujourd'hui — lignes d'adresse, région, horaires, photo,
+Les champs absents aujourd'hui — région, horaires, photo,
 lien de carte — existent dans `offices` mais restent **vides** au seed : ils
-ne sont pas inventés (doc 15 §19). Le JSON-LD `OrganizationJsonLd` est
+ne sont pas inventés (doc 15 §19). Seule exception : les lignes d'adresse,
+semées avec la valeur de `contact.address` (« Dakar, Sénégal », doc 15). Le JSON-LD `OrganizationJsonLd` est
 reconstruit depuis `site_settings.identity` + le bureau siège.
 
 ### 1.2 `SERVICES` → `content_nodes` + `entity_translations`
@@ -113,11 +114,12 @@ Les sous-catégories n'ont **pas** d'introduction aujourd'hui : le champ
 
 ### 1.6 `PAGE_SLUGS` et routes réelles → `pages`
 
-`PAGE_SLUGS` ne contient que 10 clés, mais l'application rend **11 pages
-statiques** : la page légale unique porte trois textes (mentions,
-confidentialité, cookies). Le modèle cible suit cette réalité : **une page
-`legal_notice` + trois sections `legal_document`**. Éclater les trois textes
-en trois URLs est une option SEO, pas un acquis (Q-102).
+`PAGE_SLUGS` contient 11 clés (dont `partners`, mission Frontend 2026-11-07)
+et l'application rend **11 pages statiques** : la page légale unique porte
+trois textes (mentions, confidentialité, cookies). Le modèle cible suit cette
+réalité : **une page `legal_notice` + trois sections `legal_document`**.
+Éclater les trois textes en trois URLs est une option SEO, pas un acquis
+(Q-102).
 
 | Clé `PAGE_SLUGS` | FR | EN | `page_key` cible | `template` | Menu |
 |---|---|---|---|---|---|
@@ -126,13 +128,14 @@ en trois URLs est une option SEO, pas un acquis (Q-102).
 | `interventions` | `interventions` | `interventions` | `interventions` | `standard` | ✅ 2 |
 | `sectors` | `secteurs` | `sectors` | `sectors` | `standard` | ✅ 3 |
 | `publications` | `publications` | `publications` | `publications` | `standard` | ✅ 4 |
-| `about` | `a-propos` | `about-us` | `about` | `standard` | ✅ 5 |
+| `partners` | `partenaires` | `partners` | `partners` | `standard` | ✅ 5 |
+| `about` | `a-propos` | `about-us` | `about` | `standard` | ✅ 6 |
 | `legal` | `mentions-legales` | `legal-notice` | `legal_notice` | `legal` | footer |
 | `clientArea` | `espace-client` | `customer-area` | `client_area` | `coming_soon` | bandeau |
-| `contact` | `contact` | `contact` | `contact` | `contact` | ✅ 6 |
+| `contact` | `contact` | `contact` | `contact` | `contact` | ✅ 7 |
 | — | — | — | `not_found` | `coming_soon` | — |
 
-Total : **10 pages**, dont **7 dans le menu** (avec `home`). `home` est la seule page dont
+Total : **11 pages**, dont **8 dans le menu** (avec `home`). `home` est la seule page dont
 le slug est vide (`''`) ; `not_found` n'a pas de slug ni d'entrée sitemap.
 L'ancienne route `locations` a été fusionnée dans `contact` avec redirection 301.
 
@@ -203,7 +206,8 @@ Un seul fondateur (`is_founder=true`, index partiel). La section
 | `city` | `… .city` |
 | `contact.addressesComing` | texte de repli de la section `offices_grid` (`empty_text`) |
 | contacts de la colonne de droite (`ORGANIZATION`) | champs du bureau `hq` |
-| — | `address_lines`, `region`, `hours`, `map_url`, `media_id` : **vides** (à fournir) |
+| `contact.address` (doc 15) | `address_lines` = `["Dakar, Sénégal"]` semé au seed |
+| — | `region`, `hours`, `map_url`, `media_id` : **vides** (à fournir) |
 
 ## 2. Ce qui manque aujourd'hui et doit être créé au seed
 
@@ -280,7 +284,7 @@ Le seed est exécuté par un **script Python CLI dédié et idempotent** (`pytho
 - **`redirects` (Q-103)** : contient dès le seed les 4 redirections 301 historiques de `/localisations` vers `/contact#implantations`.
 
 Les volumes attendus (test de parité 06 §6) : 2 / 10 / 20 / 94 nœuds,
-**10 pages** (7 dans le menu), 21 types de sections, **29 blocs**, 6
+**11 pages** (8 dans le menu), 23 types de sections, **33 blocs**, 6
 catégories, 3 publications, 3 + 9 secteurs, 1 bureau, 1 fondateur.
 
 ## 5. Parité et tests (CI bloquante — SC-580)
@@ -290,7 +294,7 @@ catégories, 3 publications, 3 + 9 secteurs, 1 bureau, 1 fondateur.
 | 1 | familles / domaines / groupes / prestations | 2 / 10 / 20 / 94 |
 | 2 | chaque nœud a un slug FR **et** EN | 100 % |
 | 3 | slugs de prestations uniques par langue | 94 / 94 |
-| 4 | pages / pages dans le menu | 10 / 7 |
+| 4 | pages / pages dans le menu | 11 / 8 |
 | 5 | blocs de la page d'accueil | 10 |
 | 6 | blocs `legal_document` de `legal_notice` | 3 |
 | 7 | secteurs / sous-catégories | 3 / 9 |
@@ -329,6 +333,16 @@ devenir des invariants de l'API.
 - **Publications** : les 3 fiches sont `draft` mais présentes dans le sitemap
   et affichées. Si l'API applique le statut, le sitemap tombe à 26 URLs (ou 25) et la
   page publications se vide : décision Q-104 avant le seed, pas après.
+- **Implémentation Backend (2026-11-07)** : `GET /api/v1/sitemap.xml`
+  n'émet que les publications `status='published'` (les 3 démos `draft` sont
+  donc exclues). La colonne `is_demo` n'existe pas encore en base : elle est
+  prévue par la migration 0002, et d'ici là le statut `draft` est le garde-fou.
+  Recompte : **27 URLs** avec le seed dev/démo (10 pages dont `partners`,
+  2 familles, 10 domaines, 2 interventions, 3 secteurs, 0 publication) ;
+  **30 URLs** en production quand 3 publications réelles sont publiées.
+  `not_found` est exclue ; `legal_notice` et `client_area` restent incluses
+  (Q-103 ouverte). Format : une entrée `<url>` par paire logique, `<loc>` FR
+  et `xhtml:link` FR/EN croisés (comme `generate-sitemap.mjs`).
 - **Alias** : les 5 paires FR/EN rendues sous les deux préfixes créent des
   doublons ; cible = 301 vers le slug canonique (Q-103).
 - **Canonical / hreflang** : `Page.tsx` calcule aujourd'hui les alternates
