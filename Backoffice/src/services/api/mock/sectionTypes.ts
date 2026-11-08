@@ -35,8 +35,23 @@ export interface SectionTypeDef {
 const field = (
   key: string,
   kind: SectionFieldKind = 'text',
-  options: Omit<SectionField, 'key' | 'kind' | 'labelKey'> = {},
-): SectionField => ({ key, kind, labelKey: `pages.fields.${key}`, ...options });
+  options: Omit<SectionField, 'key' | 'kind' | 'labelKey'> & { labelKey?: string } = {},
+): SectionField => ({
+  key,
+  kind,
+  labelKey: options.labelKey ?? `pages.fields.${key}`,
+  ...options,
+});
+
+/**
+ * Grille éditoriale : seuls le titre et l'introduction sont saisissables, le
+ * contenu (domaines, secteurs, publications…) vient des données du site.
+ * Le texte reste stocké sous `text`, comme dans le seed du Backend.
+ */
+const gridFields: SectionField[] = [
+  field('title', 'text', { required: true, maxLength: 80 }),
+  field('text', 'textarea', { maxLength: 240, labelKey: 'pages.fields.intro' }),
+];
 
 const CATALOGUE: SectionTypeDef[] = [
   {
@@ -100,21 +115,56 @@ const CATALOGUE: SectionTypeDef[] = [
       field('banner_text', 'text', { maxLength: 160 }),
     ],
   },
+  {
+    code: 'trust_bar',
+    labelKey: 'pages.sectionTypes.trust_bar',
+    usage: 'accueil',
+    editable: true,
+    fields: [
+      field('items', 'list', {
+        required: true,
+        itemFields: [field('text', 'text', { required: true, maxLength: 60 })],
+      }),
+    ],
+  },
+  {
+    code: 'about_preview',
+    labelKey: 'pages.sectionTypes.about_preview',
+    usage: 'accueil',
+    editable: true,
+    fields: [
+      field('kicker', 'text', { maxLength: 40 }),
+      field('title', 'text', { required: true, maxLength: 80 }),
+      field('text', 'textarea', { maxLength: 240 }),
+      field('cta_label', 'text', { maxLength: 40 }),
+    ],
+  },
+  {
+    code: 'founder_card',
+    labelKey: 'pages.sectionTypes.founder_card',
+    usage: 'accueil, à propos',
+    editable: true,
+    fields: [
+      field('kicker', 'text', { maxLength: 40 }),
+      field('empty_text', 'text', { maxLength: 80 }),
+    ],
+  },
+  ...(['domains_grid', 'audit_grid', 'interventions_grid', 'sectors_grid', 'publications_grid'] as const).map(
+    (code) => ({
+      code,
+      labelKey: `pages.sectionTypes.${code}`,
+      usage: code === 'domains_grid' || code === 'audit_grid' ? 'accueil, services' : 'accueil',
+      editable: true,
+      fields: gridFields,
+    }),
+  ),
   // Types présents dans le seed mais non outillés dans ce MVP : lecture seule.
   ...(
     [
-      ['trust_bar', 'accueil'],
-      ['about_preview', 'accueil'],
-      ['domains_grid', 'accueil, services'],
-      ['audit_grid', 'accueil, services'],
-      ['interventions_grid', 'accueil'],
-      ['sectors_grid', 'accueil'],
-      ['publications_grid', 'accueil'],
       ['modes', 'services'],
       ['values_grid', 'à propos'],
       ['steps', 'à propos'],
       ['what_we_do', 'à propos'],
-      ['founder_card', 'accueil, à propos'],
       ['interventions_compare', 'interventions'],
       ['contact_form', 'contact (position 1)'],
       ['offices_grid', 'contact (position 2)'],

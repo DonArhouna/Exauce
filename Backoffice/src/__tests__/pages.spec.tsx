@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { resetMockBackend } from '@/services/api/mock/db';
+import { findPage } from '@/services/api/mock/pages';
 import { renderApp, signIn } from './harness';
 
 const HOME_ID = 'aaaaaaaa-0001-4001-8001-000000000001';
@@ -122,5 +123,54 @@ describe('pages et sections', () => {
     await user.click(within(hero).getByRole('button', { name: /enregistrer le bloc/i }));
 
     expect(await within(hero).findByText('Champ obligatoire')).toBeInTheDocument();
+  });
+
+  it('édite les blocs d’accueil et limite les grilles au titre et à l’introduction', async () => {
+    const user = userEvent.setup();
+    const main = await openPage(
+      `/pages/${HOME_ID}`,
+      'fondateur@exauceac.com',
+      'exauce-fondateur-2026',
+    );
+
+    const sections = await within(main).findAllByTestId(/^section-/);
+    const [, trustBar, about, domains, audit] = sections;
+
+    // Barre de confiance : liste d'éléments éditable, FR et EN.
+    expect(within(trustBar).getByText('Barre de confiance')).toBeInTheDocument();
+    const trustItems = within(trustBar).getAllByLabelText(/^Texte/);
+    // 3 éléments, chacun rendu en FR et en EN.
+    expect(trustItems).toHaveLength(6);
+    expect((trustItems[0] as HTMLInputElement).value).toBe('Experts-comptables');
+    expect((trustItems[3] as HTMLInputElement).value).toBe('Chartered accountants');
+
+    // À propos : texte et libellé de bouton préremplis.
+    expect((within(about).getAllByLabelText(/^Titre/)[0] as HTMLInputElement).value).toBe(
+      'Un cabinet de proximité',
+    );
+    expect((within(about).getAllByLabelText(/^Libellé du bouton/)[0] as HTMLInputElement).value).toBe(
+      'En savoir plus',
+    );
+
+    // Grilles : titre et introduction seulement, pas de sur-titre.
+    expect(within(domains).getAllByLabelText(/^Introduction/)).toHaveLength(2);
+    expect(within(domains).queryByLabelText(/^Sur-titre/)).toBeNull();
+    expect((within(audit).getAllByLabelText(/^Introduction/)[0] as HTMLTextAreaElement).value).toBe(
+      'Une démarche rigoureuse et documentée.',
+    );
+
+    // L'enregistrement persiste la modification côté serveur.
+    const title = within(about).getAllByLabelText(/^Titre/) [0] as HTMLInputElement;
+    await user.clear(title);
+    await user.type(title, 'Un cabinet de terrain');
+    await user.click(within(about).getByRole('button', { name: /enregistrer le bloc/i }));
+
+    await waitFor(() => {
+      const page = findPage(HOME_ID);
+      const section = page?.sections.find((entry) => entry.section_type === 'about_preview');
+      expect(section?.data?.fr?.title).toBe('Un cabinet de terrain');
+      // Les autres langues et les grilles restent intactes.
+      expect(section?.data?.en?.title).toBe('A nearby firm');
+    });
   });
 });

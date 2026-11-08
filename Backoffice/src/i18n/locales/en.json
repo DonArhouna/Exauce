@@ -516,7 +516,9 @@
       "value": "Value",
       "label": "Label",
       "body": "Body",
-      "banner_text": "Notice banner"
+      "banner_text": "Notice banner",
+      "cta_label": "Button label",
+      "empty_text": "Fallback text"
     },
     "sectionTypes": {
       "hero": "Home hero",

@@ -516,7 +516,9 @@
       "value": "Valeur",
       "label": "Libellé",
       "body": "Contenu",
-      "banner_text": "Bandeau d’information"
+      "banner_text": "Bandeau d’information",
+      "cta_label": "Libellé du bouton",
+      "empty_text": "Texte de repli"
     },
     "sectionTypes": {
       "hero": "En-tête d’accueil",
