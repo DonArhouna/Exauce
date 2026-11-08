@@ -22,7 +22,7 @@ export const LEAD_STATUSES: LeadStatus[] = [
   'anonymized',
 ];
 
-interface LeadRecord {
+export interface LeadRecord {
   id: string;
   reference: string;
   full_name: string;
@@ -419,27 +419,40 @@ export function addLeadNote(
   return { ok: true, value: leadDetail(id) as AdminLeadDetail };
 }
 
-function csvCell(value: string | null): string {
-  if (value === null) return '';
-  return `"${value.replace(/"/g, '""')}"`;
+/** En-têtes de l'export, dans l'ordre des colonnes produites ci-dessous. */
+export const LEADS_CSV_HEADER = [
+  'Référence',
+  'Créée le',
+  'Statut',
+  'Nom',
+  'E-mail',
+  'Téléphone',
+  'Société',
+  'Secteur',
+  'Sujet',
+  'Message',
+];
+
+/**
+ * Neutralise une formule : Excel et LibreOffice interprètent une cellule
+ * commençant par `=`, `+`, `-` ou `@` (même après des espaces) comme une
+ * formule, ce qui permet d'exfiltrer des données. Le préfixe `'` force le
+ * texte brut.
+ */
+function neutralizeFormula(value: string): string {
+  const leading = value.replace(/^[\s]+/, '');
+  return /^[=+\-@]/.test(leading) ? `'${value}` : value;
 }
 
-/** Export CSV des demandes filtrées (séparateur virgule, entêtes FR). */
-export function exportLeadsCsv(query: LeadListQuery): string {
-  const rows = sortByDateDesc(leads.filter((record) => matches(record, query)));
-  const header = [
-    'Référence',
-    'Créée le',
-    'Statut',
-    'Nom',
-    'E-mail',
-    'Téléphone',
-    'Société',
-    'Secteur',
-    'Sujet',
-    'Message',
-  ].join(',');
-  const lines = rows.map((record) =>
+/** Cellule CSV : guillemets systématiques, guillemets internes doublés. */
+export function csvCell(value: string | null): string {
+  if (value === null) return '""';
+  return `"${neutralizeFormula(value).replace(/"/g, '""')}"`;
+}
+
+/** Construit le CSV à partir d'une liste de demandes (export et tests). */
+export function leadsToCsv(records: LeadRecord[]): string {
+  const lines = records.map((record) =>
     [
       record.reference,
       record.created_at,
@@ -455,7 +468,20 @@ export function exportLeadsCsv(query: LeadListQuery): string {
       .map((value) => csvCell(value))
       .join(','),
   );
-  return [header, ...lines].join('\n');
+  return [LEADS_CSV_HEADER.map((value) => csvCell(value)).join(','), ...lines].join('\r\n');
+}
+
+/**
+ * Export CSV des demandes filtrées (séparateur virgule, entêtes FR).
+ *
+ * Une demande anonymisée n'est jamais exportée : ses données personnelles ont
+ * été effacées et l'export sert à recontacter les prospects.
+ */
+export function exportLeadsCsv(query: LeadListQuery): string {
+  const rows = sortByDateDesc(
+    leads.filter((record) => record.status !== 'anonymized' && matches(record, query)),
+  );
+  return leadsToCsv(rows);
 }
 
 /** Remet les demandes de démonstration à leur état initial. */
