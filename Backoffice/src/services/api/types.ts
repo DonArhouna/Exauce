@@ -166,3 +166,47 @@ export interface LeadList {
   total: number;
   counts: Record<LeadStatus, number>;
 }
+
+// ── Bureaux ────────────────────────────────────────────────────
+/** Textes bilingues d'un bureau (résolus par `lang` côté public). */
+export interface OfficeTranslation {
+  name: string;
+  city: string;
+  address_lines: string[];
+}
+
+/**
+ * Bureau du back-office. Contrairement à `Office` du contrat, les textes sont
+ * exposés par langue : le mock accepte `translations` à l'écriture, écart
+ * consigné dans `docs/mock-divergences.md`.
+ */
+export interface AdminOffice {
+  id: string;
+  code: string;
+  position: number;
+  is_headquarters: boolean;
+  is_active: boolean;
+  phone_fixed: string | null;
+  phone_mobile: string | null;
+  email: string | null;
+  map_url: string | null;
+  translations: Record<ContentLang, OfficeTranslation>;
+}
+
+/** Corps d'écriture commun à la création et à la modification. */
+export interface OfficeWrite {
+  code: string;
+  position?: number;
+  is_headquarters?: boolean;
+  is_active?: boolean;
+  phone_fixed?: string | null;
+  phone_mobile?: string | null;
+  email?: string | null;
+  map_url?: string | null;
+  translations: Record<ContentLang, OfficeTranslation>;
+}
+
+/** Réponse de `GET /admin/offices` dans le mock (le contrat renvoie un tableau). */
+export interface OfficeList {
+  items: AdminOffice[];
+}

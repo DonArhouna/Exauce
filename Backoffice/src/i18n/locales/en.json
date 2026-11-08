@@ -25,7 +25,11 @@
     "empty": "No items",
     "refresh": "Refresh",
     "menu": "Menu",
-    "unknownError": "An unexpected error occurred."
+    "unknownError": "An unexpected error occurred.",
+    "actions": "Actions",
+    "edit": "Edit",
+    "delete": "Delete",
+    "retryHint": "Reload the page in a moment."
   },
   "language": {
     "interface": "Interface language",
@@ -542,6 +546,63 @@
       "offices_grid": "Offices grid",
       "legal_document": "Legal document",
       "coming_soon": "Coming soon"
+    }
+  },
+  "offices": {
+    "title": "Offices",
+    "subtitle": "Firm locations: contact details, head office and display order on the site. Texts are entered in French and English.",
+    "create": "New office",
+    "loadError": "Unable to load offices.",
+    "noPhone": "No phone",
+    "noEmail": "No email",
+    "active": "Active",
+    "inactive": "Inactive",
+    "headquarters": "Head office",
+    "columns": {
+      "office": "Office",
+      "contact": "Contact",
+      "position": "Order",
+      "status": "Status"
+    },
+    "fields": {
+      "code": "Code",
+      "codeHint": "2 to 8 characters: letters, digits and dashes.",
+      "position": "Order",
+      "positionHint": "Ascending number used by the site.",
+      "email": "Email",
+      "phoneFixed": "Landline",
+      "phoneMobile": "Mobile",
+      "mapUrl": "Map link",
+      "mapUrlHint": "Full address starting with https://.",
+      "flags": "Options",
+      "headquarters": "Set as head office",
+      "active": "Active office",
+      "name": "Name",
+      "city": "City",
+      "address": "Address",
+      "addressHint": "One line per item."
+    },
+    "lang": {
+      "fr": "French",
+      "en": "English"
+    },
+    "form": {
+      "saved": "Office saved.",
+      "error": "Could not save the office.",
+      "editTitle": "Edit office",
+      "createTitle": "New office",
+      "description": "The code is unique; only one office can be the head office."
+    },
+    "delete": {
+      "open": "Delete {{name}}",
+      "title": "Delete this office?",
+      "description": "{{name}} will be removed from the site. The head office cannot be deleted: designate a successor first.",
+      "done": "Office deleted.",
+      "error": "Delete failed."
+    },
+    "empty": {
+      "title": "No office yet",
+      "description": "Create the first office to publish it on the site."
     }
   }
 }

@@ -25,7 +25,11 @@
     "empty": "Aucun élément",
     "refresh": "Actualiser",
     "menu": "Menu",
-    "unknownError": "Une erreur inattendue est survenue."
+    "unknownError": "Une erreur inattendue est survenue.",
+    "actions": "Actions",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "retryHint": "Rechargez la page dans un instant."
   },
   "language": {
     "interface": "Langue de l’interface",
@@ -542,6 +546,63 @@
       "offices_grid": "Grille des bureaux",
       "legal_document": "Document légal",
       "coming_soon": "Bientôt disponible"
+    }
+  },
+  "offices": {
+    "title": "Bureaux",
+    "subtitle": "Implants du cabinet : coordonnées, siège et ordre d'affichage sur le site. Les textes se saisissent en français et en anglais.",
+    "create": "Nouveau bureau",
+    "loadError": "Impossible de charger les bureaux.",
+    "noPhone": "Aucun téléphone",
+    "noEmail": "Aucun e-mail",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "headquarters": "Siège",
+    "columns": {
+      "office": "Bureau",
+      "contact": "Contact",
+      "position": "Ordre",
+      "status": "Statut"
+    },
+    "fields": {
+      "code": "Code",
+      "codeHint": "2 à 8 caractères, lettres, chiffres et tirets.",
+      "position": "Ordre",
+      "positionHint": "Nombre croissant, utilisé par le site.",
+      "email": "E-mail",
+      "phoneFixed": "Téléphone fixe",
+      "phoneMobile": "Téléphone mobile",
+      "mapUrl": "Lien de carte",
+      "mapUrlHint": "Adresse complète commençant par https://.",
+      "flags": "Options",
+      "headquarters": "Définir comme siège",
+      "active": "Bureau actif",
+      "name": "Nom",
+      "city": "Ville",
+      "address": "Adresse",
+      "addressHint": "Une ligne par élément."
+    },
+    "lang": {
+      "fr": "Français",
+      "en": "Anglais"
+    },
+    "form": {
+      "saved": "Bureau enregistré.",
+      "error": "Enregistrement impossible.",
+      "editTitle": "Modifier le bureau",
+      "createTitle": "Nouveau bureau",
+      "description": "Le code est unique ; un seul bureau peut être le siège."
+    },
+    "delete": {
+      "open": "Supprimer {{name}}",
+      "title": "Supprimer ce bureau ?",
+      "description": "{{name}} sera retiré du site. Le siège ne peut pas être supprimé : désignez d'abord son successeur.",
+      "done": "Bureau supprimé.",
+      "error": "Suppression impossible."
+    },
+    "empty": {
+      "title": "Aucun bureau",
+      "description": "Créez le premier bureau pour l'afficher sur le site."
     }
   }
 }

@@ -5,7 +5,7 @@ Ce fichier liste les points où le mock du Backoffice s'écarte volontairement d
 soit un manque de contrat à combler, soit une décision du propriétaire que le
 Backend n'a pas encore intégrée.
 
-Dernière mise à jour : écrans « Pages et sections » et « Demandes de contact ».
+Dernière mise à jour : écrans « Pages et sections », « Demandes de contact » et « Bureaux ».
 
 ## 1. Contrat OpenAPI — manques à combler
 
@@ -77,3 +77,14 @@ Le mock couvre les cinq endpoints du contrat (`GET /admin/leads`,
 
 Ces écarts n'empêchent pas la démonstration : le mock est l'autorité locale et
 l'écran n'appelle que ces cinq routes.
+
+## 6. Écran « Bureaux »
+
+| # | Écart | Ce que fait le mock | Proposition de contrat |
+|---|---|---|---|
+| 1 | `Office` ne porte aucun texte bilingue, `OfficeUpsert` non plus | `GET /admin/offices` renvoie `translations.{fr,en}.{name,city,address_lines}` et l'écriture l'accepte | soit ajouter ces champs à `OfficeUpsert` par langue, soit passer par `PUT /admin/content/office/{id}/translation/{lang}` comme pour les sections |
+| 2 | `GET /admin/offices` renvoie un tableau sans `position` | le mock renvoie `{ items }` trié par `position` et expose `position` sur chaque bureau | nommer l'enveloppe et exposer `position` en lecture |
+| 3 | Aucune règle sur le siège | un seul bureau `is_headquarters` ; désigner un siège le retire des autres ; supprimer le siège renvoie `409 HEADQUARTERS_PROTECTED` | documenter l'unicité du siège et l'erreur de suppression |
+| 4 | Pas de code d'erreur de doublon | création ou renommage avec un code existant → `409 OFFICE_CODE_TAKEN` | ajouter le code à `Problem.code` |
+
+Sans réponse du Backend, le mock reste l'autorité locale pour ces quatre points.

@@ -9,6 +9,7 @@ import LoginPage from '@/features/auth/pages/LoginPage';
 import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage';
 import DashboardPage from '@/features/dashboard/pages/DashboardPage';
 import LeadsPage from '@/features/leads/LeadsPage';
+import OfficesPage from '@/features/offices/OfficesPage';
 import PageEditPage from '@/features/pages/PageEditPage';
 import PagesListPage from '@/features/pages/PagesListPage';
 import { DASHBOARD_PATH } from '@/lib/navigation';
@@ -55,8 +56,20 @@ export function AppRoutes() {
               </RequirePermission>
             }
           />
+          <Route
+            path="/bureaux"
+            element={
+              <RequirePermission module="offices" action="view">
+                <OfficesPage />
+              </RequirePermission>
+            }
+          />
           {NAV_ITEMS.filter(
-            (item) => item.path !== DASHBOARD_PATH && item.path !== '/pages' && item.path !== '/demandes',
+            (item) =>
+              item.path !== DASHBOARD_PATH &&
+              item.path !== '/pages' &&
+              item.path !== '/demandes' &&
+              item.path !== '/bureaux',
           ).map((item) => (
             <Route
               key={item.path}

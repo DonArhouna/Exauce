@@ -8,6 +8,7 @@ import type {
 } from '../types';
 import { resetPages } from './pages';
 import { resetLeads } from './leads';
+import { resetOffices } from './offices';
 
 export interface MockAccount {
   user: AdminSessionUser;
@@ -589,4 +590,5 @@ export function resetMockBackend(): void {
   mediaUsages = initialMediaUsages();
   resetPages();
   resetLeads();
+  resetOffices();
 }

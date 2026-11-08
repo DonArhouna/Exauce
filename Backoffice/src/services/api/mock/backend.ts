@@ -5,6 +5,7 @@ import type {
   AdminPasswordResetRequest,
   LeadListQuery,
   LeadStatus,
+  OfficeWrite,
 } from '../types';
 import { isAcceptedMime, MAX_UPLOAD_BYTES } from '@/lib/media';
 import {
@@ -51,6 +52,7 @@ import {
   listLeads,
   updateLeadStatus,
 } from './leads';
+import { createOffice, deleteOffice, listOffices, updateOffice } from './offices';
 
 export interface MockRequest {
   method: string;
@@ -377,6 +379,54 @@ function leadQuery(request: MockRequest): LeadListQuery {
     limit: Number.isFinite(limit) && limit > 0 ? limit : 20,
     offset: Number.isFinite(offset) && offset > 0 ? offset : 0,
   };
+}
+
+function officeFailure(result: { code?: string; field?: string }): MockResponse {
+  if (result.code === 'not_found') return problem(404, 'CONTENT_NOT_FOUND', 'Bureau inconnu');
+  if (result.code === 'code_taken') {
+    return problem(409, 'OFFICE_CODE_TAKEN', 'Ce code est déjà utilisé par un autre bureau.');
+  }
+  if (result.code === 'headquarters_protected') {
+    return problem(
+      409,
+      'HEADQUARTERS_PROTECTED',
+      'Désignez un autre siège avant de supprimer celui-ci.',
+    );
+  }
+  return {
+    ...problem(422, 'VALIDATION_ERROR', 'Données invalides'),
+    body: {
+      type: 'https://exauceac.com/errors/validation_error',
+      title: 'validation error',
+      status: 422,
+      code: 'VALIDATION_ERROR',
+      detail: 'Données invalides',
+      errors: result.field ? [{ field: result.field, message: 'FIELD_INVALID' }] : [],
+    },
+  };
+}
+
+function officesCreate(request: MockRequest): MockResponse {
+  const guard = requirePages('offices', 'create');
+  if ('status' in guard) return guard;
+  const result = createOffice((request.body ?? {}) as OfficeWrite);
+  return result.ok && result.value
+    ? { status: 201, body: result.value }
+    : officeFailure(result);
+}
+
+function officesPatch(request: MockRequest, id: string): MockResponse {
+  const guard = requirePages('offices', 'edit');
+  if ('status' in guard) return guard;
+  const result = updateOffice(id, (request.body ?? {}) as OfficeWrite);
+  return result.ok && result.value ? { status: 200, body: result.value } : officeFailure(result);
+}
+
+function officesDelete(id: string): MockResponse {
+  const guard = requirePages('offices', 'delete');
+  if ('status' in guard) return guard;
+  const result = deleteOffice(id);
+  return result.ok ? { status: 204, body: null } : officeFailure(result);
 }
 
 function leadsGuard(action: string): MockResponse | null {
@@ -721,6 +771,17 @@ export async function mockRequest(request: MockRequest): Promise<MockResponse> {
   const sectionId = request.path.match(/^\/admin\/sections\/([^/]+)$/);
   if (sectionId && request.method === 'PATCH') return sectionPatch(request, sectionId[1]);
   if (sectionId && request.method === 'DELETE') return sectionDelete(request, sectionId[1]);
+
+  if (request.method === 'GET' && request.path === '/admin/offices') {
+    const guard = requirePages('offices', 'view');
+    if ('status' in guard) return guard;
+    return { status: 200, body: { items: listOffices() } };
+  }
+  if (request.method === 'POST' && request.path === '/admin/offices') return officesCreate(request);
+
+  const officeId = request.path.match(/^\/admin\/offices\/([^/]+)$/);
+  if (officeId && request.method === 'PATCH') return officesPatch(request, officeId[1]);
+  if (officeId && request.method === 'DELETE') return officesDelete(officeId[1]);
 
   if (request.method === 'GET' && request.path === '/admin/leads/export.csv') {
     return leadsExport(request);
