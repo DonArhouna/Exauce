@@ -2,7 +2,7 @@ import { ArrowDown, ArrowUp, Eye, EyeOff, GripVertical, Lock, Save, Trash2, Undo
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Badge, Button, StatusPill } from '@/components/ui';
-import { patchSection } from '@/services/api/endpoints/pages';
+import { putSectionContent } from '@/services/api/endpoints/pages';
 import { ApiError } from '@/services/api/problem';
 import type {
   AdminPageDetail,
@@ -107,9 +107,8 @@ export function SectionCard({
     try {
       for (const lang of editableLangs) {
         if (deepEqual(values[lang], section.data[lang])) continue;
-        const result = await patchSection(section.id, {
+        const result = await putSectionContent(section.id, lang, {
           revision: currentRevision,
-          lang,
           data: values[lang],
         });
         currentRevision = result.page.revision;

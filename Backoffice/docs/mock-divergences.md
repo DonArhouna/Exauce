@@ -12,7 +12,7 @@ Dernière mise à jour : contenu réel du site chargé dans le mock (étape 2).
 | # | Manque | Ce que fait le mock | À ajouter au contrat |
 |---|---|---|---|
 | 1 | Aucun endpoint de catalogue des types de section | `GET /admin/section-types` renvoie `{ items: SectionTypeDef[] }` (code, libellé i18n, usage, `editable`, champs) | `GET /admin/section-types` exposant `config_schema` et `translation_schema` de `section_types` |
-| 2 | `Section.data` est un objet plat, sans écriture par langue | `data` est un objet `{ fr: {...}, en: {...} }` ; `PATCH /admin/sections/{id}` accepte `{ lang, data }` | `data` localisé (ou `entity_translations` par champ) + `PATCH` par langue |
+| 2 | Le Backend n'implémente pas encore les écritures de contenu par langue | le client Backoffice utilise `PUT /admin/sections/{id}/content/{lang}` avec `{ revision, data }`, conformément au contrat ; la réponse garde la structure bilingue | implémenter la route contractuelle avant les tests HTTP de bout en bout |
 | 3 | Aucun contrôle de concurrence | chaque page porte `revision` ; toute mutation l'envoie et le serveur répond `409 CONFLICT` si elle a changé | `revision` (ou `ETag`/`If-Match`) sur `PageDetail` et les mutations |
 | 4 | Aucun endpoint de workflow éditorial | `POST /admin/pages/{id}/workflow` avec `{ action, revision, comment? }` | `submit-review`, `approve`, `reject` (+ `publish` distinct) avec `x-permission` et `409` sur transition invalide |
 | 5 | Statuts de page non énumérés | `draft`, `in_review`, `approved`, `published`, `archived` | enum `status` sur `PageSummary`/`PageDetail` + machine à états documentée |

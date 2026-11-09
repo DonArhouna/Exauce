@@ -714,13 +714,10 @@ function sectionsCreate(request: MockRequest, pageId: string): MockResponse {
 function sectionPatch(request: MockRequest, id: string): MockResponse {
   const body = (request.body ?? {}) as {
     revision?: number;
-    lang?: 'fr' | 'en';
     position?: number;
     is_active?: boolean;
-    config?: Record<string, unknown>;
-    data?: Record<string, unknown>;
   };
-  const guard = requirePages('pages', 'edit', body.lang);
+  const guard = requirePages('pages', 'edit');
   if ('status' in guard) return guard;
   const failure = requireSessionAndCsrf(request);
   if (failure) return failure;
@@ -730,10 +727,22 @@ function sectionPatch(request: MockRequest, id: string): MockResponse {
     revision: body.revision,
     position: body.position,
     is_active: body.is_active,
-    config: body.config,
-    lang: body.lang,
-    data: body.data,
   });
+  return result.ok
+    ? { status: 200, body: { page: result.value.page, section: result.value.section } }
+    : mutationFailure(result);
+}
+
+function sectionContent(request: MockRequest, id: string, lang: ContentLang): MockResponse {
+  const guard = requirePages('pages', 'edit', lang);
+  if ('status' in guard) return guard;
+  const failure = requireSessionAndCsrf(request);
+  if (failure) return failure;
+  const body = (request.body ?? {}) as { revision?: number; data?: Record<string, unknown> };
+  if (typeof body.revision !== 'number' || !body.data || typeof body.data !== 'object') {
+    return problem(422, 'VALIDATION_ERROR', 'Révision ou données absentes');
+  }
+  const result = updateSection(id, { revision: body.revision, lang, data: body.data });
   return result.ok
     ? { status: 200, body: { page: result.value.page, section: result.value.section } }
     : mutationFailure(result);
@@ -803,6 +812,11 @@ export async function mockRequest(request: MockRequest): Promise<MockResponse> {
 
   const pageSections = request.path.match(/^\/admin\/pages\/([^/]+)\/sections$/);
   if (pageSections && request.method === 'POST') return sectionsCreate(request, pageSections[1]);
+
+  const sectionContentMatch = request.path.match(/^\/admin\/sections\/([^/]+)\/content\/(fr|en)$/);
+  if (sectionContentMatch && request.method === 'PUT') {
+    return sectionContent(request, sectionContentMatch[1], sectionContentMatch[2] as ContentLang);
+  }
 
   const pageId = request.path.match(/^\/admin\/pages\/([^/]+)$/);
   if (pageId && request.method === 'GET') return pagesDetail(pageId[1]);

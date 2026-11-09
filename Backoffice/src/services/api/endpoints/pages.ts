@@ -97,18 +97,31 @@ export interface SectionPatch {
   revision: number;
   position?: number;
   is_active?: boolean;
-  config?: SectionValues;
-  /** Langue des données écrites (extension locale). */
-  lang?: ContentLang;
-  data?: SectionValues;
 }
 
-/** `PATCH /admin/sections/{id}` — ordre, activation, config et données. */
+/** `PATCH /admin/sections/{id}` — ordre et activation. */
 export async function patchSection(id: string, patch: SectionPatch): Promise<SectionMutation> {
   return apiRequest<SectionMutation>(`/admin/sections/${encodeURIComponent(id)}`, {
     method: 'PATCH',
     body: patch,
   });
+}
+
+export interface SectionContentUpdate {
+  revision: number;
+  data: SectionValues;
+}
+
+/** `PUT /admin/sections/{id}/content/{lang}` — données d'une seule langue. */
+export async function putSectionContent(
+  id: string,
+  lang: ContentLang,
+  input: SectionContentUpdate,
+): Promise<SectionMutation> {
+  return apiRequest<SectionMutation>(
+    `/admin/sections/${encodeURIComponent(id)}/content/${lang}`,
+    { method: 'PUT', body: input },
+  );
 }
 
 /** `DELETE /admin/sections/{id}` — retrait d'un bloc. */
