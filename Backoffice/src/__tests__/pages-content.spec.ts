@@ -336,6 +336,45 @@ describe('contenu réel des pages', () => {
     expect(loaded.data.fr).toEqual(loadedFr);
   });
 
+  it('recharge et enregistre values_grid en FR/EN sans toucher l’autre langue', () => {
+    const summary = listPages().find((page) => page.page_key === 'about')!;
+    const page = findPage(summary.id)!;
+    const section = page.sections.find((entry) => entry.section_type === 'values_grid')!;
+    const originalFr = structuredClone(section.data.fr);
+    const originalEn = structuredClone(section.data.en);
+    expect(originalFr).toEqual({
+      title: 'Valeurs du cabinet',
+      empty_text: 'Les valeurs du cabinet seront précisées ici — contenu à venir, à valider par le cabinet.',
+    });
+    expect(originalEn).toEqual({
+      title: 'Our values',
+      empty_text: "The firm's values will be specified here — content to come, to be validated by the firm.",
+    });
+
+    const fr = updateSection(section.id, {
+      revision: page.revision,
+      lang: 'fr',
+      data: { ...originalFr, title: 'Nos valeurs' },
+    });
+    expect(fr.ok).toBe(true);
+    if (!fr.ok) return;
+    const loadedFr = findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!.data.fr;
+    expect(loadedFr).toEqual({ ...originalFr, title: 'Nos valeurs' });
+    expect(findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!.data.en).toEqual(originalEn);
+
+    const freshPage = findPage(summary.id)!;
+    const en = updateSection(section.id, {
+      revision: freshPage.revision,
+      lang: 'en',
+      data: { ...originalEn, empty_text: 'English placeholder updated — to be confirmed by the firm.' },
+    });
+    expect(en.ok).toBe(true);
+    if (!en.ok) return;
+    const loaded = findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!;
+    expect(loaded.data.en).toEqual({ ...originalEn, empty_text: 'English placeholder updated — to be confirmed by the firm.' });
+    expect(loaded.data.fr).toEqual(loadedFr);
+  });
+
   it('reprend les textes affichés par le site', () => {
     const home = listPages().find((page) => page.page_key === 'home');
     if (!home) throw new Error('accueil introuvable');

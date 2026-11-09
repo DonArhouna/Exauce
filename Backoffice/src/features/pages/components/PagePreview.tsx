@@ -88,6 +88,14 @@ function SectionPreviewContent({
       </>
     );
   }
+  if (sectionType === 'values_grid') {
+    return (
+      <div className="mt-1 rounded-card border border-dashed border-line bg-white p-4">
+        <h4 className="font-semibold text-ink">{readable(values.title)}</h4>
+        <p className="mt-2 whitespace-pre-wrap text-sm text-muted">{readable(values.empty_text)}</p>
+      </div>
+    );
+  }
   return (
     <div className="mt-1 space-y-0.5">
       {Object.entries(values)

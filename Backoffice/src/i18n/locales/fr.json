@@ -559,7 +559,9 @@
       "stepsKicker": "Sur-titre — Notre manière de travailler",
       "steps": "Étapes de travail",
       "stepTitle": "Titre de l’étape",
-      "stepText": "Description de l’étape"
+      "stepText": "Description de l’étape",
+      "valuesTitle": "Titre des valeurs",
+      "valuesComing": "Texte provisoire des valeurs (à valider par le cabinet)"
     },
     "sectionTypes": {
       "hero": "En-tête d’accueil",

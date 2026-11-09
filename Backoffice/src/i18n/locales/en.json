@@ -559,7 +559,9 @@
       "stepsKicker": "How we work — kicker",
       "steps": "Work steps",
       "stepTitle": "Step title",
-      "stepText": "Step description"
+      "stepText": "Step description",
+      "valuesTitle": "Values heading",
+      "valuesComing": "Values placeholder (to be confirmed by the firm)"
     },
     "sectionTypes": {
       "hero": "Home hero",

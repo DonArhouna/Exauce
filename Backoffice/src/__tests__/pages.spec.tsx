@@ -437,4 +437,34 @@ describe('pages et sections', () => {
       expect.stringContaining("Toutes les formes d'organisation"),
     ]);
   });
+
+  it('édite values_grid dans les deux langues et prévisualise le texte à confirmer', async () => {
+    const user = userEvent.setup();
+    const main = await openPage(`/pages/${ABOUT_ID}`, 'fondateur@exauceac.com', 'exauce-fondateur-2026');
+    const sections = await within(main).findAllByTestId(/^section-/);
+    const values = sections.find((section) => within(section).queryByText('values_grid'))!;
+    const inputs = within(values).getAllByRole('textbox');
+    expect(inputs).toHaveLength(4);
+    expect((inputs[0] as HTMLInputElement).value).toBe('Valeurs du cabinet');
+    expect((inputs[2] as HTMLInputElement).value).toBe('Our values');
+    expect((inputs[3] as HTMLTextAreaElement).value).toContain('to be validated by the firm');
+
+    await user.clear(inputs[0]);
+    await user.type(inputs[0], 'Nos engagements');
+    await user.clear(inputs[3]);
+    await user.type(inputs[3], 'Values wording — firm confirmation required.');
+    await user.click(within(values).getByRole('button', { name: 'Enregistrer le bloc' }));
+
+    await waitFor(() => {
+      const saved = findPage(ABOUT_ID)!.sections.find((section) => section.section_type === 'values_grid')!;
+      expect(saved.data.fr.title).toBe('Nos engagements');
+      expect(saved.data.fr.empty_text).toContain('à valider par le cabinet');
+      expect(saved.data.en.title).toBe('Our values');
+      expect(saved.data.en.empty_text).toBe('Values wording — firm confirmation required.');
+    });
+    const valuesId = findPage(ABOUT_ID)!.sections.find((section) => section.section_type === 'values_grid')!.id;
+    const preview = within(main).getByTestId(`preview-section-${valuesId}`);
+    expect(within(preview).getByText('Nos engagements')).toBeInTheDocument();
+    expect(within(preview).getByText(/à valider par le cabinet/)).toBeInTheDocument();
+  });
 });

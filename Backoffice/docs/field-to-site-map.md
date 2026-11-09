@@ -28,6 +28,8 @@ Cette table précise la destination éditoriale de chaque champ exposé. Les cl�
 | `steps.kicker` | `about` / `steps` / `kicker`, FR/EN | `AboutPage.tsx` → section « notre manière de travailler » → `about.howWeWorkKicker` | Chargement Frontend FR/EN, validation et test d’aller-retour livrés ; aperçu de la hiérarchie en étapes |
 | `steps.items[].title` | `about` / `steps` / `items[].title`, FR/EN | `AboutPage.tsx` → titre de chaque carte dans l’ordre 0, 1, 2 → `about.howWork1Title`, `about.howWork2Title`, `about.howWork3Title` | Formulaire prérempli, réordonnancement clavier/souris et conservation de l’ordre/nombre testés ; le Frontend lit encore les locales |
 | `steps.items[].text` | `about` / `steps` / `items[].text`, FR/EN | `AboutPage.tsx` → description sous le titre de chaque carte, ordre 0, 1, 2 → `about.howWork1Text`, `about.howWork2Text`, `about.howWork3Text` | Zone multiligne, validation, aller-retour FR/EN, ordre/nombre et aperçu testés ; le Frontend lit encore les locales |
+| `values_grid.title` | `about` / `values_grid` / `title`, FR/EN | `AboutPage.tsx` → titre de la section Valeurs → `about.valuesTitle` | Valeur de locale, test FR/EN et aperçu livrés ; wording à confirmer par le cabinet |
+| `values_grid.empty_text` | `about` / `values_grid` / `empty_text`, FR/EN | `AboutPage.tsx` → texte provisoire sous le titre → `about.valuesComing` | Texte à confirmer par le cabinet, test FR/EN et aperçu livrés ; le Frontend lit encore les locales |
 
 ## Valeurs de repli SEO
 

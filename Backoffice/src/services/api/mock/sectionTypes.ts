@@ -192,6 +192,16 @@ const CATALOGUE: SectionTypeDef[] = [
       }),
     ],
   },
+  {
+    code: 'values_grid',
+    labelKey: 'pages.sectionTypes.values_grid',
+    usage: 'à propos',
+    editable: true,
+    fields: [
+      field('title', 'text', { required: true, maxLength: 100, labelKey: 'pages.fields.valuesTitle' }),
+      field('empty_text', 'textarea', { required: true, maxLength: 400, labelKey: 'pages.fields.valuesComing' }),
+    ],
+  },
   gridHeading('domains_grid'),
   gridHeading('audit_grid', [field('text', 'textarea', { maxLength: 400, labelKey: 'pages.fields.intro' })]),
   gridHeading('interventions_grid'),
@@ -203,7 +213,6 @@ const CATALOGUE: SectionTypeDef[] = [
   // Types présents dans le seed mais non outillés dans ce MVP : lecture seule.
   ...(
     [
-      ['values_grid', 'à propos'],
       ['interventions_compare', 'interventions'],
       ['contact_form', 'contact (position 1)'],
       ['offices_grid', 'contact (position 2)'],
