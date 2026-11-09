@@ -15,6 +15,7 @@ Le doc 15 inventorie 184 clés ; le frontend en compte 221. Les clés
 | `nav.partners` | menu, fil d'Ariane | `pages.partners.data.nav_label` |
 | `partners.*` (16 clés) | page Partenaires entière | `pages.partners.data.*` et `page_sections.partners.{marquee,grid}.data.*` |
 | `identity.tagline` | texte du pied de page | `site_settings.identity.tagline` (déjà signalé §19) |
+| `PublicSettings.email`, `phone_fixed`, `phone_mobile` | coordonnées affichées dans le CTA public → `ContactCtaSection.tsx`, actuellement lues depuis `ORGANIZATION` | À trancher : groupe Paramètres `contact` (propriétaire conseillé, mais le contrat ne décrit pas les clés) ou évolution explicite du type de section `cta` ; champs non exposés tant que cette décision n’est pas prise |
 | `pages.sectors.data.intro` | intro de la page Secteurs (réutilise `services.indexText`) | panneau Page livré ; valeur à charger depuis la locale |
 | `pages.about.data.intro` | intro de la page À propos (réutilise `home.aboutText`) | panneau Page livré ; la valeur source doit être confirmée |
 | `pages.publications.data.intro` | intro de la liste (réutilise `publications.introText`) | panneau Page livré |

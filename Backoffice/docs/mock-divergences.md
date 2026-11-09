@@ -113,3 +113,20 @@ Les champs manquants au doc 15 et les changements Backend sont listés dans
 Les routes et sections du Frontend lisent actuellement `Frontend/src/i18n/locales`, `Frontend/src/data/content.data.ts` et des constantes de composants ; elles n'appellent pas les endpoints d'administration. Les mutations de l'API peuvent être testées en mode mock ou HTTP, mais une relecture du Backoffice ne prouve donc pas encore que le site public affiche l'écriture. Le branchement Frontend aux données publiées du Backend est un prérequis de validation bout en bout ; le Frontend et le Backend restent hors du périmètre modifiable de ce worktree.
 
 Le contrat définit `PUT /admin/sections/{id}/content/{lang}` et `PUT /admin/pages/{id}/content/{lang}` ainsi que l'écriture SEO par langue. Le Backend doit livrer ces routes avant que les tests HTTP d'aller-retour puissent réussir.
+
+## 9. Coordonnées du CTA public
+
+Le composant `Frontend/src/components/sections/ContactCtaSection.tsx` lit le
+titre, le texte et le libellé secondaire dans les locales `home.*`, puis
+l’e-mail et les deux téléphones dans `ORGANIZATION` (`content.data.ts`). Le
+catalogue de sections ne déclare pour `cta` que `title`, `text` et
+`secondary_label` : il ne déclare aucun champ de coordonnées. Le contrat public
+décrit bien `PublicSettings.email`, `phone_fixed` et `phone_mobile`, et
+`/admin/settings/contact` accepte un groupe de paramètres générique, mais ne
+spécifie pas le schéma de ces clés.
+
+Les coordonnées ne sont donc pas ajoutées au bloc `cta` dans le mock : cela
+créerait un second propriétaire à côté de `settings.contact` et du modèle
+`PublicSettings`. Point d’arrêt 3b : confirmer que leur propriétaire Backoffice
+est le groupe Paramètres `contact` (avec schéma contractuel explicite) ou faire
+évoluer le contrat du type `cta`. Le Frontend et le Backend ne sont pas modifiés.

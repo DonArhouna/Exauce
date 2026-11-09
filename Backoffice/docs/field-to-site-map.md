@@ -41,6 +41,7 @@ Cette table précise la destination éditoriale de chaque champ exposé. Les cl�
 | `offices_grid.intro` | `contact` / `offices_grid` / `intro`, FR/EN | `ContactPage.tsx` → texte sous le titre des implantations → `contact.officesIntro` | Zone multiligne, validation et aller-retour FR/EN livrés ; Frontend encore statique |
 | `offices_grid.empty_text` | `contact` / `offices_grid` / `empty_text`, FR/EN | `ContactPage.tsx` → texte d’adresse provisoire dans chaque carte Office → `contact.addressesComing` | Texte provisoire à valider, aller-retour FR/EN et aperçu du bureau réel (ordre API) livrés |
 | `offices_grid.map_empty_text` | `contact` / `offices_grid` / `map_empty_text`, FR/EN | `ContactPage.tsx` → texte accessible et visible dans le cadre de carte → `contact.mapComing` | Texte provisoire à valider, aller-retour FR/EN et aperçu carte livrés |
+| Coordonnées du CTA — non exposées | Cible à décider : `settings.contact.email`, `phone_fixed`, `phone_mobile` ou champs du bloc `cta` | `ContactCtaSection.tsx` → liens `mailto:` et `tel:` alimentés aujourd’hui par `ORGANIZATION.email`, `phoneFixed`, `phoneMobile` ; contrat public : `PublicSettings.email`, `phone_fixed`, `phone_mobile` | En attente d’un schéma contractuel et d’un propriétaire unique ; aucune édition ajoutée dans le bloc `cta` |
 
 ## Valeurs de repli SEO
 
