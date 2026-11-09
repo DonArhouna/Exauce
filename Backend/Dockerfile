@@ -14,8 +14,8 @@ WORKDIR /app
 # Utilisateur non-root (page 09 §6).
 RUN addgroup --system app && adduser --system --ingroup app app
 
-COPY pyproject.toml ./
-COPY app ./app
+COPY Backend/pyproject.toml ./
+COPY Backend/app ./app
 
 # Dépendances applicatives uniquement (les dépendances dev restent hors image).
 RUN pip install .
