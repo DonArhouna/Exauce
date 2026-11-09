@@ -11,7 +11,7 @@ Cette table précise la destination éditoriale de chaque champ exposé. Les cl�
 | `Page.intro` | `sectors` | `SectorsPage.tsx` → `PageHero.intro` → `services.indexText` | La valeur du mock est vide ; à charger depuis la locale au branchement |
 | `Page.intro` | `publications` | `PublicationsPage.tsx` → `PageHero.intro` → `publications.introText` | Valeur source identique au texte du site |
 | `Page.intro` | `about` | `AboutPage.tsx` → `PageHero.intro` → `home.aboutText` | La valeur actuelle du mock vient de `page_header` ; comparaison à confirmer avant branchement |
-| `Page.intro` | `contact` | `ContactPage.tsx` → `PageHero.intro` → `contact.introText` | La valeur est actuellement portée par `contact_form.intro` |
+| `Page.intro` | `contact` | `ContactPage.tsx` → `PageHero.intro` → `contact.introText` | Valeur migrée dans `AdminPageDetail.intro` depuis l’ancienne donnée `contact_form.intro` pour éviter deux champs éditables pointant au même emplacement |
 | `Page.intro` | `client_area` | `ClientAreaPage.tsx` → `PageHero.intro` → `clientArea.subtitle` | La valeur du mock est vide ; à charger depuis la locale au branchement |
 | `Page.intro` | `home`, `partners`, `legal_notice`, `not_found` | Aucun emplacement PageHero générique correspondant dans le Frontend actuel | Ne pas éditer comme introduction publique sans validation de la destination |
 | `Page.seo_title` | Page, FR/EN | `Page.tsx` → `document.title`, `meta[property="og:title"]`; chaînes assemblées dans chaque composant de page et `meta.homeTitle` | À brancher sur `AdminPageDetail.seo_title` |
@@ -36,6 +36,7 @@ Cette table précise la destination éditoriale de chaque champ exposé. Les cl�
 | `interventions_compare.rows[].label` | `interventions` / `interventions_compare` / `rows[].label`, FR/EN | `InterventionsPage.tsx` → en-tête de ligne, ordre 0, 1, 2 → `interventions.rowFocus`, `rowAction`, `rowHeart` | Ordre/nombre (3), clavier/souris, aller-retour FR/EN et aperçu tableau testés ; le Frontend lit encore les locales |
 | `interventions_compare.rows[].recurring` | `interventions` / `interventions_compare` / `rows[].recurring`, FR/EN | `InterventionsPage.tsx` → cellule colonne Récurrentes, lignes 0, 1, 2 → `interventions.rowFocusR`, `rowActionR`, `rowHeartR` | Ordre/nombre (3), clavier/souris, aller-retour FR/EN et aperçu tableau testés ; le Frontend lit encore les locales |
 | `interventions_compare.rows[].oneoff` | `interventions` / `interventions_compare` / `rows[].oneoff`, FR/EN | `InterventionsPage.tsx` → cellule colonne Ponctuelles, lignes 0, 1, 2 → `interventions.rowFocusP`, `rowActionP`, `rowHeartP` | Ordre/nombre (3), clavier/souris, aller-retour FR/EN et aperçu tableau testés ; le Frontend lit encore les locales |
+| `contact_form.success_text` | `contact` / `contact_form` / `success_text`, FR/EN | `ContactPage.tsx` → état de confirmation après l’envoi → `contact.success` | Formulaire UI hors édition ; message après envoi éditable, aller-retour FR/EN et aperçu de confirmation livrés |
 
 ## Valeurs de repli SEO
 

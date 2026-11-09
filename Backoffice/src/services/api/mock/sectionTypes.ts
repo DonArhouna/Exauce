@@ -222,6 +222,15 @@ const CATALOGUE: SectionTypeDef[] = [
       }),
     ],
   },
+  {
+    code: 'contact_form',
+    labelKey: 'pages.sectionTypes.contact_form',
+    usage: 'contact (position 1)',
+    editable: true,
+    fields: [
+      field('success_text', 'textarea', { required: true, maxLength: 300, labelKey: 'pages.fields.contactSuccess' }),
+    ],
+  },
   gridHeading('domains_grid'),
   gridHeading('audit_grid', [field('text', 'textarea', { maxLength: 400, labelKey: 'pages.fields.intro' })]),
   gridHeading('interventions_grid'),
@@ -233,7 +242,6 @@ const CATALOGUE: SectionTypeDef[] = [
   // Types présents dans le seed mais non outillés dans ce MVP : lecture seule.
   ...(
     [
-      ['contact_form', 'contact (position 1)'],
       ['offices_grid', 'contact (position 2)'],
       ['partners_marquee', 'partenaires'],
       ['partners_grid', 'partenaires'],

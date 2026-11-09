@@ -568,7 +568,8 @@
       "compareRows": "Comparison rows",
       "compareRowLabel": "Characteristic",
       "compareRecurring": "Text — recurring intervention",
-      "compareOneoff": "Text — one-off intervention"
+      "compareOneoff": "Text — one-off intervention",
+      "contactSuccess": "Confirmation shown after submission"
     },
     "sectionTypes": {
       "hero": "Home hero",

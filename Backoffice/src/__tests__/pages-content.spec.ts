@@ -417,6 +417,44 @@ describe('contenu réel des pages', () => {
     expect(loaded.data.fr).toEqual(loadedFr);
   });
 
+  it('porte l’introduction Contact dans Page et enregistre le message success_text par langue', () => {
+    const summary = listPages().find((page) => page.page_key === 'contact')!;
+    const page = findPage(summary.id)!;
+    const detail = pageDetail(page);
+    expect(detail.intro).toEqual({
+      fr: 'Nos implantations et coordonnées directes.',
+      en: 'Our locations and direct contact details.',
+    });
+    const section = page.sections.find((entry) => entry.section_type === 'contact_form')!;
+    expect(section.data.fr).not.toHaveProperty('intro');
+    const originalFr = structuredClone(section.data.fr);
+    const originalEn = structuredClone(section.data.en);
+
+    const fr = updateSection(section.id, {
+      revision: page.revision,
+      lang: 'fr',
+      data: { ...originalFr, success_text: 'Confirmation FR mise à jour' },
+    });
+    expect(fr.ok).toBe(true);
+    if (!fr.ok) return;
+    const loadedFr = findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!.data.fr;
+    expect(loadedFr).toEqual({ success_text: 'Confirmation FR mise à jour' });
+    expect(findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!.data.en).toEqual(originalEn);
+    expect(findPage(summary.id)!.intro).toEqual(detail.intro);
+
+    const freshPage = findPage(summary.id)!;
+    const en = updateSection(section.id, {
+      revision: freshPage.revision,
+      lang: 'en',
+      data: { ...originalEn, success_text: 'EN confirmation updated' },
+    });
+    expect(en.ok).toBe(true);
+    if (!en.ok) return;
+    const loaded = findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!;
+    expect(loaded.data.en).toEqual({ success_text: 'EN confirmation updated' });
+    expect(loaded.data.fr).toEqual(loadedFr);
+  });
+
   it('reprend les textes affichés par le site', () => {
     const home = listPages().find((page) => page.page_key === 'home');
     if (!home) throw new Error('accueil introuvable');

@@ -568,7 +568,8 @@
       "compareRows": "Lignes du comparatif",
       "compareRowLabel": "Caractéristique",
       "compareRecurring": "Texte — intervention récurrente",
-      "compareOneoff": "Texte — intervention ponctuelle"
+      "compareOneoff": "Texte — intervention ponctuelle",
+      "contactSuccess": "Confirmation affichée après l’envoi"
     },
     "sectionTypes": {
       "hero": "En-tête d’accueil",

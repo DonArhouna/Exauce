@@ -87,13 +87,13 @@ Un élément éditorial est ici une métadonnée Page (`title`, `nav_label`, `in
 | Publications (`publications`) | 5 | 5 | 100 % | 0 % |
 | Partenaires (`partners`) | 8 | 6 | 75 % | 0 % |
 | À propos (`about`) | 9 | 9 | 100 % | 0 % |
-| Contact (`contact`) | 7 | 5 | 71 % | 0 % |
+| Contact (`contact`) | 7 | 6 | 86 % | 0 % |
 | Mentions légales (`legal_notice`) | 8 | 8 | 100 % | 0 % |
 | Espace client (`client_area`) | 5 | 5 | 100 % | 0 % |
 | Page introuvable (`not_found`) | 5 | 5 | 100 % | 0 % |
-| **Total** | **82** | **78** | **95 %** | **0/82 (0 %)** |
+| **Total** | **82** | **79** | **96 %** | **0/82 (0 %)** |
 
-Les 27 blocs sont répartis ainsi : accueil 10, services 4, interventions 1, partenaires 3, à propos 4, contact 2, mentions légales 3. Les cinq champs Page sont présents sur les 11 pages. Après l’ouverture des blocs `modes`, `what_we_do`, `steps`, `values_grid` et `interventions_compare`, quatre éléments restent sans formulaire. La couverture Backoffice atteint 95 %, mais la liaison publique demeure à 0/82.
+Les 27 blocs sont répartis ainsi : accueil 10, services 4, interventions 1, partenaires 3, à propos 4, contact 2, mentions légales 3. Les cinq champs Page sont présents sur les 11 pages. Après l’ouverture des blocs `modes`, `what_we_do`, `steps`, `values_grid`, `interventions_compare` et `contact_form`, trois éléments restent sans formulaire. La couverture Backoffice atteint 96 %, mais la liaison publique demeure à 0/82.
 
 UI, hors périmètre : recherche, sélecteur de langue, pagination, états de chargement/vide/erreur/succès.
 

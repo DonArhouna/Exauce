@@ -512,4 +512,37 @@ describe('pages et sections', () => {
     expect(within(preview).getAllByRole('row')[1].textContent).toContain("Ressort de l'intervention");
     expect(within(preview).getAllByRole('row')[2].textContent).toContain('Finalité pour le client');
   });
+
+  it('édite contact_form sans dupliquer l’introduction de Page', async () => {
+    const user = userEvent.setup();
+    const id = 'aaaaaaaa-0008-4001-8001-000000000008';
+    const main = await openPage(`/pages/${id}`, 'fondateur@exauceac.com', 'exauce-fondateur-2026');
+    const pagePanel = await within(main).findByTestId('page-panel');
+    const frPage = within(pagePanel).getByRole('region', { name: 'Contenu FR' });
+    expect((within(frPage).getByLabelText('Introduction') as HTMLTextAreaElement).value).toBe(
+      'Nos implantations et coordonnées directes.',
+    );
+    const sections = await within(main).findAllByTestId(/^section-/);
+    const form = sections.find((section) => within(section).queryByText('contact_form'))!;
+    const textareas = within(form).getAllByRole('textbox');
+    expect(textareas).toHaveLength(2);
+    expect((textareas[0] as HTMLTextAreaElement).value).toContain('Votre message a bien été envoyé');
+    expect((textareas[1] as HTMLTextAreaElement).value).toContain('Your message has been sent successfully');
+
+    await user.clear(textareas[0]);
+    await user.type(textareas[0], 'Confirmation bilingue — version FR');
+    await user.clear(textareas[1]);
+    await user.type(textareas[1], 'Bilingual confirmation — EN version');
+    await user.click(within(form).getByRole('button', { name: 'Enregistrer le bloc' }));
+    await waitFor(() => {
+      const saved = findPage(id)!;
+      const contactForm = saved.sections.find((section) => section.section_type === 'contact_form')!;
+      expect(contactForm.data.fr.success_text).toBe('Confirmation bilingue — version FR');
+      expect(contactForm.data.en.success_text).toBe('Bilingual confirmation — EN version');
+      expect(saved.intro.fr).toBe('Nos implantations et coordonnées directes.');
+    });
+    const formId = findPage(id)!.sections.find((section) => section.section_type === 'contact_form')!.id;
+    const preview = within(main).getByTestId(`preview-section-${formId}`);
+    expect(within(preview).getByText(/Confirmation bilingue — version FR/)).toBeInTheDocument();
+  });
 });

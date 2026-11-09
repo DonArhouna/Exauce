@@ -125,6 +125,22 @@ function SectionPreviewContent({
       </>
     );
   }
+  if (sectionType === 'contact_form') {
+    return (
+      <div className="mt-1 space-y-3 rounded-control border border-line bg-white p-3">
+        <p className="text-xs uppercase tracking-wide text-muted">{lang === 'fr' ? 'Formulaire de contact' : 'Contact form'}</p>
+        <div className="grid gap-2 sm:grid-cols-2" aria-hidden="true">
+          {(lang === 'fr' ? ['Nom complet', 'Adresse e-mail', 'Téléphone', 'Sujet', 'Message'] : ['Full name', 'Email address', 'Phone', 'Subject', 'Message']).map((label) => (
+            <div key={label} className="rounded-control border border-line bg-ivory/50 px-2 py-2 text-xs text-muted">{label}</div>
+          ))}
+        </div>
+        <p className="border-l-2 border-turquoise-500 bg-turquoise-500/5 p-2 text-sm text-ink">
+          <span className="mr-1 text-xs font-semibold uppercase text-muted">{lang === 'fr' ? 'Après envoi :' : 'After submission:'}</span>
+          {readable(values.success_text)}
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="mt-1 space-y-0.5">
       {Object.entries(values)

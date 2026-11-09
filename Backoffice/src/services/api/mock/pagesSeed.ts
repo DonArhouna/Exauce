@@ -715,8 +715,8 @@ export const PAGE_SEED: SeedPage[] = [
       "Contact"
     ],
     "intro": [
-      "",
-      ""
+      "Nos implantations et coordonnées directes.",
+      "Our locations and direct contact details."
     ],
     "seo_title": [
       "Contact — EXAUCE Audit & Conseils",
@@ -735,11 +735,9 @@ export const PAGE_SEED: SeedPage[] = [
         "type": "contact_form",
         "source": "contact_form",
         "fr": {
-          "intro": "Nos implantations et coordonnées directes.",
           "success_text": "Votre message a bien été envoyé. Nous vous répondrons dans les meilleurs délais."
         },
         "en": {
-          "intro": "Our locations and direct contact details.",
           "success_text": "Your message has been sent successfully. We will get back to you as soon as possible."
         }
       },
