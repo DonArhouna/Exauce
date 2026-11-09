@@ -551,7 +551,11 @@
       "modeTitle": "Mode name",
       "modeText": "Mode description",
       "whatWeDoKicker": "What we do — kicker",
-      "whatWeDoText": "What we do — text"
+      "whatWeDoText": "What we do — text",
+      "founderName": "Founder’s name",
+      "founderRole": "Founder’s role",
+      "founderPhotoAlt": "Portrait alternative text",
+      "founderBioComing": "Biography placeholder text"
     },
     "sectionTypes": {
       "hero": "Home hero",

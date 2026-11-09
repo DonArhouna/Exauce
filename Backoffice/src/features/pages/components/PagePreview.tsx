@@ -55,6 +55,20 @@ function SectionPreviewContent({
       </div>
     );
   }
+  if (sectionType === 'founder_card') {
+    return (
+      <article className="mt-1 rounded-card border border-line bg-white p-4">
+        <figure>
+          <div role="img" aria-label={readable(values.photo_alt)} className="flex h-16 w-16 items-center justify-center rounded-full border border-dashed border-line text-xl text-muted">AK</div>
+          <figcaption>
+            <h4 className="mt-3 font-semibold text-ink">{readable(values.name)}</h4>
+            <p className="text-sm text-muted">{readable(values.role)}</p>
+          </figcaption>
+        </figure>
+        <p className="mt-3 whitespace-pre-wrap text-sm text-ink">{readable(values.empty_text)}</p>
+      </article>
+    );
+  }
   return (
     <div className="mt-1 space-y-0.5">
       {Object.entries(values)

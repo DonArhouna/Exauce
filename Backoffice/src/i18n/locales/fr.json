@@ -551,7 +551,11 @@
       "modeTitle": "Nom du mode",
       "modeText": "Description du mode",
       "whatWeDoKicker": "Sur-titre — Ce que nous faisons",
-      "whatWeDoText": "Texte — Ce que nous faisons"
+      "whatWeDoText": "Texte — Ce que nous faisons",
+      "founderName": "Nom du fondateur",
+      "founderRole": "Fonction du fondateur",
+      "founderPhotoAlt": "Texte alternatif du portrait",
+      "founderBioComing": "Texte de remplacement de la biographie"
     },
     "sectionTypes": {
       "hero": "En-tête d’accueil",

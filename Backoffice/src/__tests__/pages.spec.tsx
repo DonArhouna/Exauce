@@ -367,4 +367,34 @@ describe('pages et sections', () => {
     expect(within(previewSection).getByText('Nos activités')).toBeInTheDocument();
     expect(within(previewSection).getByText(/Tous basés sur les technologies du numérique/)).toBeInTheDocument();
   });
+
+  it('édite founder_card dans les deux langues et prévisualise la carte réelle', async () => {
+    const user = userEvent.setup();
+    const main = await openPage(`/pages/${ABOUT_ID}`, 'fondateur@exauceac.com', 'exauce-fondateur-2026');
+    const sections = await within(main).findAllByTestId(/^section-/);
+    const founder = sections.find((section) => within(section).queryByText('founder_card'))!;
+    const textboxes = within(founder).getAllByRole('textbox');
+    expect(textboxes).toHaveLength(8);
+    expect((textboxes[0] as HTMLInputElement).value).toBe('Assane KANE');
+    expect((textboxes[1] as HTMLInputElement).value).toContain('Fondateur');
+    expect((textboxes[4] as HTMLInputElement).value).toBe('Assane KANE');
+    expect((textboxes[7] as HTMLTextAreaElement).value).toContain('Detailed founder biography');
+
+    await user.clear(textboxes[0]);
+    await user.type(textboxes[0], 'Assane Kane');
+    await user.clear(textboxes[7]);
+    await user.type(textboxes[7], 'Biography copy to confirm');
+    await user.click(within(founder).getByRole('button', { name: /enregistrer le bloc/i }));
+
+    await waitFor(() => {
+      const saved = findPage(ABOUT_ID)!.sections.find((section) => section.section_type === 'founder_card')!;
+      expect(saved.data.fr.name).toBe('Assane Kane');
+      expect(saved.data.fr.role).toContain('Fondateur');
+      expect(saved.data.en.name).toBe('Assane KANE');
+      expect(saved.data.en.empty_text).toBe('Biography copy to confirm');
+    });
+    const previewSection = within(main).getByTestId(`preview-section-${findPage(ABOUT_ID)!.sections.find((section) => section.section_type === 'founder_card')!.id}`);
+    expect(within(previewSection).getByText('Assane Kane')).toBeInTheDocument();
+    expect(within(previewSection).getByText(/Expert-Comptable et Financier/)).toBeInTheDocument();
+  });
 });

@@ -636,11 +636,15 @@ export const PAGE_SEED: SeedPage[] = [
         "type": "founder_card",
         "source": "founder_card",
         "fr": {
-          "kicker": "",
+          "name": "Assane KANE",
+          "role": "Expert-Comptable et Financier Diplômé — Fondateur",
+          "photo_alt": "Portrait du fondateur — à fournir",
           "empty_text": "Biographie détaillée du fondateur — contenu à venir."
         },
         "en": {
-          "kicker": "",
+          "name": "Assane KANE",
+          "role": "Qualified Chartered Accountant and Finance Professional — Founder",
+          "photo_alt": "Founder portrait — to be provided",
           "empty_text": "Detailed founder biography — content to come."
         }
       },

@@ -259,6 +259,39 @@ describe('contenu réel des pages', () => {
     expect(loaded.data.fr).toEqual(loadedFr);
   });
 
+  it('recharge et enregistre founder_card en FR/EN sans perte ni écrasement croisé', () => {
+    const summary = listPages().find((page) => page.page_key === 'about')!;
+    const page = findPage(summary.id)!;
+    const section = page.sections.find((entry) => entry.section_type === 'founder_card')!;
+    const originalFr = structuredClone(section.data.fr);
+    const originalEn = structuredClone(section.data.en);
+    expect(originalFr).toMatchObject({ name: 'Assane KANE', role: expect.stringContaining('Fondateur'), photo_alt: 'Portrait du fondateur — à fournir' });
+    expect(originalEn).toMatchObject({ name: 'Assane KANE', role: expect.stringContaining('Founder'), photo_alt: 'Founder portrait — to be provided' });
+
+    const fr = updateSection(section.id, {
+      revision: page.revision,
+      lang: 'fr',
+      data: { ...originalFr, name: 'Assane KANE (modifié)', empty_text: 'Biographie FR modifiée', unknown_field: 'conservé' },
+    });
+    expect(fr.ok).toBe(true);
+    if (!fr.ok) return;
+    const loadedFr = findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!.data.fr;
+    expect(loadedFr).toEqual({ ...originalFr, name: 'Assane KANE (modifié)', empty_text: 'Biographie FR modifiée', unknown_field: 'conservé' });
+    expect(findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!.data.en).toEqual(originalEn);
+
+    const freshPage = findPage(summary.id)!;
+    const en = updateSection(section.id, {
+      revision: freshPage.revision,
+      lang: 'en',
+      data: { ...originalEn, empty_text: 'Biography EN modified' },
+    });
+    expect(en.ok).toBe(true);
+    if (!en.ok) return;
+    const loaded = findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!;
+    expect(loaded.data.en).toEqual({ ...originalEn, empty_text: 'Biography EN modified' });
+    expect(loaded.data.fr).toEqual(loadedFr);
+  });
+
   it('reprend les textes affichés par le site', () => {
     const home = listPages().find((page) => page.page_key === 'home');
     if (!home) throw new Error('accueil introuvable');

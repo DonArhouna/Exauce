@@ -139,8 +139,10 @@ const CATALOGUE: SectionTypeDef[] = [
     usage: 'accueil, à propos',
     editable: true,
     fields: [
-      field('kicker', 'text', { maxLength: 40 }),
-      field('empty_text', 'text', { maxLength: 80 }),
+      field('name', 'text', { required: true, maxLength: 80, labelKey: 'pages.fields.founderName' }),
+      field('role', 'text', { required: true, maxLength: 140, labelKey: 'pages.fields.founderRole' }),
+      field('photo_alt', 'text', { required: true, maxLength: 120, labelKey: 'pages.fields.founderPhotoAlt' }),
+      field('empty_text', 'textarea', { required: true, maxLength: 240, labelKey: 'pages.fields.founderBioComing' }),
     ],
   },
   {
