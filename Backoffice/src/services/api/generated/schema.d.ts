@@ -1028,6 +1028,40 @@ export interface paths {
         patch: operations["adminUpdatePage"];
         trace?: never;
     };
+    "/admin/pages/{id}/content/{lang}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Écriture des champs de page pour une langue */
+        put: operations["adminPutPageContent"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/pages/{id}/seo/{lang}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Écriture des métadonnées SEO d'une langue */
+        put: operations["adminPutPageSeo"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/pages/{id}/sections": {
         parameters: {
             query?: never;
@@ -2042,6 +2076,22 @@ export interface components {
             /** Format: uuid */
             cover_media_id?: string | null;
         };
+        /** @description Valeurs textuelles complètes en français et en anglais. */
+        LocalizedTexts: {
+            fr: string;
+            en: string;
+        };
+        PageContentUpdate: {
+            revision: number;
+            title?: string;
+            nav_label?: string;
+            intro?: string;
+        };
+        PageSeoUpdate: {
+            revision: number;
+            seo_title?: string;
+            seo_description?: string;
+        };
         PageSummary: {
             /** Format: uuid */
             id?: string;
@@ -2077,6 +2127,10 @@ export interface components {
             titles?: {
                 [key: string]: string;
             };
+            nav_label?: components["schemas"]["LocalizedTexts"];
+            intro?: components["schemas"]["LocalizedTexts"];
+            seo_title?: components["schemas"]["LocalizedTexts"];
+            seo_description?: components["schemas"]["LocalizedTexts"];
             /** @description Slug par langue (`fr`, `en`). */
             slugs?: {
                 [key: string]: string;
@@ -4377,6 +4431,68 @@ export interface operations {
                 };
                 content?: never;
             };
+        };
+    };
+    adminPutPageContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                lang: "fr" | "en";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PageContentUpdate"];
+            };
+        };
+        responses: {
+            /** @description Page mise à jour */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDetail"];
+                };
+            };
+            403: components["responses"]["Eproblem"];
+            404: components["responses"]["Eproblem"];
+            409: components["responses"]["Eproblem"];
+            422: components["responses"]["Eproblem"];
+        };
+    };
+    adminPutPageSeo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                lang: "fr" | "en";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PageSeoUpdate"];
+            };
+        };
+        responses: {
+            /** @description Métadonnées SEO mises à jour */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDetail"];
+                };
+            };
+            403: components["responses"]["Eproblem"];
+            404: components["responses"]["Eproblem"];
+            409: components["responses"]["Eproblem"];
+            422: components["responses"]["Eproblem"];
         };
     };
     adminAddSection: {

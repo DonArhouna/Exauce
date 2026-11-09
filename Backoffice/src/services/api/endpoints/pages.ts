@@ -41,6 +41,43 @@ export async function patchPage(id: string, patch: PagePatch): Promise<AdminPage
   });
 }
 
+export interface PageContentPatch {
+  revision: number;
+  title?: string;
+  nav_label?: string;
+  intro?: string;
+}
+
+/** `PUT /admin/pages/{id}/content/{lang}` — titres et introduction d'une langue. */
+export async function patchPageContent(
+  id: string,
+  lang: ContentLang,
+  patch: PageContentPatch,
+): Promise<AdminPageDetail> {
+  return apiRequest<AdminPageDetail>(
+    `/admin/pages/${encodeURIComponent(id)}/content/${lang}`,
+    { method: 'PUT', body: patch },
+  );
+}
+
+export interface PageSeoPatch {
+  revision: number;
+  seo_title?: string;
+  seo_description?: string;
+}
+
+/** `PUT /admin/pages/{id}/seo/{lang}` — métadonnées SEO d'une langue. */
+export async function patchPageSeo(
+  id: string,
+  lang: ContentLang,
+  patch: PageSeoPatch,
+): Promise<AdminPageDetail> {
+  return apiRequest<AdminPageDetail>(
+    `/admin/pages/${encodeURIComponent(id)}/seo/${lang}`,
+    { method: 'PUT', body: patch },
+  );
+}
+
 export interface SectionCreate {
   revision: number;
   section_type: string;

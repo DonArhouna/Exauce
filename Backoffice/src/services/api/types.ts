@@ -99,6 +99,10 @@ export interface AdminPageSummary {
 }
 
 export interface AdminPageDetail extends AdminPageSummary {
+  nav_label: Record<ContentLang, string>;
+  intro: Record<ContentLang, string>;
+  seo_title: Record<ContentLang, string>;
+  seo_description: Record<ContentLang, string>;
   banners_pending: boolean;
   revision: number;
   slug: Record<ContentLang, string | null>;

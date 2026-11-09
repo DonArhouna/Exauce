@@ -97,7 +97,7 @@ Le contenu du mock n'est plus inventé : il reprend celui du site public
 
 | # | Écart | Ce que fait le mock | Proposition de contrat |
 |---|---|---|---|
-| 1 | `AdminPageDetail` ne porte que `title` | la page expose aussi `slug`, `revision` ; le panneau Page (étape 3) ajoutera `nav_label`, `intro`, `seo_*` | exposer ces champs par langue |
+| 1 | Mutation des champs Page et SEO | contrat étendu en 3a.1 : `PageDetail` expose `nav_label`, `intro`, `seo_title`, `seo_description` par langue ; `PUT /admin/pages/{id}/content/{lang}` et `/seo/{lang}` définissent les droits correspondants | endpoints à implémenter côté Backend avant le mode HTTP |
 | 2 | Le seed Backend garde `page_header` et `coming_soon` | ces blocs sont retirés du mock : le site ne les rend pas | les retirer du seed et du catalogue |
 | 3 | `hero` déclare `primary_cta`/`secondary_cta` | champs retirés : le site lit `common.*` | retirer du type, éditer les CTA dans Paramètres |
 | 4 | Les grilles déclarent une introduction | seuls `kicker` + `title` (et `text` pour `audit_grid`) | aligner `section_types.json` |

@@ -37,6 +37,10 @@ export interface MockPage {
   nav_position: number | null;
   is_system: boolean;
   status: PageStatus;
+  nav_label: Record<MockLang, string>;
+  intro: Record<MockLang, string>;
+  seo_title: Record<MockLang, string>;
+  seo_description: Record<MockLang, string>;
   banners_pending: boolean;
   revision: number;
   /** Auteur de la soumission en relecture (interdit l'auto-approbation). */
@@ -65,6 +69,10 @@ function materialize(): MockPage[] {
     nav_position: seed.nav,
     is_system: seed.system,
     status: seed.status,
+    nav_label: { fr: seed.title[0], en: seed.title[1] },
+    intro: { fr: '', en: '' },
+    seo_title: { fr: '', en: '' },
+    seo_description: { fr: '', en: '' },
     banners_pending: seed.banners ?? false,
     revision: 1,
     submitted_by: null,
@@ -120,6 +128,10 @@ export function pageDetail(page: MockPage): PageDetail {
     nav_position: page.nav_position,
     is_system: page.is_system,
     status: page.status,
+    nav_label: page.nav_label,
+    intro: page.intro,
+    seo_title: page.seo_title,
+    seo_description: page.seo_description,
     banners_pending: page.banners_pending,
     revision: page.revision,
     title: page.title,
