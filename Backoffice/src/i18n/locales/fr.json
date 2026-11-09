@@ -504,6 +504,8 @@
       "maxLength": "{{max}} caractères maximum",
       "addItem": "Ajouter un élément",
       "removeItem": "Retirer cet élément",
+      "moveItemUp": "Déplacer l’élément {{index}} vers le haut",
+      "moveItemDown": "Déplacer l’élément {{index}} vers le bas",
       "saveError": "L’enregistrement du bloc a échoué."
     },
     "preview": {
@@ -543,7 +545,11 @@
       "body": "Contenu",
       "banner_text": "Bandeau d’information",
       "cta_label": "Libellé du bouton",
-      "empty_text": "Texte de repli"
+      "empty_text": "Texte de repli",
+      "modesTitle": "Titre du bandeau des modes",
+      "modes": "Modes d’accompagnement",
+      "modeTitle": "Nom du mode",
+      "modeText": "Description du mode"
     },
     "sectionTypes": {
       "hero": "En-tête d’accueil",
@@ -556,7 +562,7 @@
       "stats": "Chiffres clés",
       "publications_grid": "Grille des publications",
       "cta": "Appel à l’action",
-      "modes": "Modes d’intervention",
+      "modes": "Modes d’accompagnement",
       "values_grid": "Grille des valeurs",
       "steps": "Étapes",
       "what_we_do": "Ce que nous faisons",

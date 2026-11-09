@@ -143,6 +143,26 @@ const CATALOGUE: SectionTypeDef[] = [
       field('empty_text', 'text', { maxLength: 80 }),
     ],
   },
+  {
+    code: 'modes',
+    labelKey: 'pages.sectionTypes.modes',
+    usage: 'services/:familleSlug/accompagnement',
+    editable: true,
+    fields: [
+      field('title', 'text', {
+        required: true,
+        labelKey: 'pages.fields.modesTitle',
+      }),
+      field('items', 'list', {
+        required: true,
+        labelKey: 'pages.fields.modes',
+        itemFields: [
+          field('title', 'text', { required: true, labelKey: 'pages.fields.modeTitle' }),
+          field('text', 'textarea', { required: true, labelKey: 'pages.fields.modeText' }),
+        ],
+      }),
+    ],
+  },
   gridHeading('domains_grid'),
   gridHeading('audit_grid', [field('text', 'textarea', { maxLength: 400, labelKey: 'pages.fields.intro' })]),
   gridHeading('interventions_grid'),
@@ -154,7 +174,6 @@ const CATALOGUE: SectionTypeDef[] = [
   // Types présents dans le seed mais non outillés dans ce MVP : lecture seule.
   ...(
     [
-      ['modes', 'services'],
       ['values_grid', 'à propos'],
       ['steps', 'à propos'],
       ['what_we_do', 'à propos'],

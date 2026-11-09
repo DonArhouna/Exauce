@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { resetMockBackend } from '@/services/api/mock/db';
 import { findPage, listPages } from '@/services/api/mock/pages';
@@ -105,6 +105,67 @@ describe('pages et sections', () => {
       'Two great families, one standard of excellence',
     );
     expect(findPage(SERVICES_ID)?.intro.en).toContain('total focus on their skills');
+  });
+
+  it('édite modes en FR/EN, préserve les champs inconnus et conserve l’ordre explicite', async () => {
+    const user = userEvent.setup();
+    const page = findPage(SERVICES_ID)!;
+    const modes = page.sections.find((section) => section.section_type === 'modes')!;
+    const frItems = modes.data.fr.items as Record<string, unknown>[];
+    frItems[0].source_reference = 'à conserver';
+    modes.data.fr.unknown_source_field = 'valeur inconnue conservée';
+
+    const main = await openPage(
+      `/pages/${SERVICES_ID}`,
+      'fondateur@exauceac.com',
+      'exauce-fondateur-2026',
+    );
+    const modesCard = await within(main).findByTestId(`section-${modes.id}`);
+    const modesList = within(modesCard).getAllByRole('group', { name: 'Modes d’accompagnement' })[0];
+    await user.click(within(modesList).getByRole('button', { name: 'Déplacer l’élément 1 vers le bas' }));
+
+    const titleInputs = () =>
+      Array.from(modesCard.querySelectorAll<HTMLInputElement>('input[id*="-items-"][id$="-title"]'));
+    let titles = titleInputs();
+    expect(titles.slice(0, 3).map((input) => input.value)).toEqual(['Conseil', 'Assistance', 'Formation']);
+
+    const rows = within(modesList).getAllByRole('listitem');
+    const dataTransfer = { effectAllowed: '', setData: vi.fn() };
+    fireEvent.dragStart(rows[2], { dataTransfer });
+    fireEvent.dragOver(rows[0], { dataTransfer });
+    fireEvent.drop(rows[0], { dataTransfer });
+    titles = titleInputs();
+    expect(titles.slice(0, 3).map((input) => input.value)).toEqual(['Formation', 'Conseil', 'Assistance']);
+
+    await user.clear(titles[0]);
+    await user.type(titles[0], 'Formation professionnelle');
+    const descriptions = Array.from(
+      modesCard.querySelectorAll<HTMLTextAreaElement>('textarea[id*="-items-"][id$="-text"]'),
+    );
+    await user.clear(descriptions[5]);
+    await user.type(descriptions[5], 'Training description updated');
+    await user.click(within(modesCard).getByRole('button', { name: 'Enregistrer le bloc' }));
+
+    await waitFor(() => {
+      const saved = findPage(SERVICES_ID)!.sections.find((section) => section.id === modes.id)!;
+      const savedFr = saved.data.fr;
+      const savedEn = saved.data.en;
+      const savedFrItems = savedFr.items as Record<string, unknown>[];
+      const savedEnItems = savedEn.items as Record<string, unknown>[];
+      expect(savedFrItems).toHaveLength(3);
+      expect(savedEnItems).toHaveLength(3);
+      expect(savedFrItems.map((item) => item.title)).toEqual([
+        'Formation professionnelle',
+        'Conseil',
+        'Assistance',
+      ]);
+      expect(savedEnItems.map((item) => item.title)).toEqual(['Assistance', 'Advice', 'Training']);
+      expect(savedEnItems[2].text).toBe('Training description updated');
+      expect(savedFrItems[2].source_reference).toBe('à conserver');
+      expect(savedFr.unknown_source_field).toBe('valeur inconnue conservée');
+      expect(savedFr.title).toBe("Trois modes d'accompagnement");
+      expect(savedEn.title).toBe('Three modes of support');
+    });
   });
 
   it('verrouille les colonnes selon les permissions de contenu et de SEO', async () => {

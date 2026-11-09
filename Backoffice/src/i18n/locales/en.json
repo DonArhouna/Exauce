@@ -504,6 +504,8 @@
       "maxLength": "{{max}} characters maximum",
       "addItem": "Add an item",
       "removeItem": "Remove this item",
+      "moveItemUp": "Move item {{index}} up",
+      "moveItemDown": "Move item {{index}} down",
       "saveError": "Saving the block failed."
     },
     "preview": {
@@ -543,7 +545,11 @@
       "body": "Body",
       "banner_text": "Notice banner",
       "cta_label": "Button label",
-      "empty_text": "Fallback text"
+      "empty_text": "Fallback text",
+      "modesTitle": "Engagement modes heading",
+      "modes": "Engagement modes",
+      "modeTitle": "Mode name",
+      "modeText": "Mode description"
     },
     "sectionTypes": {
       "hero": "Home hero",

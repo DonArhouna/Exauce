@@ -166,6 +166,64 @@ describe('contenu réel des pages', () => {
     expect(seoFr.value.intro).toEqual(content.value.intro);
   });
 
+  it('conserve les trois modes, leur ordre et les autres données en écriture FR/EN', () => {
+    const summary = listPages().find((page) => page.page_key === 'services')!;
+    const page = findPage(summary.id)!;
+    const section = page.sections.find((entry) => entry.section_type === 'modes')!;
+    const originalFr = structuredClone(section.data.fr);
+    const originalEn = structuredClone(section.data.en);
+    const originalOrderFr = (originalFr.items as { title: string }[]).map((item) => item.title);
+    const originalOrderEn = (originalEn.items as { title: string }[]).map((item) => item.title);
+    const frItems = (originalFr.items as SectionValues[]).map((item) => ({ ...item }));
+    frItems[1].source_reference = 'keep-fr-unknown';
+    const frResult = updateSection(section.id, {
+      revision: page.revision,
+      lang: 'fr',
+      data: {
+        ...originalFr,
+        extra_source_field: 'keep-fr-field',
+        items: frItems.map((item, index) =>
+          index === 0 ? { ...item, text: 'Texte assistance modifié' } : item,
+        ),
+      },
+    });
+    expect(frResult.ok).toBe(true);
+    if (!frResult.ok) return;
+
+    const reloadedFr = findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!.data.fr;
+    const reloadedFrItems = reloadedFr.items as SectionValues[];
+    expect((reloadedFr.items as { title: string }[]).map((item) => item.title)).toEqual(originalOrderFr);
+    expect(reloadedFrItems).toHaveLength(3);
+    expect(reloadedFrItems[0].text).toBe('Texte assistance modifié');
+    expect(reloadedFrItems[1].source_reference).toBe('keep-fr-unknown');
+    expect(reloadedFr.extra_source_field).toBe('keep-fr-field');
+    expect(findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!.data.en).toEqual(originalEn);
+
+    const currentPage = findPage(summary.id)!;
+    const currentSection = currentPage.sections.find((entry) => entry.id === section.id)!;
+    const enItems = (currentSection.data.en.items as SectionValues[]).map((item) => ({ ...item }));
+    const enResult = updateSection(section.id, {
+      revision: currentPage.revision,
+      lang: 'en',
+      data: {
+        ...currentSection.data.en,
+        items: enItems.map((item, index) =>
+          index === 2 ? { ...item, title: 'Training' } : item,
+        ),
+      },
+    });
+    expect(enResult.ok).toBe(true);
+    if (!enResult.ok) return;
+    const reloadedEn = findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!.data.en;
+    expect((reloadedEn.items as { title: string }[]).map((item) => item.title)).toEqual([
+      originalOrderEn[0],
+      originalOrderEn[1],
+      'Training',
+    ]);
+    expect(reloadedEn).toMatchObject({ title: originalEn.title });
+    expect(findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!.data.fr).toEqual(reloadedFr);
+  });
+
   it('reprend les textes affichés par le site', () => {
     const home = listPages().find((page) => page.page_key === 'home');
     if (!home) throw new Error('accueil introuvable');

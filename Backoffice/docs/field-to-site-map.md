@@ -16,6 +16,9 @@ Cette table précise la destination éditoriale de chaque champ exposé. Les cl�
 | `Page.intro` | `home`, `partners`, `legal_notice`, `not_found` | Aucun emplacement PageHero générique correspondant dans le Frontend actuel | Ne pas éditer comme introduction publique sans validation de la destination |
 | `Page.seo_title` | Page, FR/EN | `Page.tsx` → `document.title`, `meta[property="og:title"]`; chaînes assemblées dans chaque composant de page et `meta.homeTitle` | À brancher sur `AdminPageDetail.seo_title` |
 | `Page.seo_description` | Page, FR/EN | `Page.tsx` → `meta[name="description"]`, `meta[property="og:description"]`; `contact` passe `contact.introText`, les autres pages retombent sur le titre ; `meta.homeDescription` existe mais n'est pas transmis par `HomePage` | À brancher sur `AdminPageDetail.seo_description`; la description d'accueil est à confirmer par le cabinet |
+| `modes.title` | `services` / `modes` / `title`, FR/EN | `ServicesIndexPage.tsx` (`FamilyView`) → sur-titre au-dessus des trois cartes → `services.modesTitle` | Formulaire et aller-retour livrés ; le Frontend lit encore la locale |
+| `modes.items[].title` | `services` / `modes` / `items[].title`, FR/EN | `ServicesIndexPage.tsx` (`FamilyView`) → titre de chaque carte → `services.modeAssistanceTitle`, `services.modeConseilTitle`, `services.modeFormationTitle` (ordre 0, 1, 2) | Formulaire prérempli et ordre conservé ; le Frontend lit encore les locales |
+| `modes.items[].text` | `services` / `modes` / `items[].text`, FR/EN | `ServicesIndexPage.tsx` (`FamilyView`) → description de chaque carte → `services.modeAssistanceText`, `services.modeConseilText`, `services.modeFormationText` (ordre 0, 1, 2) | Formulaire, zone multiligne, test FR/EN, conservation des champs inconnus et réordonnancement clavier/souris livrés ; le Frontend lit encore les locales |
 
 ## Valeurs de repli SEO
 
