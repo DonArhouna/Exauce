@@ -15,11 +15,11 @@ Le doc 15 inventorie 184 clés ; le frontend en compte 221. Les clés
 | `nav.partners` | menu, fil d'Ariane | `pages.partners.data.nav_label` |
 | `partners.*` (16 clés) | page Partenaires entière | `pages.partners.data.*` et `page_sections.partners.{marquee,grid}.data.*` |
 | `identity.tagline` | texte du pied de page | `site_settings.identity.tagline` (déjà signalé §19) |
-| `pages.sectors.data.intro` | intro de la page Secteurs (réutilise `services.indexText`) | à créer (§19) |
-| `pages.about.data.intro` | intro de la page À propos (réutilise `home.aboutText`) | à créer |
-| `pages.publications.data.intro` | intro de la liste (réutilise `publications.introText`) | à créer |
-| `pages.services.data.title` / `intro` | titre et intro de l'index Services | à créer (`page_header` n'est pas rendu) |
-| `pages.<key>.data.seo_title` / `seo_description` | `<title>` et description des 11 pages | généraliser l'accueil (§19) |
+| `pages.sectors.data.intro` | intro de la page Secteurs (réutilise `services.indexText`) | panneau Page livré ; valeur à charger depuis la locale |
+| `pages.about.data.intro` | intro de la page À propos (réutilise `home.aboutText`) | panneau Page livré ; la valeur source doit être confirmée |
+| `pages.publications.data.intro` | intro de la liste (réutilise `publications.introText`) | panneau Page livré |
+| `pages.services.data.title` / `intro` | titre et intro de l'index Services | panneau Page livré ; les valeurs `page_header` existantes diffèrent des clés publiques `nav.services` / `services.indexText` |
+| `pages.<key>.data.seo_title` / `seo_description` | `<title>` et description des pages | champs bilingues livrés en 3a ; les valeurs SEO reprises sont à confirmer par le cabinet |
 | `publications.media*`, `hasVideo`, `videoLabel`, `mediaBadge`, `paginationPrev/Next`, `pageOf`, `imageCaption`, `thumbnails` | galerie du détail et pagination | libellés d'interface, à classer « UI » au doc 15 |
 
 Constats vérifiés sur le site (`/fr` et `/en`) :
@@ -42,9 +42,10 @@ Constats vérifiés sur le site (`/fr` et `/en`) :
 
 ## 2. Changements attendus côté Backend
 
-1. **Panneau Page** : exposer `nav_label`, `intro`, `seo_title`,
-   `seo_description` par langue dans `AdminPageDetail` (aujourd'hui seul
-   `title` existe), et retirer l'obligation de blocs `page_header`.
+1. **Panneau Page** : champs `nav_label`, `intro`, `seo_title` et
+   `seo_description` bilingues livrés en 3a. Les routes d'écriture doivent être
+   implémentées côté Backend avant le mode HTTP ; aligner les valeurs avec les
+   emplacements Frontend décrits dans `field-to-site-map.md`.
 2. **Catalogue de sections** : `hero` sans `primary_cta`/`secondary_cta` ;
    grilles avec `kicker` ; `audit_grid` seul avec `text` ;
    `publications_grid` avec `cta_label` et `empty_text` ; `stats` avec
@@ -73,25 +74,29 @@ Constats vérifiés sur le site (`/fr` et `/en`) :
 - Étape 5 : Arbre des services, Secteurs, Interventions, Équipe, Catégories,
   Partenaires.
 
-## 4. Couverture recalculée après 3a
+## 4. Couverture globale recalculée après 3a
 
-Périmètre mesuré : métadonnées du panneau Page présentes pour chaque page (`title`, `nav_label`, `intro`, `seo_title`, `seo_description`). Les valeurs SEO restent vides et signalées « À confirmer » tant qu'elles ne sont pas validées ; la disponibilité du champ ne vaut pas validation éditoriale. Les introductions sans texte affiché sur le site ne sont pas proposées à l'édition.
+Un élément éditorial est ici une métadonnée Page (`title`, `nav_label`, `intro`, `seo_title`, `seo_description`) ou un bloc. Un bloc compte comme couvert si son formulaire éditable est configuré ; un bloc en lecture seule compte comme non couvert. Ce taux est une mesure au niveau du bloc, pas au niveau de chaque champ ; les champs précis et leur destination sont suivis dans `docs/field-to-site-map.md`.
 
-| Page | Métadonnées du panneau couvertes |
-|---|---:|
-| Accueil (`home`) | 5/5 |
-| Services (`services`) | 5/5 |
-| Interventions (`interventions`) | 5/5 |
-| Secteurs (`sectors`) | 5/5 |
-| Publications (`publications`) | 5/5 |
-| Partenaires (`partners`) | 5/5 |
-| À propos (`about`) | 5/5 |
-| Contact (`contact`) | 5/5 |
-| Espace client (`client_area`) | 5/5 |
-| Mentions légales (`legal_notice`) | 5/5 |
-| Page introuvable (`not_found`) | 5/5 |
-| **Total** | **55/55 (100 %)** |
+| Page | Éléments éditoriaux | Formulaires configurés | Couverture Backoffice | Liaison publique vérifiée |
+|---|---:|---:|---:|---:|
+| Accueil (`home`) | 15 | 15 | 100 % | 0 % |
+| Services (`services`) | 9 | 8 | 89 % | 0 % |
+| Interventions (`interventions`) | 6 | 5 | 83 % | 0 % |
+| Secteurs (`sectors`) | 5 | 5 | 100 % | 0 % |
+| Publications (`publications`) | 5 | 5 | 100 % | 0 % |
+| Partenaires (`partners`) | 8 | 6 | 75 % | 0 % |
+| À propos (`about`) | 9 | 6 | 67 % | 0 % |
+| Contact (`contact`) | 7 | 5 | 71 % | 0 % |
+| Mentions légales (`legal_notice`) | 8 | 8 | 100 % | 0 % |
+| Espace client (`client_area`) | 5 | 5 | 100 % | 0 % |
+| Page introuvable (`not_found`) | 5 | 5 | 100 % | 0 % |
+| **Total** | **82** | **73** | **89 %** | **0/82 (0 %)** |
+
+Les 27 blocs sont répartis ainsi : accueil 10, services 4, interventions 1, partenaires 3, à propos 4, contact 2, mentions légales 3. Les cinq champs Page sont présents sur les 11 pages. Les blocs en lecture seule expliquent les neuf éléments sans formulaire ; l’objectif de 95 % de couverture Backoffice n’est donc pas atteint. La liaison publique est à 0/82 : les pages Frontend ne consomment pas encore l’API éditoriale, donc une édition enregistrée n’est pas encore prouvée sur le site.
 
 UI, hors périmètre : recherche, sélecteur de langue, pagination, états de chargement/vide/erreur/succès.
 
-Ce taux porte uniquement sur les métadonnées Page. Les champs des blocs déjà représentés dans le mock ne sont pas comptés comme éditables tant que leur formulaire n'est pas livré ; ils restent à traiter en 3b/3c. Les valeurs SEO vides et les introductions de pages sans intro visible restent des décisions éditoriales, pas des champs manquants du schéma.
+Les SEO renseignés reprennent les titres et descriptions des locales et composants Frontend ; toute nouvelle rédaction SEO est **à confirmer par le cabinet**. Le Frontend n’utilise pas encore ces valeurs provenant du Backoffice : `HomePage` ne transmet pas `meta.homeDescription` à `Page`, qui utilise alors le titre en repli, et les pages ne chargent pas les données d’administration. La valeur de locale home reste préremplie comme texte source, à confirmer par le cabinet avant branchement public. La route Partenaires n’existe pas dans `Frontend/src/App.tsx` ; ses valeurs SEO restent vides et le panneau indique le repli 404.
+
+Le mock contient **27 blocs** après migration des cinq `page_header` dans le panneau Page ; le seed Backend en compte encore **32**. Aucun fichier d'`Analyse/` n'est modifié.

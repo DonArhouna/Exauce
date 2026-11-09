@@ -93,12 +93,12 @@ Sans réponse du Backend, le mock reste l'autorité locale pour ces quatre point
 
 Le contenu du mock n'est plus inventé : il reprend celui du site public
 (`editorial_i18n.json`, `content_data.json`, locales `partners.*`). Il vit dans
-`src/services/api/mock/pagesSeed.ts` (11 pages, 32 blocs).
+`src/services/api/mock/pagesSeed.ts` (11 pages, 27 blocs après migration des cinq `page_header` dans le panneau Page). Le seed Backend conserve encore 32 blocs : les cinq `page_header` y sont toujours présents.
 
 | # | Écart | Ce que fait le mock | Proposition de contrat |
 |---|---|---|---|
 | 1 | Mutation des champs Page et SEO | contrat étendu en 3a.1 : `PageDetail` expose `nav_label`, `intro`, `seo_title`, `seo_description` par langue ; `PUT /admin/pages/{id}/content/{lang}` et `/seo/{lang}` définissent les droits correspondants | endpoints à implémenter côté Backend avant le mode HTTP |
-| 2 | Le seed Backend contient `page_header` | les titres et intros sont migrés dans Page ; les 5 blocs et leur type de catalogue sont retirés du mock après le test exact de non-perte. `coming_soon` reste un gabarit des pages techniques, pas un bloc | aucune modification du contrat ; conserver les gabarits |
+| 2 | Le seed Backend contient encore cinq `page_header` (32 blocs contre 27 dans le mock) | les textes ont été migrés dans Page ; les 5 blocs et leur type de catalogue sont retirés du mock après le test exact de non-perte. `coming_soon` reste un gabarit des pages techniques, pas un bloc | aligner le seed Backend avant le mode HTTP ; conserver les gabarits |
 | 3 | `hero` déclare `primary_cta`/`secondary_cta` | champs retirés : le site lit `common.*` | retirer du type, éditer les CTA dans Paramètres |
 | 4 | Les grilles déclarent une introduction | seuls `kicker` + `title` (et `text` pour `audit_grid`) | aligner `section_types.json` |
 | 5 | Pas de page Partenaires | 11ᵉ page + 4 blocs + 8 partenaires de démonstration | ajouter page, types et entité `partner` |
@@ -107,3 +107,9 @@ Le contenu du mock n'est plus inventé : il reprend celui du site public
 
 Les champs manquants au doc 15 et les changements Backend sont listés dans
 `docs/editorial-gaps.md`.
+
+## 8. Source de vérité publique
+
+Les routes et sections du Frontend lisent actuellement `Frontend/src/i18n/locales`, `Frontend/src/data/content.data.ts` et des constantes de composants ; elles n'appellent pas les endpoints d'administration. Les mutations de l'API peuvent être testées en mode mock ou HTTP, mais une relecture du Backoffice ne prouve donc pas encore que le site public affiche l'écriture. Le branchement Frontend aux données publiées du Backend est un prérequis de validation bout en bout ; le Frontend et le Backend restent hors du périmètre modifiable de ce worktree.
+
+Le contrat définit `PUT /admin/sections/{id}/content/{lang}` et `PUT /admin/pages/{id}/content/{lang}` ainsi que l'écriture SEO par langue. Le Backend doit livrer ces routes avant que les tests HTTP d'aller-retour puissent réussir.
