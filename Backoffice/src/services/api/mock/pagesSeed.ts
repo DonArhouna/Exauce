@@ -55,12 +55,12 @@ export const PAGE_SEED: SeedPage[] = [
       ""
     ],
     "seo_title": [
-      "",
-      ""
+      "EXAUCE Audit & Conseils SAS — Expertise comptable, audit et conseil à Dakar",
+      "EXAUCE Audit & Conseils SAS — Accounting, audit and advisory services in Dakar"
     ],
     "seo_description": [
-      "",
-      ""
+      "Cabinet d’expertise comptable, de conseil, d’audit et de formation à Dakar, Sénégal — membre de l’ONECCA du Sénégal.",
+      "Accounting, consulting, audit and training firm in Dakar, Senegal — member of the ONECCA of Senegal."
     ],
     "slug": [
       "",
@@ -283,8 +283,8 @@ export const PAGE_SEED: SeedPage[] = [
       "EXAUCE Audit & Conseils SAS helps its clients solve their most complex problems and systematically improve their acquired performance. All based on digital technologies, our external support and audit services ensure clients a total focus on their skills and know-how, while opening the way to the new sphere of business development."
     ],
     "seo_title": [
-      "",
-      ""
+      "Services — EXAUCE Audit & Conseils",
+      "Services — EXAUCE Audit & Conseils"
     ],
     "seo_description": [
       "",
@@ -390,8 +390,8 @@ export const PAGE_SEED: SeedPage[] = [
       "EXAUCE Audit & Conseils SAS helps its clients in an innovative way, through recurring and one-off interventions."
     ],
     "seo_title": [
-      "",
-      ""
+      "Interventions — EXAUCE Audit & Conseils",
+      "Interventions — EXAUCE Audit & Conseils"
     ],
     "seo_description": [
       "",
@@ -471,8 +471,8 @@ export const PAGE_SEED: SeedPage[] = [
       ""
     ],
     "seo_title": [
-      "",
-      ""
+      "Secteurs — EXAUCE Audit & Conseils",
+      "Sectors — EXAUCE Audit & Conseils"
     ],
     "seo_description": [
       "",
@@ -503,8 +503,8 @@ export const PAGE_SEED: SeedPage[] = [
       "EXAUCE Audit & Conseils SAS helps its clients update and upgrade their information and knowledge, through regular publications in the different management areas of an organization. Our services also involve the provision of relevant publications in various subjects."
     ],
     "seo_title": [
-      "",
-      ""
+      "Publications — EXAUCE Audit & Conseils",
+      "Publications — EXAUCE Audit & Conseils"
     ],
     "seo_description": [
       "",
@@ -608,8 +608,8 @@ export const PAGE_SEED: SeedPage[] = [
       "EXAUCE Audit & Conseils SAS is an accounting, consulting, audit and training firm, created and managed by Mr. Assane KANE, Qualified Chartered Accountant and Finance Professional, and registered with the National Order of Chartered Accountants (ONECCA) of Senegal, alongside its founder."
     ],
     "seo_title": [
-      "",
-      ""
+      "À propos de nous — EXAUCE Audit & Conseils",
+      "About us — EXAUCE Audit & Conseils"
     ],
     "seo_description": [
       "",
@@ -715,12 +715,12 @@ export const PAGE_SEED: SeedPage[] = [
       ""
     ],
     "seo_title": [
-      "",
-      ""
+      "Contact — EXAUCE Audit & Conseils",
+      "Contact — EXAUCE Audit & Conseils"
     ],
     "seo_description": [
-      "",
-      ""
+      "Nos implantations et coordonnées directes.",
+      "Our locations and direct contact details."
     ],
     "slug": [
       "contact",
@@ -777,8 +777,8 @@ export const PAGE_SEED: SeedPage[] = [
       ""
     ],
     "seo_title": [
-      "",
-      ""
+      "Mentions légales — EXAUCE Audit & Conseils",
+      "Legal notice — EXAUCE Audit & Conseils"
     ],
     "seo_description": [
       "",
@@ -846,8 +846,8 @@ export const PAGE_SEED: SeedPage[] = [
       ""
     ],
     "seo_title": [
-      "",
-      ""
+      "Espace Client — EXAUCE",
+      "Customer Area — EXAUCE"
     ],
     "seo_description": [
       "",
@@ -878,8 +878,8 @@ export const PAGE_SEED: SeedPage[] = [
       ""
     ],
     "seo_title": [
-      "",
-      ""
+      "404 — Page introuvable",
+      "404 — Page not found"
     ],
     "seo_description": [
       "",

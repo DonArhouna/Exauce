@@ -9,6 +9,14 @@ import { useEditionLanguage } from '@/services/edition/useEditionLanguage';
 
 const LANGS: ContentLang[] = ['fr', 'en'];
 
+function seoFallbackTitle(page: AdminPageDetail, language: ContentLang): string {
+  if (page.seo_title[language]) return page.seo_title[language];
+  if (page.page_key === 'partners') {
+    return language === 'fr' ? '404 — Page introuvable' : '404 — Page not found';
+  }
+  return page.title[language];
+}
+
 type PageValues = Pick<AdminPageDetail, 'title' | 'nav_label' | 'intro' | 'seo_title' | 'seo_description'>;
 
 interface PagePanelProps {
@@ -216,7 +224,9 @@ export function PagePanel({
                   <Input
                     id={`${prefix}-seo-title`}
                     value={values.seo_title[language]}
-                    placeholder={t('pages.panel.toConfirm')}
+                    placeholder={t('pages.panel.seoTitleFallback', {
+                      value: seoFallbackTitle(page, language),
+                    })}
                     disabled={!seoEditable}
                     onChange={(event) => update('seo_title', language, event.target.value)}
                   />
@@ -226,7 +236,9 @@ export function PagePanel({
                     id={`${prefix}-seo-description`}
                     rows={3}
                     value={values.seo_description[language]}
-                    placeholder={t('pages.panel.toConfirm')}
+                    placeholder={t('pages.panel.seoDescriptionFallback', {
+                      value: seoFallbackTitle(page, language),
+                    })}
                     disabled={!seoEditable}
                     onChange={(event) => update('seo_description', language, event.target.value)}
                   />

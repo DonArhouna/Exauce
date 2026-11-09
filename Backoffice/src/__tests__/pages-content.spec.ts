@@ -107,6 +107,29 @@ describe('contenu réel des pages', () => {
     }
   });
 
+  it('charge les titres et descriptions SEO publics réellement définis en FR et EN', () => {
+    const byKey = (key: string) => {
+      const summary = listPages().find((page) => page.page_key === key)!;
+      return pageDetail(findPage(summary.id)!);
+    };
+
+    expect(byKey('home').seo_title).toEqual({
+      fr: 'EXAUCE Audit & Conseils SAS — Expertise comptable, audit et conseil à Dakar',
+      en: 'EXAUCE Audit & Conseils SAS — Accounting, audit and advisory services in Dakar',
+    });
+    expect(byKey('home').seo_description).toEqual({
+      fr: 'Cabinet d’expertise comptable, de conseil, d’audit et de formation à Dakar, Sénégal — membre de l’ONECCA du Sénégal.',
+      en: 'Accounting, consulting, audit and training firm in Dakar, Senegal — member of the ONECCA of Senegal.',
+    });
+    expect(byKey('contact').seo_description).toEqual({
+      fr: 'Nos implantations et coordonnées directes.',
+      en: 'Our locations and direct contact details.',
+    });
+    expect(byKey('services').seo_title.fr).toBe('Services — EXAUCE Audit & Conseils');
+    expect(byKey('services').seo_description).toEqual({ fr: '', en: '' });
+    expect(byKey('partners').seo_title).toEqual({ fr: '', en: '' });
+  });
+
   it('enregistre le contenu et le SEO par langue sans modifier l’autre langue', () => {
     const services = listPages().find((page) => page.page_key === 'services')!;
     const detail = pageDetail(findPage(services.id)!);
@@ -126,7 +149,21 @@ describe('contenu réel des pages', () => {
     expect(seo.ok).toBe(true);
     if (!seo.ok) return;
     expect(seo.value.seo_title.en).toBe('SEO title to confirm');
-    expect(seo.value.seo_title.fr).toBe('');
+    expect(seo.value.seo_title.fr).toBe(detail.seo_title.fr);
+    expect(seo.value.seo_description).toEqual(detail.seo_description);
+
+    const seoFr = updatePageSeo(services.id, 'fr', {
+      revision: seo.value.revision,
+      seo_description: 'Description française testée',
+    });
+    expect(seoFr.ok).toBe(true);
+    if (!seoFr.ok) return;
+    expect(seoFr.value.seo_description).toEqual({
+      fr: 'Description française testée',
+      en: detail.seo_description.en,
+    });
+    expect(seoFr.value.title).toEqual(detail.title);
+    expect(seoFr.value.intro).toEqual(content.value.intro);
   });
 
   it('reprend les textes affichés par le site', () => {

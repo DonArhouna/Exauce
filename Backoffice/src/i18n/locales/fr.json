@@ -468,6 +468,8 @@
       "contentLocked": "Votre rôle ne permet pas de modifier le contenu de cette langue.",
       "seoLocked": "Votre rôle ne permet pas de modifier le SEO dans cette langue.",
       "toConfirm": "À confirmer",
+      "seoTitleFallback": "Repli Frontend actuel : {{value}}",
+      "seoDescriptionFallback": "Repli Frontend actuel : {{value}}",
       "save": "Enregistrer {{lang}}",
       "discard": "Annuler les modifications",
       "saveError": "Impossible d’enregistrer les champs de page."

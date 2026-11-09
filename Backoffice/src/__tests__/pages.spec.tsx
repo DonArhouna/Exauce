@@ -77,8 +77,12 @@ describe('pages et sections', () => {
     expect(title.value).toBe('Deux grandes familles, une même exigence');
     expect(navLabel.value).toBe('Services');
     expect(intro.value).toContain('focalisation totale');
-    expect(seoTitle.placeholder).toBe('À confirmer');
-    expect(seoDescription.placeholder).toBe('À confirmer');
+    expect(seoTitle.placeholder).toBe(
+      'Repli Frontend actuel : Services — EXAUCE Audit & Conseils',
+    );
+    expect(seoDescription.placeholder).toBe(
+      'Repli Frontend actuel : Services — EXAUCE Audit & Conseils',
+    );
 
     await user.clear(title);
     await user.type(title, 'Nos services d’audit');
@@ -128,7 +132,7 @@ describe('pages et sections', () => {
       patchPageSeo(SERVICES_ID, 'fr', { revision: page.revision, seo_title: 'Unauthorized' }),
     ).rejects.toMatchObject({ status: 403 });
     expect(findPage(SERVICES_ID)?.nav_label.en).toBe('Services');
-    expect(findPage(SERVICES_ID)?.seo_title.fr).toBe('');
+    expect(findPage(SERVICES_ID)?.seo_title.fr).toBe('Services — EXAUCE Audit & Conseils');
   });
 
   it('affiche la colonne EN en lecture seule pour un rédacteur limité au français', async () => {

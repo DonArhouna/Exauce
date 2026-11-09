@@ -468,6 +468,8 @@
       "contentLocked": "Your role cannot edit this language’s page content.",
       "seoLocked": "Your role cannot edit SEO in this language.",
       "toConfirm": "To be confirmed",
+      "seoTitleFallback": "Current Frontend fallback: {{value}}",
+      "seoDescriptionFallback": "Current Frontend fallback: {{value}}",
       "save": "Save {{lang}}",
       "discard": "Discard changes",
       "saveError": "Could not save page fields."
