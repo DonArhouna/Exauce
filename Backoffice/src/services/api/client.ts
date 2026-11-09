@@ -10,7 +10,8 @@ export const API_MODE: ApiMode = (import.meta.env.VITE_API_MODE ?? 'mock') as Ap
 
 const MUTATING: Method[] = ['POST', 'PUT', 'PATCH', 'DELETE'];
 
-function baseUrl(): string {
+/** Base HTTP de l'API selon le mode (exportée pour le téléversement XHR). */
+export function apiBaseUrl(): string {
   if (API_MODE === 'prism') return import.meta.env.VITE_PRISM_BASE_URL ?? 'http://localhost:4010';
   return import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 }
@@ -66,7 +67,7 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
       });
       response = { status: mock.status, body: mock.body, headers: new Headers(mock.headers) };
     } else {
-      const result = await fetch(`${baseUrl()}${path}${buildQuery(options.query)}`, {
+      const result = await fetch(`${apiBaseUrl()}${path}${buildQuery(options.query)}`, {
         method,
         headers,
         credentials: 'include',

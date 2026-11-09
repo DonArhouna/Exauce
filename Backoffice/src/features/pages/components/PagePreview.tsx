@@ -1,0 +1,68 @@
+import { useTranslation } from 'react-i18next';
+import { Badge } from '@/components/ui';
+import type { AdminPageDetail, ContentLang, SectionTypeDef, SectionValues } from '@/services/api/types';
+
+interface PagePreviewProps {
+  page: AdminPageDetail;
+  types: SectionTypeDef[];
+  lang: ContentLang;
+}
+
+/** Texte lisible d'une valeur, jamais de HTML brut. */
+function readable(value: unknown): string {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) =>
+        typeof item === 'object' && item !== null
+          ? Object.values(item as SectionValues).filter(Boolean).join(' — ')
+          : String(item),
+      )
+      .join(' · ');
+  }
+  return typeof value === 'string' ? value : '';
+}
+
+/** Aperçu structurel : ordre des blocs et textes de la langue d'édition. */
+export function PagePreview({ page, types, lang }: PagePreviewProps) {
+  const { t } = useTranslation();
+  const active = page.sections.filter((section) => section.is_active);
+
+  return (
+    <div className="space-y-3 rounded-card border border-line bg-ivory/50 p-3" data-testid="page-preview">
+      <header className="flex flex-wrap items-center gap-2">
+        <h2 className="text-sm font-semibold text-ink">{t('pages.preview.title')}</h2>
+        <Badge tone="info">{lang.toUpperCase()}</Badge>
+        <span className="text-xs text-muted">
+          {t('pages.preview.activeCount', { count: active.length })}
+        </span>
+      </header>
+      {active.length === 0 ? (
+        <p className="text-sm text-muted">{t('pages.preview.empty')}</p>
+      ) : (
+        <ol className="space-y-2">
+          {active.map((section) => {
+            const type = types.find((item) => item.code === section.section_type);
+            const values = section.data[lang] ?? {};
+            return (
+              <li key={section.id} className="rounded-control border border-line bg-surface px-3 py-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  {section.position}. {type ? t(type.labelKey) : section.section_type}
+                </p>
+                <div className="mt-1 space-y-0.5">
+                  {Object.entries(values)
+                    .map(([key, value]) => ({ key, text: readable(value) }))
+                    .filter((entry) => entry.text)
+                    .map((entry) => (
+                      <p key={entry.key} className="truncate text-sm text-ink">
+                        {entry.text}
+                      </p>
+                    ))}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </div>
+  );
+}

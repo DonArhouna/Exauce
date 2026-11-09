@@ -25,7 +25,11 @@
     "empty": "Aucun élément",
     "refresh": "Actualiser",
     "menu": "Menu",
-    "unknownError": "Une erreur inattendue est survenue."
+    "unknownError": "Une erreur inattendue est survenue.",
+    "actions": "Actions",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "retryHint": "Rechargez la page dans un instant."
   },
   "language": {
     "interface": "Langue de l’interface",
@@ -253,6 +257,61 @@
       "done": "Traité",
       "rejected": "Rejeté",
       "anonymized": "Anonymisé"
+    },
+    "list": {
+      "title": "Demandes de contact",
+      "subtitle": "Les demandes reçues par le formulaire du site, avec leur statut et leurs notes internes.",
+      "filters": "Filtres",
+      "search": "Rechercher",
+      "searchPlaceholder": "Référence, nom, e-mail, société…",
+      "from": "Du",
+      "to": "Au",
+      "apply": "Filtrer",
+      "reset": "Réinitialiser",
+      "statusFilter": "Filtrer par statut",
+      "statusAll": "Toutes",
+      "results": "Résultats",
+      "columns": {
+        "reference": "Référence",
+        "contact": "Demandeur",
+        "subject": "Objet",
+        "status": "Statut",
+        "actions": "Actions"
+      },
+      "count": "{{count}} demande(s)",
+      "open": "Ouvrir",
+      "empty": "Aucune demande ne correspond aux filtres",
+      "emptyHint": "Élargissez la recherche ou réinitialisez les filtres.",
+      "loadError": "Impossible de charger les demandes.",
+      "export": "Exporter en CSV",
+      "exporting": "Export en cours…",
+      "exportError": "L’export a échoué."
+    },
+    "detail": {
+      "title": "Détail de la demande",
+      "choose": "Choisissez une demande pour afficher son détail, changer son statut ou ajouter une note.",
+      "close": "Fermer le détail",
+      "loadError": "Impossible de charger cette demande.",
+      "company": "Société",
+      "sector": "Secteur",
+      "source": "Origine",
+      "receivedAt": "Reçue le",
+      "message": "Message",
+      "status": "Statut de la demande",
+      "statusHint": "Le changement est immédiat et laisse une trace dans le journal d’audit.",
+      "statusSaved": "Statut mis à jour.",
+      "statusError": "Le statut n’a pas pu être modifié.",
+      "conflict": "Cette demande a été modifiée entre-temps : son contenu vient d’être rechargé.",
+      "anonymized": "Demande anonymisée : les données personnelles ont été effacées et ne sont plus modifiables.",
+      "notes": "Notes internes",
+      "notesEmpty": "Aucune note pour l’instant.",
+      "addNote": "Ajouter une note",
+      "notePlaceholder": "Contexte, échange téléphonique, prochaine étape…",
+      "noteSubmit": "Enregistrer la note",
+      "noteSaving": "Enregistrement…",
+      "noteSaved": "Note ajoutée.",
+      "noteRequired": "La note ne peut pas être vide.",
+      "noteError": "La note n’a pas pu être enregistrée."
     }
   },
   "audit": {
@@ -265,6 +324,285 @@
       "lead.status": "a changé le statut d’une demande",
       "user.create": "a créé un utilisateur",
       "settings.update": "a mis à jour les paramètres"
+    }
+  },
+  "media": {
+    "kind": {
+      "image": "Image",
+      "pdf": "PDF",
+      "document": "Document"
+    },
+    "unknownType": "Type inconnu",
+    "picker": {
+      "choose": "Choisir un média",
+      "replace": "Remplacer",
+      "remove": "Retirer",
+      "empty": "Aucun média sélectionné.",
+      "title": "Médiathèque",
+      "description": "Choisissez un média existant ou téléversez un fichier.",
+      "search": "Rechercher",
+      "searchPlaceholder": "Nom, texte alternatif…",
+      "upload": "Téléverser",
+      "uploadHint": "Formats : images, PDF et documents.",
+      "accepted": "Formats acceptés : {{types}} · {{size}} maximum.",
+      "progress": "Progression du téléversement",
+      "progressValue": "{{value}} % envoyé",
+      "uploadFailed": "Téléversement refusé",
+      "loadFailed": "Impossible de charger la médiathèque.",
+      "noResult": "Aucun média ne correspond à la recherche."
+    },
+    "errors": {
+      "mime": "Ce format de fichier n’est pas autorisé.",
+      "size": "Le fichier dépasse la taille maximale autorisée.",
+      "infected": "Le fichier a été refusé par l’analyse antivirus.",
+      "upload": "Le téléversement a échoué. Réessayez."
+    },
+    "alt": {
+      "legend": "Texte alternatif",
+      "hint": "Décrivez l’image pour les personnes qui ne la voient pas.",
+      "label": "Texte alternatif ({{language}})",
+      "required": "Le texte alternatif est obligatoire ({{language}}).",
+      "decorative": "Image purement décorative",
+      "decorativeHint": "Aucun texte alternatif ne sera demandé ; à réserver aux visuels sans information.",
+      "missing": "{{count}} langue(s) sans texte alternatif",
+      "publishBlocked": "{{count}} média(s) sans texte alternatif bloquent la publication."
+    }
+  },
+  "video": {
+    "urlPlaceholder": "https://www.youtube.com/watch?v=…",
+    "errors": {
+      "invalid": "Lien invalide : seuls YouTube et Vimeo sont acceptés."
+    },
+    "provider": {
+      "youtube": "YouTube",
+      "vimeo": "Vimeo"
+    },
+    "preview": "Aperçu",
+    "previewTitle": "Aperçu {{provider}}",
+    "privacy": "Aperçu sans cookie publicitaire.",
+    "emptyPreview": "Collez un lien YouTube ou Vimeo pour afficher un aperçu.",
+    "caption": "Légende",
+    "transcription": "Transcription",
+    "transcriptionPlaceholder": "Retranscrivez le contenu parlé…",
+    "captionFor": "Légende ({{language}})",
+    "transcriptionFor": "Transcription ({{language}})"
+  },
+  "gallery": {
+    "count": "{{count}} média(s)",
+    "empty": "Aucun média dans cette galerie.",
+    "moved": "Média déplacé en position {{position}} sur {{total}}.",
+    "removed": "Média retiré ; {{total}} restant(s).",
+    "moveUp": "Monter le média {{position}}",
+    "moveDown": "Descendre le média {{position}}",
+    "remove": "Retirer le média {{position}}",
+    "dragHint": "Glisser pour réordonner, ou utiliser les boutons Monter et Descendre."
+  },
+  "pages": {
+    "list": {
+      "title": "Pages et sections",
+      "subtitle": "Contenu éditorial des pages publiques, bloc par bloc.",
+      "empty": "Aucune page",
+      "emptyHint": "Le contenu éditorial apparaîtra ici.",
+      "loadError": "Impossible de charger les pages.",
+      "open": "Ouvrir",
+      "navPosition": "Navigation · {{position}}",
+      "notInNav": "Hors navigation",
+      "noSection": "Aucun bloc",
+      "sectionCount": "{{count}} bloc(s)",
+      "columns": {
+        "page": "Page",
+        "status": "Statut",
+        "nav": "Navigation",
+        "sections": "Blocs",
+        "actions": "Actions"
+      }
+    },
+    "status": {
+      "draft": "Brouillon",
+      "inReview": "En relecture",
+      "approved": "Approuvée",
+      "published": "Publiée",
+      "archived": "Archivée"
+    },
+    "edit": {
+      "back": "Retour aux pages",
+      "notFound": "Cette page n’existe pas.",
+      "loadError": "Impossible de charger la page.",
+      "revision": "révision {{revision}}",
+      "noSlug": "Aucun slug (page technique)",
+      "bannersPending": "Cette page porte des bandeaux en attente de validation.",
+      "conflict": "Cette page a été modifiée entre-temps. Rechargez pour repartir de la dernière version.",
+      "reload": "Recharger",
+      "unsaved": "Des blocs contiennent des modifications non enregistrées.",
+      "navTitle": "Placement dans la navigation",
+      "inNav": "Afficher dans la navigation",
+      "navPosition": "Position",
+      "sectionsTitle": "Blocs ({{count}})",
+      "addSection": "Ajouter un bloc",
+      "noSections": "Aucun bloc",
+      "noSectionsHint": "Ajoutez un premier bloc pour composer la page.",
+      "actionError": "L’action a échoué.",
+      "leaveTitle": "Quitter sans enregistrer ?",
+      "leaveDescription": "Les modifications d’un ou plusieurs blocs seront perdues.",
+      "leaveConfirm": "Quitter sans enregistrer",
+      "addTitle": "Ajouter un bloc",
+      "addDescription": "Seuls les types éditables dans cette version sont proposés.",
+      "addType": "Type de bloc",
+      "addConfirm": "Ajouter",
+      "deleteTitle": "Supprimer ce bloc ?",
+      "deleteDescription": "Le bloc sera retiré de la page. Cette action est définitive.",
+      "deleteConfirm": "Supprimer"
+    },
+    "sections": {
+      "drag": "Glisser pour réordonner",
+      "inactive": "Inactive",
+      "hiddenOnSite": "Masquée sur le site",
+      "moveUp": "Monter {{name}}",
+      "moveDown": "Descendre {{name}}",
+      "activate": "Activer le bloc",
+      "deactivate": "Désactiver le bloc",
+      "delete": "Supprimer le bloc"
+    },
+    "section": {
+      "langLocked": "Langue non autorisée pour ce compte : lecture seule.",
+      "notEditable": "Ce type de bloc n’est pas encore éditable. Contenu affiché en lecture seule.",
+      "listCount": "{{count}} élément(s)"
+    },
+    "langColumn": "Contenu {{lang}}",
+    "editing": "Langue active",
+    "readOnly": "Lecture seule",
+    "completeness": {
+      "label": "Complétude {{lang}} : {{filled}}/{{total}}"
+    },
+    "form": {
+      "save": "Enregistrer le bloc",
+      "reset": "Annuler",
+      "unsaved": "Modifications non enregistrées",
+      "required": "Champ obligatoire",
+      "tooLong": "{{max}} caractères maximum",
+      "maxLength": "{{max}} caractères maximum",
+      "addItem": "Ajouter un élément",
+      "removeItem": "Retirer cet élément",
+      "saveError": "L’enregistrement du bloc a échoué."
+    },
+    "preview": {
+      "title": "Aperçu de la page",
+      "show": "Afficher l’aperçu",
+      "hide": "Masquer l’aperçu",
+      "empty": "Aucun bloc actif à afficher.",
+      "activeCount": "{{count}} bloc(s) actif(s)"
+    },
+    "workflow": {
+      "submit": "Soumettre à relecture",
+      "approve": "Approuver",
+      "reject": "Rejeter",
+      "publish": "Publier",
+      "none": "Aucune action disponible pour ce statut et vos droits.",
+      "error": "L’action a échoué.",
+      "autoApproval": "Vous ne pouvez pas approuver votre propre soumission.",
+      "comment": "Motif du rejet",
+      "commentRequired": "Le motif est obligatoire.",
+      "rejectTitle": "Rejeter la page",
+      "rejectDescription": "Le motif est transmis au rédacteur."
+    },
+    "fields": {
+      "brand_line1": "Ligne de marque 1",
+      "brand_line2": "Ligne de marque 2",
+      "subtitle": "Sous-titre",
+      "primary_cta": "Bouton principal",
+      "secondary_cta": "Bouton secondaire",
+      "kicker": "Sur-titre",
+      "title": "Titre",
+      "intro": "Introduction",
+      "text": "Texte",
+      "secondary_label": "Libellé secondaire",
+      "items": "Éléments",
+      "value": "Valeur",
+      "label": "Libellé",
+      "body": "Contenu",
+      "banner_text": "Bandeau d’information",
+      "cta_label": "Libellé du bouton",
+      "empty_text": "Texte de repli"
+    },
+    "sectionTypes": {
+      "hero": "En-tête d’accueil",
+      "trust_bar": "Barre de confiance",
+      "about_preview": "Aperçu à propos",
+      "domains_grid": "Grille des domaines",
+      "audit_grid": "Bloc audit",
+      "interventions_grid": "Grille des interventions",
+      "sectors_grid": "Grille des secteurs",
+      "stats": "Chiffres clés",
+      "publications_grid": "Grille des publications",
+      "cta": "Appel à l’action",
+      "page_header": "En-tête de page",
+      "modes": "Modes d’intervention",
+      "values_grid": "Grille des valeurs",
+      "steps": "Étapes",
+      "what_we_do": "Ce que nous faisons",
+      "founder_card": "Carte du fondateur",
+      "interventions_compare": "Comparatif des interventions",
+      "contact_form": "Formulaire de contact",
+      "offices_grid": "Grille des bureaux",
+      "legal_document": "Document légal",
+      "coming_soon": "Bientôt disponible"
+    }
+  },
+  "offices": {
+    "title": "Bureaux",
+    "subtitle": "Implants du cabinet : coordonnées, siège et ordre d'affichage sur le site. Les textes se saisissent en français et en anglais.",
+    "create": "Nouveau bureau",
+    "loadError": "Impossible de charger les bureaux.",
+    "noPhone": "Aucun téléphone",
+    "noEmail": "Aucun e-mail",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "headquarters": "Siège",
+    "columns": {
+      "office": "Bureau",
+      "contact": "Contact",
+      "position": "Ordre",
+      "status": "Statut"
+    },
+    "fields": {
+      "code": "Code",
+      "codeHint": "2 à 8 caractères, lettres, chiffres et tirets.",
+      "position": "Ordre",
+      "positionHint": "Nombre croissant, utilisé par le site.",
+      "email": "E-mail",
+      "phoneFixed": "Téléphone fixe",
+      "phoneMobile": "Téléphone mobile",
+      "mapUrl": "Lien de carte",
+      "mapUrlHint": "Adresse complète commençant par https://.",
+      "flags": "Options",
+      "headquarters": "Définir comme siège",
+      "active": "Bureau actif",
+      "name": "Nom",
+      "city": "Ville",
+      "address": "Adresse",
+      "addressHint": "Une ligne par élément."
+    },
+    "lang": {
+      "fr": "Français",
+      "en": "Anglais"
+    },
+    "form": {
+      "saved": "Bureau enregistré.",
+      "error": "Enregistrement impossible.",
+      "editTitle": "Modifier le bureau",
+      "createTitle": "Nouveau bureau",
+      "description": "Le code est unique ; un seul bureau peut être le siège."
+    },
+    "delete": {
+      "open": "Supprimer {{name}}",
+      "title": "Supprimer ce bureau ?",
+      "description": "{{name}} sera retiré du site. Le siège ne peut pas être supprimé : désignez d'abord son successeur.",
+      "done": "Bureau supprimé.",
+      "error": "Suppression impossible."
+    },
+    "empty": {
+      "title": "Aucun bureau",
+      "description": "Créez le premier bureau pour l'afficher sur le site."
     }
   }
 }

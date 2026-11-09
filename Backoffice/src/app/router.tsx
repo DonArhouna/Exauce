@@ -8,6 +8,10 @@ import ForgotPasswordPage from '@/features/auth/pages/ForgotPasswordPage';
 import LoginPage from '@/features/auth/pages/LoginPage';
 import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage';
 import DashboardPage from '@/features/dashboard/pages/DashboardPage';
+import LeadsPage from '@/features/leads/LeadsPage';
+import OfficesPage from '@/features/offices/OfficesPage';
+import PageEditPage from '@/features/pages/PageEditPage';
+import PagesListPage from '@/features/pages/PagesListPage';
 import { DASHBOARD_PATH } from '@/lib/navigation';
 import { RequireAuth, RequirePermission } from './guards';
 
@@ -25,15 +29,48 @@ export function AppRoutes() {
 
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
+          {/* Tableau de bord : tout utilisateur authentifié ; les blocs sont
+              filtrés par permission côté UI et côté serveur. */}
+          <Route path={DASHBOARD_PATH} element={<DashboardPage />} />
           <Route
-            path={DASHBOARD_PATH}
+            path="/pages"
             element={
-              <RequirePermission module="audit" action="view">
-                <DashboardPage />
+              <RequirePermission module="pages" action="view">
+                <PagesListPage />
               </RequirePermission>
             }
           />
-          {NAV_ITEMS.filter((item) => item.path !== DASHBOARD_PATH).map((item) => (
+          <Route
+            path="/pages/:id"
+            element={
+              <RequirePermission module="pages" action="view">
+                <PageEditPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/demandes"
+            element={
+              <RequirePermission module="leads" action="view">
+                <LeadsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/bureaux"
+            element={
+              <RequirePermission module="offices" action="view">
+                <OfficesPage />
+              </RequirePermission>
+            }
+          />
+          {NAV_ITEMS.filter(
+            (item) =>
+              item.path !== DASHBOARD_PATH &&
+              item.path !== '/pages' &&
+              item.path !== '/demandes' &&
+              item.path !== '/bureaux',
+          ).map((item) => (
             <Route
               key={item.path}
               path={item.path}

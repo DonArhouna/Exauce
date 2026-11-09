@@ -13,7 +13,7 @@
     "api:types": "openapi-typescript ../Analyse/modelisation/docs/openapi.yaml -o src/services/api/generated/schema.d.ts"
   },
   "dependencies": {
-    "@hookform/resolvers": "^3.9.0",
+    "@hookform/resolvers": "7.0.1",
     "@tanstack/react-query": "^5.59.16",
     "clsx": "^2.1.1",
     "i18next": "^23.16.4",
@@ -23,13 +23,14 @@
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.53.1",
     "react-i18next": "^15.1.1",
-    "react-router-dom": "^6.27.0",
+    "react-router-dom": "7.18.5",
     "tailwind-merge": "^2.5.4",
-    "zod": "^3.23.8"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",
     "@stoplight/prism-cli": "^5.12.0",
+    "@stoplight/spectral-cli": "^6.17.0",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",

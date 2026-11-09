@@ -49,6 +49,7 @@ développement complet sans backend.
 | `fondateur@exauceac.com` | `exauce-fondateur-2026` | super-administrateur (toutes les entrées) |
 | `editeur@exauceac.com` | `exauce-editeur-2026` | éditeur (navigation restreinte) |
 | `mfa@exauceac.com` | `exauce-mfa-2026` | MFA activé, code `123456` |
+| `lecteur@exauceac.com` | `exauce-lecteur-2026` | démo uniquement : `pages:view` + `publications:view` (dashboard sans `leads:view` ni `audit:view`) |
 | invitation | jeton `exauce-invitation-demo` | activation du compte fondateur |
 
 ## Sécurité
@@ -69,7 +70,7 @@ développement complet sans backend.
 src/
   app/            bootstrap, routeur, providers, gardes
   features/       auth, dashboard, contenu, relations, médias, site, administration
-  components/     ui (design system), layout (coque), shared
+  components/     ui (primitives), media (picker, vidéo, galerie), layout (coque), shared
   services/       api (client, endpoints, mock, types générés), auth, realtime
   i18n/           locales FR/EN symétriques
   lib/            utilitaires (cn, RFC 7807, dates, hotkeys)
@@ -91,17 +92,21 @@ src/
 ## Écarts connus avec le contrat OpenAPI
 
 Ces manques sont à porter en pull request sur `openapi.yaml` (revue Backend) ;
-aucun contournement n'est codé ici.
+aucun contournement n'est codé ici. Le détail argumenté est dans
+[`docs/contract-needs-media.md`](docs/contract-needs-media.md).
 
-1. Pas de `GET/POST /admin/publications` : l'écran Publications reste « bientôt
-   disponible » alors que le menu existe.
-2. Pas de `GET /admin/leads/{id}` : le lien profond vers un lead ne peut viser
-   qu'une liste filtrée, pas une fiche.
-3. `x-permission` absent sur de nombreux endpoints admin (`/admin/content/tree`,
-   `/admin/pages`, `/admin/users`, `/admin/media`…) : le mapping RBAC de l'UI
-   s'appuie sur `src/services/auth/permissions.ts`, à aligner avec le registre
-   `GET /admin/permissions`.
+1. **Médiathèque** : `GET /admin/media` n'a ni filtre par date, ni filtre
+   « utilisé / non utilisé », ni champ d'usage ; pas de `PATCH`, pas de
+   remplacement ; `MediaItem.alt` ne porte qu'une langue alors que l'écriture se
+   fait par langue. Aucun écran média n'est codé avant arbitrage.
+2. **Blocs média** : `SectionUpsert.config` est un objet libre, aucun schéma ne
+   décrit un bloc média, une galerie ou une vidéo. Les composants existent, pas
+   l'éditeur de sections.
+3. **Arborescence des services** : les nœuds n'exposent ni `source_key`, ni
+   `position`, ni `is_active` ; aucun endpoint de renommage ni d'activation, et
+   `GET /admin/content/tree` ne renvoie qu'une langue.
 4. Pas d'endpoint de préférences : langue d'interface et langue d'édition sont
    stockées localement (valeurs non sensibles, aucun jeton).
 5. `/admin/search` renvoie un stub `not_implemented` : la palette Ctrl/Cmd+K se
    limite aux entrées de navigation.
+

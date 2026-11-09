@@ -25,7 +25,11 @@
     "empty": "No items",
     "refresh": "Refresh",
     "menu": "Menu",
-    "unknownError": "An unexpected error occurred."
+    "unknownError": "An unexpected error occurred.",
+    "actions": "Actions",
+    "edit": "Edit",
+    "delete": "Delete",
+    "retryHint": "Reload the page in a moment."
   },
   "language": {
     "interface": "Interface language",
@@ -253,6 +257,61 @@
       "done": "Done",
       "rejected": "Rejected",
       "anonymized": "Anonymised"
+    },
+    "list": {
+      "title": "Contact requests",
+      "subtitle": "Requests received through the website form, with their status and internal notes.",
+      "filters": "Filters",
+      "search": "Search",
+      "searchPlaceholder": "Reference, name, email, company…",
+      "from": "From",
+      "to": "To",
+      "apply": "Filter",
+      "reset": "Reset",
+      "statusFilter": "Filter by status",
+      "statusAll": "All",
+      "results": "Results",
+      "columns": {
+        "reference": "Reference",
+        "contact": "Requester",
+        "subject": "Subject",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "count": "{{count}} request(s)",
+      "open": "Open",
+      "empty": "No request matches the filters",
+      "emptyHint": "Widen the search or reset the filters.",
+      "loadError": "Could not load the requests.",
+      "export": "Export as CSV",
+      "exporting": "Exporting…",
+      "exportError": "The export failed."
+    },
+    "detail": {
+      "title": "Request details",
+      "choose": "Select a request to see its details, change its status or add a note.",
+      "close": "Close details",
+      "loadError": "Could not load this request.",
+      "company": "Company",
+      "sector": "Sector",
+      "source": "Source",
+      "receivedAt": "Received",
+      "message": "Message",
+      "status": "Request status",
+      "statusHint": "The change is immediate and recorded in the audit log.",
+      "statusSaved": "Status updated.",
+      "statusError": "The status could not be changed.",
+      "conflict": "This request changed in the meantime: its content has just been reloaded.",
+      "anonymized": "Anonymised request: personal data has been erased and can no longer be edited.",
+      "notes": "Internal notes",
+      "notesEmpty": "No note yet.",
+      "addNote": "Add a note",
+      "notePlaceholder": "Context, phone call, next step…",
+      "noteSubmit": "Save note",
+      "noteSaving": "Saving…",
+      "noteSaved": "Note added.",
+      "noteRequired": "The note cannot be empty.",
+      "noteError": "The note could not be saved."
     }
   },
   "audit": {
@@ -265,6 +324,285 @@
       "lead.status": "changed a request status",
       "user.create": "created a user",
       "settings.update": "updated settings"
+    }
+  },
+  "media": {
+    "kind": {
+      "image": "Image",
+      "pdf": "PDF",
+      "document": "Document"
+    },
+    "unknownType": "Unknown type",
+    "picker": {
+      "choose": "Choose a media file",
+      "replace": "Replace",
+      "remove": "Remove",
+      "empty": "No media selected.",
+      "title": "Media library",
+      "description": "Pick an existing file or upload a new one.",
+      "search": "Search",
+      "searchPlaceholder": "Name, alternative text…",
+      "upload": "Upload",
+      "uploadHint": "Formats: images, PDF and documents.",
+      "accepted": "Accepted formats: {{types}} · {{size}} maximum.",
+      "progress": "Upload progress",
+      "progressValue": "{{value}}% sent",
+      "uploadFailed": "Upload rejected",
+      "loadFailed": "The media library could not be loaded.",
+      "noResult": "No media matches this search."
+    },
+    "errors": {
+      "mime": "This file format is not allowed.",
+      "size": "The file exceeds the maximum allowed size.",
+      "infected": "The file was rejected by the antivirus scan.",
+      "upload": "The upload failed. Try again."
+    },
+    "alt": {
+      "legend": "Alternative text",
+      "hint": "Describe the image for people who cannot see it.",
+      "label": "Alternative text ({{language}})",
+      "required": "Alternative text is required ({{language}}).",
+      "decorative": "Purely decorative image",
+      "decorativeHint": "No alternative text will be asked for; reserve this for visuals without information.",
+      "missing": "{{count}} language(s) without alternative text",
+      "publishBlocked": "{{count}} media item(s) without alternative text block publishing."
+    }
+  },
+  "video": {
+    "urlPlaceholder": "https://www.youtube.com/watch?v=…",
+    "errors": {
+      "invalid": "Invalid link: only YouTube and Vimeo are accepted."
+    },
+    "provider": {
+      "youtube": "YouTube",
+      "vimeo": "Vimeo"
+    },
+    "preview": "Preview",
+    "previewTitle": "{{provider}} preview",
+    "privacy": "Cookie-free preview.",
+    "emptyPreview": "Paste a YouTube or Vimeo link to see a preview.",
+    "caption": "Caption",
+    "transcription": "Transcript",
+    "transcriptionPlaceholder": "Transcribe the spoken content…",
+    "captionFor": "Caption ({{language}})",
+    "transcriptionFor": "Transcript ({{language}})"
+  },
+  "gallery": {
+    "count": "{{count}} item(s)",
+    "empty": "No media in this gallery.",
+    "moved": "Media moved to position {{position}} of {{total}}.",
+    "removed": "Media removed; {{total}} remaining.",
+    "moveUp": "Move media {{position}} up",
+    "moveDown": "Move media {{position}} down",
+    "remove": "Remove media {{position}}",
+    "dragHint": "Drag to reorder, or use the Move up and Move down buttons."
+  },
+  "pages": {
+    "list": {
+      "title": "Pages and sections",
+      "subtitle": "Editorial content of the public pages, block by block.",
+      "empty": "No page",
+      "emptyHint": "Editorial content will appear here.",
+      "loadError": "Could not load the pages.",
+      "open": "Open",
+      "navPosition": "Navigation · {{position}}",
+      "notInNav": "Not in navigation",
+      "noSection": "No block",
+      "sectionCount": "{{count}} block(s)",
+      "columns": {
+        "page": "Page",
+        "status": "Status",
+        "nav": "Navigation",
+        "sections": "Blocks",
+        "actions": "Actions"
+      }
+    },
+    "status": {
+      "draft": "Draft",
+      "inReview": "In review",
+      "approved": "Approved",
+      "published": "Published",
+      "archived": "Archived"
+    },
+    "edit": {
+      "back": "Back to pages",
+      "notFound": "This page does not exist.",
+      "loadError": "Could not load the page.",
+      "revision": "revision {{revision}}",
+      "noSlug": "No slug (technical page)",
+      "bannersPending": "This page has notices pending approval.",
+      "conflict": "This page was changed in the meantime. Reload to start from the latest version.",
+      "reload": "Reload",
+      "unsaved": "Some blocks have unsaved changes.",
+      "navTitle": "Navigation placement",
+      "inNav": "Show in navigation",
+      "navPosition": "Position",
+      "sectionsTitle": "Blocks ({{count}})",
+      "addSection": "Add a block",
+      "noSections": "No block",
+      "noSectionsHint": "Add a first block to build the page.",
+      "actionError": "The action failed.",
+      "leaveTitle": "Leave without saving?",
+      "leaveDescription": "Changes to one or more blocks will be lost.",
+      "leaveConfirm": "Leave without saving",
+      "addTitle": "Add a block",
+      "addDescription": "Only types editable in this version are listed.",
+      "addType": "Block type",
+      "addConfirm": "Add",
+      "deleteTitle": "Delete this block?",
+      "deleteDescription": "The block will be removed from the page. This cannot be undone.",
+      "deleteConfirm": "Delete"
+    },
+    "sections": {
+      "drag": "Drag to reorder",
+      "inactive": "Inactive",
+      "hiddenOnSite": "Hidden on the site",
+      "moveUp": "Move {{name}} up",
+      "moveDown": "Move {{name}} down",
+      "activate": "Activate block",
+      "deactivate": "Deactivate block",
+      "delete": "Delete block"
+    },
+    "section": {
+      "langLocked": "Language not allowed for this account: read-only.",
+      "notEditable": "This block type is not editable yet. Content shown read-only.",
+      "listCount": "{{count}} item(s)"
+    },
+    "langColumn": "{{lang}} content",
+    "editing": "Active language",
+    "readOnly": "Read-only",
+    "completeness": {
+      "label": "{{lang}} completeness: {{filled}}/{{total}}"
+    },
+    "form": {
+      "save": "Save block",
+      "reset": "Discard",
+      "unsaved": "Unsaved changes",
+      "required": "Required field",
+      "tooLong": "{{max}} characters maximum",
+      "maxLength": "{{max}} characters maximum",
+      "addItem": "Add an item",
+      "removeItem": "Remove this item",
+      "saveError": "Saving the block failed."
+    },
+    "preview": {
+      "title": "Page preview",
+      "show": "Show preview",
+      "hide": "Hide preview",
+      "empty": "No active block to show.",
+      "activeCount": "{{count}} active block(s)"
+    },
+    "workflow": {
+      "submit": "Submit for review",
+      "approve": "Approve",
+      "reject": "Reject",
+      "publish": "Publish",
+      "none": "No action available for this status and your rights.",
+      "error": "The action failed.",
+      "autoApproval": "You cannot approve your own submission.",
+      "comment": "Rejection reason",
+      "commentRequired": "A reason is required.",
+      "rejectTitle": "Reject the page",
+      "rejectDescription": "The reason is sent to the editor."
+    },
+    "fields": {
+      "brand_line1": "Brand line 1",
+      "brand_line2": "Brand line 2",
+      "subtitle": "Subtitle",
+      "primary_cta": "Primary button",
+      "secondary_cta": "Secondary button",
+      "kicker": "Kicker",
+      "title": "Title",
+      "intro": "Introduction",
+      "text": "Text",
+      "secondary_label": "Secondary label",
+      "items": "Items",
+      "value": "Value",
+      "label": "Label",
+      "body": "Body",
+      "banner_text": "Notice banner",
+      "cta_label": "Button label",
+      "empty_text": "Fallback text"
+    },
+    "sectionTypes": {
+      "hero": "Home hero",
+      "trust_bar": "Trust bar",
+      "about_preview": "About preview",
+      "domains_grid": "Domains grid",
+      "audit_grid": "Audit block",
+      "interventions_grid": "Interventions grid",
+      "sectors_grid": "Sectors grid",
+      "stats": "Key figures",
+      "publications_grid": "Publications grid",
+      "cta": "Call to action",
+      "page_header": "Page header",
+      "modes": "Engagement modes",
+      "values_grid": "Values grid",
+      "steps": "Steps",
+      "what_we_do": "What we do",
+      "founder_card": "Founder card",
+      "interventions_compare": "Interventions comparison",
+      "contact_form": "Contact form",
+      "offices_grid": "Offices grid",
+      "legal_document": "Legal document",
+      "coming_soon": "Coming soon"
+    }
+  },
+  "offices": {
+    "title": "Offices",
+    "subtitle": "Firm locations: contact details, head office and display order on the site. Texts are entered in French and English.",
+    "create": "New office",
+    "loadError": "Unable to load offices.",
+    "noPhone": "No phone",
+    "noEmail": "No email",
+    "active": "Active",
+    "inactive": "Inactive",
+    "headquarters": "Head office",
+    "columns": {
+      "office": "Office",
+      "contact": "Contact",
+      "position": "Order",
+      "status": "Status"
+    },
+    "fields": {
+      "code": "Code",
+      "codeHint": "2 to 8 characters: letters, digits and dashes.",
+      "position": "Order",
+      "positionHint": "Ascending number used by the site.",
+      "email": "Email",
+      "phoneFixed": "Landline",
+      "phoneMobile": "Mobile",
+      "mapUrl": "Map link",
+      "mapUrlHint": "Full address starting with https://.",
+      "flags": "Options",
+      "headquarters": "Set as head office",
+      "active": "Active office",
+      "name": "Name",
+      "city": "City",
+      "address": "Address",
+      "addressHint": "One line per item."
+    },
+    "lang": {
+      "fr": "French",
+      "en": "English"
+    },
+    "form": {
+      "saved": "Office saved.",
+      "error": "Could not save the office.",
+      "editTitle": "Edit office",
+      "createTitle": "New office",
+      "description": "The code is unique; only one office can be the head office."
+    },
+    "delete": {
+      "open": "Delete {{name}}",
+      "title": "Delete this office?",
+      "description": "{{name}} will be removed from the site. The head office cannot be deleted: designate a successor first.",
+      "done": "Office deleted.",
+      "error": "Delete failed."
+    },
+    "empty": {
+      "title": "No office yet",
+      "description": "Create the first office to publish it on the site."
     }
   }
 }

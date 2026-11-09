@@ -3,8 +3,12 @@ import type {
   AdminSessionUser,
   Permission,
   PublicationJob,
+  MediaItem,
   PublicationSiteStatus,
 } from '../types';
+import { resetPages } from './pages';
+import { resetLeads } from './leads';
+import { resetOffices } from './offices';
 
 export interface MockAccount {
   user: AdminSessionUser;
@@ -76,6 +80,7 @@ const EDITOR_PERMISSIONS: Permission[] = [
   'publications:edit',
   'media:view',
   'media:create',
+  'media:edit',
   'offices:view',
   'team:view',
   'settings:view',
@@ -85,6 +90,44 @@ const EDITOR_PERMISSIONS: Permission[] = [
   const [module, action] = pair.split(':');
   return { module, action, lang: null };
 });
+
+const LECTEUR_PERMISSIONS: Permission[] = [
+  'pages:view',
+  'publications:view',
+].map((pair) => {
+  const [module, action] = pair.split(':');
+  return { module, action, lang: null };
+});
+
+/**
+ * Administrateur : matrice arbitrée par le propriétaire (doc 03 §1) — pages,
+ * tree, publications, users, offices, team, settings, seo, audit, media, leads.
+ * Le seed Backend est en retard sur cette décision (voir docs/mock-divergences.md).
+ */
+const ADMIN_MODULES = [
+  'pages',
+  'tree',
+  'publications',
+  'users',
+  'offices',
+  'team',
+  'settings',
+  'seo',
+  'audit',
+  'media',
+  'leads',
+];
+
+const ADMIN_PERMISSIONS: Permission[] = ADMIN_MODULES.flatMap((module) =>
+  ACTIONS.map((action) => ({ module, action, lang: null })),
+);
+
+/** Rédacteur limité au français : vérifie le RBAC par langue. */
+const EDITOR_FR_PERMISSIONS: Permission[] = [
+  { module: 'pages', action: 'view', lang: 'fr' },
+  { module: 'pages', action: 'edit', lang: 'fr' },
+  { module: 'pages', action: 'delete', lang: 'fr' },
+];
 
 function makeUser(
   id: string,
@@ -139,6 +182,40 @@ function createInitialAccounts(): MockAccount[] {
         { mfaEnabled: true },
       ),
       password: 'exauce-mfa-2026',
+    },
+    {
+      user: makeUser(
+        '66666666-6666-4666-8666-666666666666',
+        'admin@exauceac.com',
+        'Compte administrateur',
+        ['admin'],
+        ADMIN_PERMISSIONS,
+      ),
+      password: 'exauce-admin-2026',
+    },
+    {
+      // Démo : rédacteur restreint au français, pour vérifier la lecture seule
+      // de la colonne EN et le refus serveur sur la langue non autorisée.
+      user: makeUser(
+        '77777777-7777-4777-8777-777777777777',
+        'redacteur-fr@exauceac.com',
+        'Compte rédacteur FR',
+        ['editor'],
+        EDITOR_FR_PERMISSIONS,
+      ),
+      password: 'exauce-redacteur-fr-2026',
+    },
+    {
+      // Démo uniquement : compte restreint (ni leads:view, ni audit:view) pour
+      // vérifier que le tableau de bord reste accessible et filtre ses blocs.
+      user: makeUser(
+        '55555555-5555-4555-8555-555555555555',
+        'lecteur@exauceac.com',
+        'Compte lecteur',
+        ['reader'],
+        LECTEUR_PERMISSIONS,
+      ),
+      password: 'exauce-lecteur-2026',
     },
     {
       user: makeUser(
@@ -371,6 +448,133 @@ export function triggerMockPublication(): PublicationJob | null {
   return job;
 }
 
+
+/** Visuel de démonstration (démo uniquement) : SVG en data URI, aucun réseau. */
+function demoImage(label: string, from: string, to: string): string {
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="320" viewBox="0 0 480 320">` +
+    `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">` +
+    `<stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="${to}"/></linearGradient></defs>` +
+    `<rect width="480" height="320" fill="url(#g)"/>` +
+    `<text x="240" y="170" text-anchor="middle" font-family="Georgia, serif" font-size="26" fill="#ffffff">${label}</text>` +
+    `</svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+/** Médiathèque de démonstration (démo uniquement). */
+function initialMedia(): MediaItem[] {
+  return [
+    {
+      id: 'eeeeeeee-0001-4001-8001-000000000001',
+      kind: 'image',
+      storage_key: 'demo/2026/10/accueil-hero.jpg',
+      url: demoImage('Accueil — hero', '#0F766E', '#134E4A'),
+      mime: 'image/jpeg',
+      size_bytes: 184_320,
+      status: 'active',
+      alt: 'Façade du cabinet EXAUCE à Dakar',
+      caption: null,
+      created_at: '2026-10-28T08:00:00Z',
+    },
+    {
+      id: 'eeeeeeee-0002-4002-8002-000000000002',
+      kind: 'image',
+      storage_key: 'demo/2026/10/equipe-atelier.jpg',
+      url: demoImage('Équipe — atelier', '#B45309', '#78350F'),
+      mime: 'image/jpeg',
+      size_bytes: 256_000,
+      status: 'active',
+      alt: 'Atelier de travail de l’équipe EXAUCE',
+      caption: 'Atelier interne, octobre 2026',
+      created_at: '2026-10-29T10:15:00Z',
+    },
+    {
+      id: 'eeeeeeee-0003-4003-8003-000000000003',
+      kind: 'pdf',
+      storage_key: 'demo/2026/10/plaquette-exauce.pdf',
+      url: 'data:application/pdf;base64,JVBERi0xLjQK',
+      mime: 'application/pdf',
+      size_bytes: 921_600,
+      status: 'active',
+      alt: null,
+      caption: 'Plaquette institutionnelle 2026',
+      created_at: '2026-10-30T14:40:00Z',
+    },
+  ];
+}
+
+/** Contenus qui référencent un média (démo uniquement) : bloque la suppression. */
+function initialMediaUsages(): Record<string, string[]> {
+  return {
+    'eeeeeeee-0001-4001-8001-000000000001': ['Accueil — section « Hero »'],
+    'eeeeeeee-0002-4002-8002-000000000002': ['À propos — section « Équipe »'],
+  };
+}
+
+let media = initialMedia();
+let mediaUsages = initialMediaUsages();
+
+export function listMockMedia(query: { kind?: string; search?: string; limit: number; offset: number }) {
+  const search = (query.search ?? '').trim().toLowerCase();
+  const filtered = media.filter((item) => {
+    if (item.status === 'deleted') return false;
+    if (query.kind && item.kind !== query.kind) return false;
+    if (!search) return true;
+    return (
+      (item.alt ?? '').toLowerCase().includes(search) ||
+      (item.storage_key ?? '').toLowerCase().includes(search) ||
+      (item.kind ?? '').toLowerCase().includes(search)
+    );
+  });
+  return { items: filtered.slice(query.offset, query.offset + query.limit), total: filtered.length };
+}
+
+export function findMockMedia(id: string): MediaItem | undefined {
+  return media.find((item) => item.id === id && item.status !== 'deleted');
+}
+
+export function getMockMediaUsages(id: string): { label: string }[] {
+  return (mediaUsages[id] ?? []).map((label) => ({ label }));
+}
+
+/** Ajout d'un média téléversé, ou null si le type est refusé. */
+export function createMockMedia(input: {
+  filename: string;
+  mime: string;
+  size_bytes: number;
+  kind: 'image' | 'pdf' | 'document';
+}): MediaItem | null {
+  const ordinal = media.length + 1;
+  const id = `eeeeeeee-${String(ordinal).padStart(4, '0')}-4001-8001-${String(ordinal).padStart(12, '0')}`;
+  const item: MediaItem = {
+    id,
+    kind: input.kind,
+    storage_key: `demo/2026/11/${input.filename}`,
+    url:
+      input.kind === 'image'
+        ? demoImage(input.filename, '#0E7490', '#155E75')
+        : `data:${input.mime};base64,`,
+    mime: input.mime,
+    size_bytes: input.size_bytes,
+    status: 'active',
+    alt: null,
+    caption: null,
+    created_at: new Date().toISOString(),
+  };
+  media = [item, ...media];
+  return item;
+}
+
+export type MockDeleteMedia = 'deleted' | 'not_found' | 'in_use';
+
+export function deleteMockMedia(id: string): MockDeleteMedia {
+  const item = findMockMedia(id);
+  if (!item) return 'not_found';
+  if ((mediaUsages[id] ?? []).length > 0) return 'in_use';
+  media = media.filter((entry) => entry.id !== id);
+  return 'deleted';
+}
+
 /** Remet le backend mock dans son état initial. */
 export function resetMockBackend(): void {
   buildTimers.forEach((timer) => window.clearTimeout(timer));
@@ -382,4 +586,9 @@ export function resetMockBackend(): void {
   notifications = initialNotifications();
   publicationJobs = initialJobs();
   publicationStatus = initialStatus();
+  media = initialMedia();
+  mediaUsages = initialMediaUsages();
+  resetPages();
+  resetLeads();
+  resetOffices();
 }
