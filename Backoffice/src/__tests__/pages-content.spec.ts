@@ -1,5 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { listPages, findPage, pageDetail, resetPages, updateSection } from '@/services/api/mock/pages';
+import {
+  listPages,
+  findPage,
+  pageDetail,
+  resetPages,
+  transitionPage,
+  updatePageContent,
+  updatePageSeo,
+  updateSection,
+} from '@/services/api/mock/pages';
 import { listOffices, resetOffices } from '@/services/api/mock/offices';
 import type { AdminSection, SectionValues } from '@/services/api/types';
 
@@ -74,12 +83,52 @@ describe('contenu réel des pages', () => {
     expect(summaries.filter((page) => page.is_in_nav)).toHaveLength(8);
     expect(summaries.reduce((total, page) => total + page.section_count, 0)).toBe(32);
 
+    const pending = summaries
+      .filter((page) => findPage(page.id)?.banners_pending)
+      .map((page) => page.page_key);
+    expect(pending).toEqual(['legal_notice']);
+
     const partners = summaries.find((page) => page.page_key === 'partners');
     expect(partners?.section_count).toBe(4);
 
     // Aucune page ne porte plus le bandeau « bientôt disponible ».
     const all = summaries.flatMap((page) => findPage(page.id)?.sections ?? []);
     expect(all.some((section) => section.section_type === 'coming_soon')).toBe(false);
+  });
+
+  it('reprend les champs des en-têtes dans le panneau Page sans supprimer les blocs avant l’écran', () => {
+    const pagesWithHeader = ['services', 'interventions', 'publications', 'partners', 'about'];
+    for (const pageKey of pagesWithHeader) {
+      const summary = listPages().find((page) => page.page_key === pageKey)!;
+      const page = findPage(summary.id)!;
+      const header = page.sections.find((section) => section.section_type === 'page_header')!;
+      const detail = pageDetail(page);
+      expect(detail.title.fr).toBe(header.data.fr.title);
+      expect(detail.title.en).toBe(header.data.en.title);
+      expect(detail.intro.fr).toBe(header.data.fr.intro);
+      expect(detail.intro.en).toBe(header.data.en.intro);
+      expect(detail.nav_label).toEqual({ fr: page.nav_label.fr, en: page.nav_label.en });
+    }
+
+    const services = listPages().find((page) => page.page_key === 'services')!;
+    const detail = pageDetail(findPage(services.id)!);
+    const content = updatePageContent(services.id, 'fr', {
+      revision: detail.revision,
+      intro: 'Introduction française modifiée',
+    });
+    expect(content.ok).toBe(true);
+    if (!content.ok) return;
+    expect(content.value.intro.fr).toBe('Introduction française modifiée');
+    expect(content.value.intro.en).toBe(detail.intro.en);
+
+    const seo = updatePageSeo(services.id, 'en', {
+      revision: content.value.revision,
+      seo_title: 'SEO title to confirm',
+    });
+    expect(seo.ok).toBe(true);
+    if (!seo.ok) return;
+    expect(seo.value.seo_title.en).toBe('SEO title to confirm');
+    expect(seo.value.seo_title.fr).toBe('');
   });
 
   it('reprend les textes affichés par le site', () => {
@@ -150,6 +199,16 @@ describe('contenu réel des pages', () => {
         }
       }
     }
+  });
+
+  it('ne place pas les bandeaux en attente sur une page autre que legal_notice', () => {
+    const home = listPages().find((page) => page.page_key === 'home')!;
+    const page = findPage(home.id)!;
+    page.status = 'in_review';
+    page.submitted_by = 'auteur';
+    const result = transitionPage(page.id, 'reject', page.revision, 'relecteur', 'À corriger');
+    expect(result.ok).toBe(true);
+    expect(findPage(page.id)?.banners_pending).toBe(false);
   });
 
   it('conserve les sur-titres quand seul le titre est renvoyé', () => {

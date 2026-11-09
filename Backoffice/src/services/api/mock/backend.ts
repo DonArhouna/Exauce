@@ -3,6 +3,7 @@ import type {
   AdminLoginRequest,
   AdminPasswordChangeRequest,
   AdminPasswordResetRequest,
+  ContentLang,
   LeadListQuery,
   LeadStatus,
   OfficeWrite,
@@ -39,7 +40,11 @@ import {
   pageDetail,
   transitionPage,
   updatePage,
+  updatePageContent,
+  updatePageSeo,
   updateSection,
+  type UpdatePageContentInput,
+  type UpdatePageSeoInput,
   type MutationResult,
   type WorkflowAction,
 } from './pages';
@@ -655,6 +660,32 @@ function pagesPatch(request: MockRequest, id: string): MockResponse {
   return result.ok ? { status: 200, body: result.value } : mutationFailure(result);
 }
 
+function pagesContent(request: MockRequest, id: string, lang: ContentLang): MockResponse {
+  const guard = requirePages('pages', 'edit', lang);
+  if ('status' in guard) return guard;
+  const failure = requireSessionAndCsrf(request);
+  if (failure) return failure;
+  const payload = (request.body ?? {}) as UpdatePageContentInput;
+  if (typeof payload.revision !== 'number') {
+    return problem(422, 'VALIDATION_ERROR', 'Révision absente');
+  }
+  const result = updatePageContent(id, lang, payload);
+  return result.ok ? { status: 200, body: result.value } : mutationFailure(result);
+}
+
+function pagesSeo(request: MockRequest, id: string, lang: ContentLang): MockResponse {
+  const guard = requirePages('seo', 'edit', lang);
+  if ('status' in guard) return guard;
+  const failure = requireSessionAndCsrf(request);
+  if (failure) return failure;
+  const payload = (request.body ?? {}) as UpdatePageSeoInput;
+  if (typeof payload.revision !== 'number') {
+    return problem(422, 'VALIDATION_ERROR', 'Révision absente');
+  }
+  const result = updatePageSeo(id, lang, payload);
+  return result.ok ? { status: 200, body: result.value } : mutationFailure(result);
+}
+
 function sectionsCreate(request: MockRequest, pageId: string): MockResponse {
   const guard = requirePages('pages', 'edit');
   if ('status' in guard) return guard;
@@ -759,6 +790,15 @@ export async function mockRequest(request: MockRequest): Promise<MockResponse> {
   const pageWorkflowMatch = request.path.match(/^\/admin\/pages\/([^/]+)\/workflow$/);
   if (pageWorkflowMatch && request.method === 'POST') {
     return pageWorkflow(request, pageWorkflowMatch[1]);
+  }
+
+  const pageContent = request.path.match(/^\/admin\/pages\/([^/]+)\/content\/(fr|en)$/);
+  if (pageContent && request.method === 'PUT') {
+    return pagesContent(request, pageContent[1], pageContent[2] as ContentLang);
+  }
+  const pageSeo = request.path.match(/^\/admin\/pages\/([^/]+)\/seo\/(fr|en)$/);
+  if (pageSeo && request.method === 'PUT') {
+    return pagesSeo(request, pageSeo[1], pageSeo[2] as ContentLang);
   }
 
   const pageSections = request.path.match(/^\/admin\/pages\/([^/]+)\/sections$/);

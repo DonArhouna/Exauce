@@ -27,6 +27,10 @@ export interface SeedPage {
   status: PageStatus;
   banners?: boolean;
   title: [string, string];
+  nav_label: [string, string];
+  intro: [string, string];
+  seo_title: [string, string];
+  seo_description: [string, string];
   slug: [string | null, string | null];
   sections: SeedSection[];
 }
@@ -41,6 +45,22 @@ export const PAGE_SEED: SeedPage[] = [
     "title": [
       "Accueil",
       "Home"
+    ],
+    "nav_label": [
+      "Accueil",
+      "Home"
+    ],
+    "intro": [
+      "",
+      ""
+    ],
+    "seo_title": [
+      "",
+      ""
+    ],
+    "seo_description": [
+      "",
+      ""
     ],
     "slug": [
       "",
@@ -251,8 +271,24 @@ export const PAGE_SEED: SeedPage[] = [
     "system": false,
     "status": "published",
     "title": [
+      "Deux grandes familles, une même exigence",
+      "Two great families, one standard of excellence"
+    ],
+    "nav_label": [
       "Services",
       "Services"
+    ],
+    "intro": [
+      "EXAUCE Audit & Conseils SAS aide ses clients à solutionner leurs problèmes les plus complexes et à améliorer systématiquement leurs performances acquises. Tous basés sur les technologies du numérique, nos services d'accompagnement et d'audit externes assurent aux clients une focalisation totale sur leurs compétences et savoir-faire, tout en leur ouvrant la voie vers la nouvelle sphère d'évolution des entreprises.",
+      "EXAUCE Audit & Conseils SAS helps its clients solve their most complex problems and systematically improve their acquired performance. All based on digital technologies, our external support and audit services ensure clients a total focus on their skills and know-how, while opening the way to the new sphere of business development."
+    ],
+    "seo_title": [
+      "",
+      ""
+    ],
+    "seo_description": [
+      "",
+      ""
     ],
     "slug": [
       "services",
@@ -359,6 +395,22 @@ export const PAGE_SEED: SeedPage[] = [
       "Interventions",
       "Interventions"
     ],
+    "nav_label": [
+      "Interventions",
+      "Interventions"
+    ],
+    "intro": [
+      "EXAUCE Audit & Conseils SAS aide ses clients de manière innovante, par le biais d'interventions récurrentes et ponctuelles.",
+      "EXAUCE Audit & Conseils SAS helps its clients in an innovative way, through recurring and one-off interventions."
+    ],
+    "seo_title": [
+      "",
+      ""
+    ],
+    "seo_description": [
+      "",
+      ""
+    ],
     "slug": [
       "interventions",
       "interventions"
@@ -438,6 +490,22 @@ export const PAGE_SEED: SeedPage[] = [
       "Secteurs",
       "Sectors"
     ],
+    "nav_label": [
+      "Secteurs",
+      "Sectors"
+    ],
+    "intro": [
+      "",
+      ""
+    ],
+    "seo_title": [
+      "",
+      ""
+    ],
+    "seo_description": [
+      "",
+      ""
+    ],
     "slug": [
       "secteurs",
       "sectors"
@@ -453,6 +521,22 @@ export const PAGE_SEED: SeedPage[] = [
     "title": [
       "Publications",
       "Publications"
+    ],
+    "nav_label": [
+      "Publications",
+      "Publications"
+    ],
+    "intro": [
+      "EXAUCE Audit & Conseils SAS aide ses clients dans la mise à jour et à niveau de leurs informations et connaissances, par le biais de publications régulières dans les différents domaines de gestion d'une organisation. Nos services impliquent également la mise à disposition de publications pertinentes dans divers sujets.",
+      "EXAUCE Audit & Conseils SAS helps its clients update and upgrade their information and knowledge, through regular publications in the different management areas of an organization. Our services also involve the provision of relevant publications in various subjects."
+    ],
+    "seo_title": [
+      "",
+      ""
+    ],
+    "seo_description": [
+      "",
+      ""
     ],
     "slug": [
       "publications",
@@ -482,8 +566,24 @@ export const PAGE_SEED: SeedPage[] = [
     "system": false,
     "status": "published",
     "title": [
+      "Nos partenaires",
+      "Our partners"
+    ],
+    "nav_label": [
       "Partenaires",
       "Partners"
+    ],
+    "intro": [
+      "EXAUCE Audit & Conseils SAS développe des partenariats avec des organisations qui partagent ses valeurs d’exigence, d’innovation et de service aux entreprises.",
+      "EXAUCE Audit & Conseils SAS develops partnerships with organisations that share its values of excellence, innovation and service to businesses."
+    ],
+    "seo_title": [
+      "",
+      ""
+    ],
+    "seo_description": [
+      "",
+      ""
     ],
     "slug": [
       "partenaires",
@@ -555,6 +655,22 @@ export const PAGE_SEED: SeedPage[] = [
     "title": [
       "À propos de nous",
       "About us"
+    ],
+    "nav_label": [
+      "À propos de nous",
+      "About us"
+    ],
+    "intro": [
+      "EXAUCE Audit & Conseils SAS est une société d’expertise comptable, de conseil, d’audit et de formation, créée et dirigée par Monsieur Assane KANE, Expert-Comptable et Financier Diplômé, et inscrite à l’Ordre National des Experts Comptables et Comptables Agréés (ONECCA) du Sénégal, au même titre que son fondateur.",
+      "EXAUCE Audit & Conseils SAS is an accounting, consulting, audit and training firm, created and managed by Mr. Assane KANE, Qualified Chartered Accountant and Finance Professional, and registered with the National Order of Chartered Accountants (ONECCA) of Senegal, alongside its founder."
+    ],
+    "seo_title": [
+      "",
+      ""
+    ],
+    "seo_description": [
+      "",
+      ""
     ],
     "slug": [
       "a-propos",
@@ -661,6 +777,22 @@ export const PAGE_SEED: SeedPage[] = [
       "Contact",
       "Contact"
     ],
+    "nav_label": [
+      "Contact",
+      "Contact"
+    ],
+    "intro": [
+      "",
+      ""
+    ],
+    "seo_title": [
+      "",
+      ""
+    ],
+    "seo_description": [
+      "",
+      ""
+    ],
     "slug": [
       "contact",
       "contact"
@@ -706,6 +838,22 @@ export const PAGE_SEED: SeedPage[] = [
     "title": [
       "Mentions légales",
       "Legal notice"
+    ],
+    "nav_label": [
+      "Mentions légales",
+      "Legal notice"
+    ],
+    "intro": [
+      "",
+      ""
+    ],
+    "seo_title": [
+      "",
+      ""
+    ],
+    "seo_description": [
+      "",
+      ""
     ],
     "slug": [
       "mentions-legales",
@@ -760,6 +908,22 @@ export const PAGE_SEED: SeedPage[] = [
       "Espace Client",
       "Customer area"
     ],
+    "nav_label": [
+      "Espace Client",
+      "Customer Area"
+    ],
+    "intro": [
+      "",
+      ""
+    ],
+    "seo_title": [
+      "",
+      ""
+    ],
+    "seo_description": [
+      "",
+      ""
+    ],
     "slug": [
       "espace-client",
       "customer-area"
@@ -775,6 +939,22 @@ export const PAGE_SEED: SeedPage[] = [
     "title": [
       "Page introuvable",
       "Page not found"
+    ],
+    "nav_label": [
+      "Page introuvable",
+      "Page not found"
+    ],
+    "intro": [
+      "",
+      ""
+    ],
+    "seo_title": [
+      "",
+      ""
+    ],
+    "seo_description": [
+      "",
+      ""
     ],
     "slug": [
       null,

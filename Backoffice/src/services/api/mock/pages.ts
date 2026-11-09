@@ -69,10 +69,10 @@ function materialize(): MockPage[] {
     nav_position: seed.nav,
     is_system: seed.system,
     status: seed.status,
-    nav_label: { fr: seed.title[0], en: seed.title[1] },
-    intro: { fr: '', en: '' },
-    seo_title: { fr: '', en: '' },
-    seo_description: { fr: '', en: '' },
+    nav_label: { fr: seed.nav_label[0], en: seed.nav_label[1] },
+    intro: { fr: seed.intro[0], en: seed.intro[1] },
+    seo_title: { fr: seed.seo_title[0], en: seed.seo_title[1] },
+    seo_description: { fr: seed.seo_description[0], en: seed.seo_description[1] },
     banners_pending: seed.banners ?? false,
     revision: 1,
     submitted_by: null,
@@ -128,14 +128,14 @@ export function pageDetail(page: MockPage): PageDetail {
     nav_position: page.nav_position,
     is_system: page.is_system,
     status: page.status,
-    nav_label: page.nav_label,
-    intro: page.intro,
-    seo_title: page.seo_title,
-    seo_description: page.seo_description,
     banners_pending: page.banners_pending,
     revision: page.revision,
-    title: page.title,
-    slug: page.slug,
+    title: { ...page.title },
+    slug: { ...page.slug },
+    nav_label: { ...page.nav_label },
+    intro: { ...page.intro },
+    seo_title: { ...page.seo_title },
+    seo_description: { ...page.seo_description },
     section_count: page.sections.length,
     sections: [...page.sections].sort((a, b) => a.position - b.position).map(cloneSection),
   };
@@ -183,6 +183,56 @@ export function updatePage(id: string, input: UpdatePageInput): MutationResult<P
     page.nav_position = input.nav_position;
   }
 
+  bump(page);
+  return { ok: true, value: pageDetail(page) };
+}
+
+export interface UpdatePageContentInput {
+  revision: number;
+  title?: string;
+  nav_label?: string;
+  intro?: string;
+}
+
+export interface UpdatePageSeoInput {
+  revision: number;
+  seo_title?: string;
+  seo_description?: string;
+}
+
+export function updatePageContent(
+  id: string,
+  lang: MockLang,
+  input: UpdatePageContentInput,
+): MutationResult<PageDetail> {
+  const page = findPage(id);
+  if (!page) return { ok: false, code: 'NOT_FOUND' };
+  if (page.revision !== input.revision) return { ok: false, code: 'CONFLICT' };
+  const entries = Object.entries(input).filter(([key]) => key !== 'revision');
+  if (entries.length === 0 || entries.some(([, value]) => typeof value !== 'string')) {
+    return { ok: false, code: 'VALIDATION_ERROR', detail: 'Aucun champ de page valide à enregistrer.' };
+  }
+  if (input.title !== undefined) page.title[lang] = input.title;
+  if (input.nav_label !== undefined) page.nav_label[lang] = input.nav_label;
+  if (input.intro !== undefined) page.intro[lang] = input.intro;
+  bump(page);
+  return { ok: true, value: pageDetail(page) };
+}
+
+export function updatePageSeo(
+  id: string,
+  lang: MockLang,
+  input: UpdatePageSeoInput,
+): MutationResult<PageDetail> {
+  const page = findPage(id);
+  if (!page) return { ok: false, code: 'NOT_FOUND' };
+  if (page.revision !== input.revision) return { ok: false, code: 'CONFLICT' };
+  const entries = Object.entries(input).filter(([key]) => key !== 'revision');
+  if (entries.length === 0 || entries.some(([, value]) => typeof value !== 'string')) {
+    return { ok: false, code: 'VALIDATION_ERROR', detail: 'Aucun champ SEO valide à enregistrer.' };
+  }
+  if (input.seo_title !== undefined) page.seo_title[lang] = input.seo_title;
+  if (input.seo_description !== undefined) page.seo_description[lang] = input.seo_description;
   bump(page);
   return { ok: true, value: pageDetail(page) };
 }
@@ -323,10 +373,10 @@ export function transitionPage(
   page.status = transition.to;
   if (action === 'submit_review') page.submitted_by = actorId;
   if (action === 'reject') {
-    page.banners_pending = true;
+    if (page.page_key === 'legal_notice') page.banners_pending = true;
     page.submitted_by = null;
   }
-  if (action === 'approve') page.banners_pending = false;
+  if (action === 'approve' && page.page_key === 'legal_notice') page.banners_pending = false;
   if (action === 'publish') page.submitted_by = null;
   bump(page);
   return { ok: true, value: pageDetail(page) };

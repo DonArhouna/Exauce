@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { resetMockBackend } from '@/services/api/mock/db';
-import { findPage } from '@/services/api/mock/pages';
+import { findPage, listPages } from '@/services/api/mock/pages';
 import { renderApp, signIn } from './harness';
 
 const HOME_ID = 'aaaaaaaa-0001-4001-8001-000000000001';
@@ -29,7 +29,7 @@ describe('pages et sections', () => {
     // En-tête + 11 pages.
     expect(rows).toHaveLength(12);
     expect(within(main).getByRole('link', { name: 'Secteurs' })).toBeInTheDocument();
-    expect(within(main).getByRole('link', { name: 'Partenaires' })).toBeInTheDocument();
+    expect(within(main).getByRole('link', { name: 'Nos partenaires' })).toBeInTheDocument();
     // 8 pages en navigation, 3 hors navigation.
     expect(within(main).getAllByText(/^Navigation · /)).toHaveLength(8);
     expect(within(main).getAllByText('Hors navigation')).toHaveLength(3);
@@ -87,6 +87,11 @@ describe('pages et sections', () => {
     );
 
     expect(await within(main).findByText(/bandeaux en attente/i)).toBeInTheDocument();
+    expect(findPage(LEGAL_ID)?.page_key).toBe('legal_notice');
+    const clientAreaSummary = listPages().find((page) => page.page_key === 'client_area');
+    const clientArea = clientAreaSummary ? findPage(clientAreaSummary.id) : undefined;
+    expect(clientArea?.page_key).toBe('client_area');
+    expect(clientArea?.banners_pending).toBe(false);
 
     await user.click(within(main).getByRole('button', { name: /soumettre à relecture/i }));
 
