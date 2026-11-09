@@ -29,6 +29,7 @@ import type { AdminPageDetail, ContentLang, PageStatus } from '@/services/api/ty
 import { hasPermission } from '@/services/auth/permissions';
 import { useAuth } from '@/services/auth/useAuth';
 import { useEditionLanguage } from '@/services/edition/useEditionLanguage';
+import { PagePanel } from './components/PagePanel';
 import { PagePreview } from './components/PagePreview';
 import { SectionCard } from './components/SectionCard';
 import { WorkflowBar } from './components/WorkflowBar';
@@ -298,6 +299,15 @@ export default function PageEditPage() {
           ) : null}
         </div>
       </section>
+
+      <PagePanel
+        page={page}
+        canEditContent={canEdit}
+        canEditSeo={(contentLang) => hasPermission(permissions, 'seo', 'edit', contentLang)}
+        onSaved={applyPage}
+        onDirtyChange={onDirtyChange}
+        onConflict={() => setConflict(true)}
+      />
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <section className="space-y-3">

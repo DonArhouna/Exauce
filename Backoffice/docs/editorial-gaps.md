@@ -72,3 +72,26 @@ Constats vérifiés sur le site (`/fr` et `/en`) :
   limites) puis Médiathèque.
 - Étape 5 : Arbre des services, Secteurs, Interventions, Équipe, Catégories,
   Partenaires.
+
+## 4. Couverture recalculée après 3a
+
+Périmètre mesuré : métadonnées du panneau Page présentes pour chaque page (`title`, `nav_label`, `intro`, `seo_title`, `seo_description`). Les valeurs SEO restent vides et signalées « À confirmer » tant qu'elles ne sont pas validées ; la disponibilité du champ ne vaut pas validation éditoriale. Les introductions sans texte affiché sur le site ne sont pas proposées à l'édition.
+
+| Page | Métadonnées du panneau couvertes |
+|---|---:|
+| Accueil (`home`) | 5/5 |
+| Services (`services`) | 5/5 |
+| Interventions (`interventions`) | 5/5 |
+| Secteurs (`sectors`) | 5/5 |
+| Publications (`publications`) | 5/5 |
+| Partenaires (`partners`) | 5/5 |
+| À propos (`about`) | 5/5 |
+| Contact (`contact`) | 5/5 |
+| Espace client (`client_area`) | 5/5 |
+| Mentions légales (`legal_notice`) | 5/5 |
+| Page introuvable (`not_found`) | 5/5 |
+| **Total** | **55/55 (100 %)** |
+
+UI, hors périmètre : recherche, sélecteur de langue, pagination, états de chargement/vide/erreur/succès.
+
+Ce taux porte uniquement sur les métadonnées Page. Les champs des blocs déjà représentés dans le mock ne sont pas comptés comme éditables tant que leur formulaire n'est pas livré ; ils restent à traiter en 3b/3c. Les valeurs SEO vides et les introductions de pages sans intro visible restent des décisions éditoriales, pas des champs manquants du schéma.

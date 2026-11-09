@@ -98,7 +98,7 @@ Le contenu du mock n'est plus inventé : il reprend celui du site public
 | # | Écart | Ce que fait le mock | Proposition de contrat |
 |---|---|---|---|
 | 1 | Mutation des champs Page et SEO | contrat étendu en 3a.1 : `PageDetail` expose `nav_label`, `intro`, `seo_title`, `seo_description` par langue ; `PUT /admin/pages/{id}/content/{lang}` et `/seo/{lang}` définissent les droits correspondants | endpoints à implémenter côté Backend avant le mode HTTP |
-| 2 | Cinq blocs `page_header` sont encore dans le seed | leurs titres et intros sont aussi repris par les champs Page ; ils restent jusqu’au panneau et au test de non-perte de 3a.3. La section `coming_soon` n’est pas présente dans le seed | retirer `page_header` après vérification, sans supprimer les gabarits `coming_soon` |
+| 2 | Le seed Backend contient `page_header` | les titres et intros sont migrés dans Page ; les 5 blocs et leur type de catalogue sont retirés du mock après le test exact de non-perte. `coming_soon` reste un gabarit des pages techniques, pas un bloc | aucune modification du contrat ; conserver les gabarits |
 | 3 | `hero` déclare `primary_cta`/`secondary_cta` | champs retirés : le site lit `common.*` | retirer du type, éditer les CTA dans Paramètres |
 | 4 | Les grilles déclarent une introduction | seuls `kicker` + `title` (et `text` pour `audit_grid`) | aligner `section_types.json` |
 | 5 | Pas de page Partenaires | 11ᵉ page + 4 blocs + 8 partenaires de démonstration | ajouter page, types et entité `partner` |

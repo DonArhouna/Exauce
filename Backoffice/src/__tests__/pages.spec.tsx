@@ -2,9 +2,11 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { resetMockBackend } from '@/services/api/mock/db';
 import { findPage, listPages } from '@/services/api/mock/pages';
+import { patchPageContent, patchPageSeo } from '@/services/api/endpoints/pages';
 import { renderApp, signIn } from './harness';
 
 const HOME_ID = 'aaaaaaaa-0001-4001-8001-000000000001';
+const SERVICES_ID = 'aaaaaaaa-0002-4001-8001-000000000002';
 const LEGAL_ID = 'aaaaaaaa-0009-4001-8001-000000000009';
 
 async function openPage(path: string, email: string, password: string) {
@@ -53,6 +55,80 @@ describe('pages et sections', () => {
     expect(subtitles).toHaveLength(2);
     expect((subtitles[0] as HTMLTextAreaElement).value).toContain('solutionner leurs problèmes');
     expect((subtitles[1] as HTMLTextAreaElement).value).toContain('most complex problems');
+  });
+
+  it('édite les champs de page et SEO par langue depuis le panneau Page', async () => {
+    const user = userEvent.setup();
+    const main = await openPage(
+      `/pages/${SERVICES_ID}`,
+      'fondateur@exauceac.com',
+      'exauce-fondateur-2026',
+    );
+    const panel = await within(main).findByTestId('page-panel');
+    const frColumn = within(panel).getByRole('region', { name: 'Contenu FR' });
+    const enColumn = within(panel).getByRole('region', { name: 'Contenu EN' });
+
+    const title = within(frColumn).getByLabelText('Titre de la page') as HTMLInputElement;
+    const navLabel = within(frColumn).getByLabelText('Libellé de navigation') as HTMLInputElement;
+    const intro = within(frColumn).getByLabelText('Introduction') as HTMLTextAreaElement;
+    const seoTitle = within(frColumn).getByLabelText('Titre SEO') as HTMLInputElement;
+    const seoDescription = within(frColumn).getByLabelText('Description SEO') as HTMLTextAreaElement;
+
+    expect(title.value).toBe('Deux grandes familles, une même exigence');
+    expect(navLabel.value).toBe('Services');
+    expect(intro.value).toContain('focalisation totale');
+    expect(seoTitle.placeholder).toBe('À confirmer');
+    expect(seoDescription.placeholder).toBe('À confirmer');
+
+    await user.clear(title);
+    await user.type(title, 'Nos services d’audit');
+    await user.clear(navLabel);
+    await user.type(navLabel, 'Conseil et audit');
+    await user.clear(seoTitle);
+    await user.type(seoTitle, 'Services — EXAUCE');
+    await user.clear(seoDescription);
+    await user.type(seoDescription, 'Conseil et audit à Dakar.');
+    await user.click(within(frColumn).getByRole('button', { name: 'Enregistrer FR' }));
+
+    await waitFor(() => {
+      const page = findPage(SERVICES_ID)!;
+      expect(page.title.fr).toBe('Nos services d’audit');
+      expect(page.nav_label.fr).toBe('Conseil et audit');
+      expect(page.seo_title.fr).toBe('Services — EXAUCE');
+      expect(page.seo_description.fr).toBe('Conseil et audit à Dakar.');
+    });
+    expect((within(enColumn).getByLabelText('Titre de la page') as HTMLInputElement).value).toBe(
+      'Two great families, one standard of excellence',
+    );
+    expect(findPage(SERVICES_ID)?.intro.en).toContain('total focus on their skills');
+  });
+
+  it('verrouille les colonnes selon les permissions de contenu et de SEO', async () => {
+    const main = await openPage(
+      `/pages/${SERVICES_ID}`,
+      'redacteur-fr@exauceac.com',
+      'exauce-redacteur-fr-2026',
+    );
+    const panel = await within(main).findByTestId('page-panel');
+    const frColumn = within(panel).getByRole('region', { name: 'Contenu FR' });
+    const enColumn = within(panel).getByRole('region', { name: 'Contenu EN' });
+
+    expect(within(frColumn).getByLabelText('Titre de la page')).toBeEnabled();
+    expect(within(enColumn).getByLabelText('Titre de la page')).toBeDisabled();
+    expect(within(enColumn).getByText('Votre rôle ne permet pas de modifier le contenu de cette langue.'));
+    expect(within(frColumn).getByLabelText('Titre SEO')).toBeDisabled();
+    expect(within(enColumn).getByLabelText('Titre SEO')).toBeDisabled();
+    expect(within(frColumn).getByText('Votre rôle ne permet pas de modifier le SEO dans cette langue.'));
+
+    const page = findPage(SERVICES_ID)!;
+    await expect(
+      patchPageContent(SERVICES_ID, 'en', { revision: page.revision, nav_label: 'Unauthorized' }),
+    ).rejects.toMatchObject({ status: 403 });
+    await expect(
+      patchPageSeo(SERVICES_ID, 'fr', { revision: page.revision, seo_title: 'Unauthorized' }),
+    ).rejects.toMatchObject({ status: 403 });
+    expect(findPage(SERVICES_ID)?.nav_label.en).toBe('Services');
+    expect(findPage(SERVICES_ID)?.seo_title.fr).toBe('');
   });
 
   it('affiche la colonne EN en lecture seule pour un rédacteur limité au français', async () => {

@@ -73,17 +73,6 @@ const CATALOGUE: SectionTypeDef[] = [
     ],
   },
   {
-    code: 'page_header',
-    labelKey: 'pages.sectionTypes.page_header',
-    usage: 'pages internes',
-    editable: true,
-    fields: [
-      field('kicker', 'text', { maxLength: 40 }),
-      field('title', 'text', { required: true, maxLength: 80 }),
-      field('intro', 'textarea', { maxLength: 600 }),
-    ],
-  },
-  {
     code: 'cta',
     labelKey: 'pages.sectionTypes.cta',
     usage: 'transverse',

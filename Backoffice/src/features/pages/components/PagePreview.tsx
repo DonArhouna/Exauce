@@ -36,6 +36,15 @@ export function PagePreview({ page, types, lang }: PagePreviewProps) {
           {t('pages.preview.activeCount', { count: active.length })}
         </span>
       </header>
+      {page.template !== 'home' ? (
+        <section
+          className="rounded-control border border-line bg-surface px-3 py-2"
+          data-testid="page-preview-heading"
+        >
+          <h3 className="font-semibold text-ink">{page.title[lang]}</h3>
+          {page.intro[lang] ? <p className="mt-1 text-sm text-muted">{page.intro[lang]}</p> : null}
+        </section>
+      ) : null}
       {active.length === 0 ? (
         <p className="text-sm text-muted">{t('pages.preview.empty')}</p>
       ) : (

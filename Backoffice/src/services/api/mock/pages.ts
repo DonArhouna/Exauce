@@ -3,9 +3,9 @@
  * (`Backend/app/seed/payload.py` : `PAGES`, `SECTION_INSTANCES` et
  * `Backend/app/seed/data/section_types.json`).
  *
- * 11 pages dont 8 en navigation, 32 blocs (accueil 10, services 5,
- * interventions 2, à propos 5, publications 1, partenaires 4, contact 2,
- * mentions 3), 23 types de sections. `legal_notice` est en brouillon avec
+ * 11 pages dont 8 en navigation, 27 blocs après migration de `page_header`
+ * (accueil 10, services 4, interventions 1, à propos 4, publications 0,
+ * partenaires 3, contact 2, mentions 3), 22 types de sections. `legal_notice` est en brouillon avec
  * `banners_pending`. Le contenu éditorial vit dans `pagesSeed.ts`.
  *
  * Écarts assumés avec le contrat OpenAPI (documentés dans

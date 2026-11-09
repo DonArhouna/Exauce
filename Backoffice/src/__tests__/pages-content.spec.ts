@@ -11,6 +11,7 @@ import {
 } from '@/services/api/mock/pages';
 import { listOffices, resetOffices } from '@/services/api/mock/offices';
 import type { AdminSection, SectionValues } from '@/services/api/types';
+import { PAGE_HEADER_MIGRATION } from './page-header-migration';
 
 /** Recherche le premier champ texte d'un bloc (hors listes), pour l'aller-retour. */
 function firstTextField(values: SectionValues): string | null {
@@ -65,7 +66,7 @@ describe('contenu réel des pages', () => {
     resetOffices();
   });
 
-  it('décrit les 11 pages du site et leurs 32 blocs', () => {
+  it('décrit les 11 pages du site et leurs 27 blocs après migration des en-têtes', () => {
     const summaries = listPages();
     expect(summaries.map((page) => page.page_key)).toEqual([
       'home',
@@ -81,7 +82,7 @@ describe('contenu réel des pages', () => {
       'not_found',
     ]);
     expect(summaries.filter((page) => page.is_in_nav)).toHaveLength(8);
-    expect(summaries.reduce((total, page) => total + page.section_count, 0)).toBe(32);
+    expect(summaries.reduce((total, page) => total + page.section_count, 0)).toBe(27);
 
     const pending = summaries
       .filter((page) => findPage(page.id)?.banners_pending)
@@ -89,27 +90,24 @@ describe('contenu réel des pages', () => {
     expect(pending).toEqual(['legal_notice']);
 
     const partners = summaries.find((page) => page.page_key === 'partners');
-    expect(partners?.section_count).toBe(4);
+    expect(partners?.section_count).toBe(3);
 
     // Aucune page ne porte plus le bandeau « bientôt disponible ».
     const all = summaries.flatMap((page) => findPage(page.id)?.sections ?? []);
     expect(all.some((section) => section.section_type === 'coming_soon')).toBe(false);
   });
 
-  it('reprend les champs des en-têtes dans le panneau Page sans supprimer les blocs avant l’écran', () => {
-    const pagesWithHeader = ['services', 'interventions', 'publications', 'partners', 'about'];
-    for (const pageKey of pagesWithHeader) {
+  it('ne perd aucun titre ni aucune introduction des anciens blocs page_header', () => {
+    for (const [pageKey, expected] of Object.entries(PAGE_HEADER_MIGRATION)) {
       const summary = listPages().find((page) => page.page_key === pageKey)!;
-      const page = findPage(summary.id)!;
-      const header = page.sections.find((section) => section.section_type === 'page_header')!;
-      const detail = pageDetail(page);
-      expect(detail.title.fr).toBe(header.data.fr.title);
-      expect(detail.title.en).toBe(header.data.en.title);
-      expect(detail.intro.fr).toBe(header.data.fr.intro);
-      expect(detail.intro.en).toBe(header.data.en.intro);
-      expect(detail.nav_label).toEqual({ fr: page.nav_label.fr, en: page.nav_label.en });
+      const detail = pageDetail(findPage(summary.id)!);
+      expect(detail.title).toEqual(expected.title);
+      expect(detail.intro).toEqual(expected.intro);
+      expect(detail.sections.some((section) => section.section_type === 'page_header')).toBe(false);
     }
+  });
 
+  it('enregistre le contenu et le SEO par langue sans modifier l’autre langue', () => {
     const services = listPages().find((page) => page.page_key === 'services')!;
     const detail = pageDetail(findPage(services.id)!);
     const content = updatePageContent(services.id, 'fr', {
