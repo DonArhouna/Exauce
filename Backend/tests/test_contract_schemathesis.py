@@ -27,7 +27,11 @@ from sqlalchemy.engine import make_url
 from app.core.config import get_settings
 from app.main import create_app
 
-schemathesis = pytest.importorskip("schemathesis")
+try:
+    __import__("schemathesis")
+except ImportError:  # pragma: no cover — dépendance native absente ou bloquée
+    # `importorskip` remonte une `ImportError` interne (DLL) au lieu de sauter.
+    pytest.skip("schemathesis non importable sur cette machine", allow_module_level=True)
 
 from schemathesis import GenerationMode  # noqa: E402
 from schemathesis.openapi import from_asgi  # noqa: E402
