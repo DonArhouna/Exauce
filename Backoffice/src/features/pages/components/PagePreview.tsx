@@ -69,6 +69,25 @@ function SectionPreviewContent({
       </article>
     );
   }
+  if (sectionType === 'steps') {
+    const items = Array.isArray(values.items) ? (values.items as SectionValues[]) : [];
+    return (
+      <>
+        <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-muted">{readable(values.kicker)}</p>
+        <ol className="mt-3 space-y-2">
+          {items.map((item, index) => (
+            <li key={`${index}-${readable(item.title)}`} className="flex gap-3 rounded-control border border-line p-3">
+              <span className="text-muted" aria-hidden="true">✓</span>
+              <div>
+                <h4 className="font-semibold text-ink">{readable(item.title)}</h4>
+                <p className="mt-1 whitespace-pre-wrap text-sm text-muted">{readable(item.text)}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </>
+    );
+  }
   return (
     <div className="mt-1 space-y-0.5">
       {Object.entries(values)

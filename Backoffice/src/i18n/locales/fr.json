@@ -555,7 +555,11 @@
       "founderName": "Nom du fondateur",
       "founderRole": "Fonction du fondateur",
       "founderPhotoAlt": "Texte alternatif du portrait",
-      "founderBioComing": "Texte de remplacement de la biographie"
+      "founderBioComing": "Texte de remplacement de la biographie",
+      "stepsKicker": "Sur-titre — Notre manière de travailler",
+      "steps": "Étapes de travail",
+      "stepTitle": "Titre de l’étape",
+      "stepText": "Description de l’étape"
     },
     "sectionTypes": {
       "hero": "En-tête d’accueil",

@@ -555,7 +555,11 @@
       "founderName": "Founder’s name",
       "founderRole": "Founder’s role",
       "founderPhotoAlt": "Portrait alternative text",
-      "founderBioComing": "Biography placeholder text"
+      "founderBioComing": "Biography placeholder text",
+      "stepsKicker": "How we work — kicker",
+      "steps": "Work steps",
+      "stepTitle": "Step title",
+      "stepText": "Step description"
     },
     "sectionTypes": {
       "hero": "Home hero",

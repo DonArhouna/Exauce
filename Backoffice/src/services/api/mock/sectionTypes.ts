@@ -175,6 +175,23 @@ const CATALOGUE: SectionTypeDef[] = [
       field('text', 'textarea', { required: true, maxLength: 800, labelKey: 'pages.fields.whatWeDoText' }),
     ],
   },
+  {
+    code: 'steps',
+    labelKey: 'pages.sectionTypes.steps',
+    usage: 'à propos',
+    editable: true,
+    fields: [
+      field('kicker', 'text', { required: true, maxLength: 80, labelKey: 'pages.fields.stepsKicker' }),
+      field('items', 'list', {
+        required: true,
+        labelKey: 'pages.fields.steps',
+        itemFields: [
+          field('title', 'text', { required: true, maxLength: 120, labelKey: 'pages.fields.stepTitle' }),
+          field('text', 'textarea', { required: true, maxLength: 1200, labelKey: 'pages.fields.stepText' }),
+        ],
+      }),
+    ],
+  },
   gridHeading('domains_grid'),
   gridHeading('audit_grid', [field('text', 'textarea', { maxLength: 400, labelKey: 'pages.fields.intro' })]),
   gridHeading('interventions_grid'),
@@ -187,7 +204,6 @@ const CATALOGUE: SectionTypeDef[] = [
   ...(
     [
       ['values_grid', 'à propos'],
-      ['steps', 'à propos'],
       ['interventions_compare', 'interventions'],
       ['contact_form', 'contact (position 1)'],
       ['offices_grid', 'contact (position 2)'],

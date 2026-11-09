@@ -292,6 +292,50 @@ describe('contenu réel des pages', () => {
     expect(loaded.data.fr).toEqual(loadedFr);
   });
 
+  it('recharge steps en FR/EN et préserve ses trois éléments ordonnés à l’aller-retour', () => {
+    const summary = listPages().find((page) => page.page_key === 'about')!;
+    const page = findPage(summary.id)!;
+    const section = page.sections.find((entry) => entry.section_type === 'steps')!;
+    const originalFr = structuredClone(section.data.fr);
+    const originalEn = structuredClone(section.data.en);
+    const frItems = originalFr.items as SectionValues[];
+    const enItems = originalEn.items as SectionValues[];
+    expect(frItems).toHaveLength(3);
+    expect(enItems).toHaveLength(3);
+    expect((frItems[0].title as string)).toBe('Un cheminement pas à pas');
+    expect((enItems[2].title as string)).toBe('Every kind of organization');
+
+    const reorderedFr = [frItems[1], { ...frItems[0], text: 'Texte FR modifié', preserved: 'unknown' }, frItems[2]];
+    const fr = updateSection(section.id, {
+      revision: page.revision,
+      lang: 'fr',
+      data: { ...originalFr, items: reorderedFr },
+    });
+    expect(fr.ok).toBe(true);
+    if (!fr.ok) return;
+    const loadedFr = findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!.data.fr;
+    expect((loadedFr.items as SectionValues[]).map((item) => item.title)).toEqual([
+      'Pilotes par vos savoir-faire', 'Un cheminement pas à pas', "Toutes les formes d'organisation",
+    ]);
+    expect((loadedFr.items as SectionValues[])[1]).toMatchObject({ text: 'Texte FR modifié', preserved: 'unknown' });
+    expect(findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!.data.en).toEqual(originalEn);
+
+    const freshPage = findPage(summary.id)!;
+    const reorderedEn = [enItems[0], enItems[2], { ...enItems[1], title: 'Led by your know-how' }];
+    const en = updateSection(section.id, {
+      revision: freshPage.revision,
+      lang: 'en',
+      data: { ...originalEn, items: reorderedEn },
+    });
+    expect(en.ok).toBe(true);
+    if (!en.ok) return;
+    const loaded = findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!;
+    expect((loaded.data.en.items as SectionValues[]).map((item) => item.title)).toEqual([
+      'A step-by-step path', 'Every kind of organization', 'Led by your know-how',
+    ]);
+    expect(loaded.data.fr).toEqual(loadedFr);
+  });
+
   it('reprend les textes affichés par le site', () => {
     const home = listPages().find((page) => page.page_key === 'home');
     if (!home) throw new Error('accueil introuvable');

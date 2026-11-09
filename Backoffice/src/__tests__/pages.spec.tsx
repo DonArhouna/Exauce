@@ -397,4 +397,44 @@ describe('pages et sections', () => {
     expect(within(previewSection).getByText('Assane Kane')).toBeInTheDocument();
     expect(within(previewSection).getByText(/Expert-Comptable et Financier/)).toBeInTheDocument();
   });
+
+  it('réordonne steps au clavier et à la souris, sans perdre les cartes en FR/EN', async () => {
+    const user = userEvent.setup();
+    const main = await openPage(`/pages/${ABOUT_ID}`, 'fondateur@exauceac.com', 'exauce-fondateur-2026');
+    const sections = await within(main).findAllByTestId(/^section-/);
+    const steps = sections.find((section) => within(section).queryByText('steps'))!;
+    const lists = within(steps).getAllByRole('group', { name: 'Étapes de travail' });
+    expect(lists).toHaveLength(2);
+    const frList = lists[0];
+    const enList = lists[1];
+    await user.click(within(frList).getByRole('button', { name: 'Déplacer l’élément 1 vers le bas' }));
+
+    const enRows = within(enList).getAllByRole('listitem');
+    const dataTransfer = { effectAllowed: '', setData: vi.fn() };
+    fireEvent.dragStart(enRows[2], { dataTransfer });
+    fireEvent.dragOver(enRows[0], { dataTransfer });
+    fireEvent.drop(enRows[0], { dataTransfer });
+
+    await user.click(within(steps).getByRole('button', { name: 'Enregistrer le bloc' }));
+    await waitFor(() => {
+      const saved = findPage(ABOUT_ID)!.sections.find((section) => section.section_type === 'steps')!;
+      const frItems = saved.data.fr.items as Record<string, string>[];
+      const enItems = saved.data.en.items as Record<string, string>[];
+      expect(frItems).toHaveLength(3);
+      expect(frItems.map((item) => item.title)).toEqual([
+        'Pilotes par vos savoir-faire', 'Un cheminement pas à pas', "Toutes les formes d'organisation",
+      ]);
+      expect(enItems).toHaveLength(3);
+      expect(enItems.map((item) => item.title)).toEqual([
+        'Every kind of organization', 'A step-by-step path', 'Driven by your know-how',
+      ]);
+    });
+    const stepsId = findPage(ABOUT_ID)!.sections.find((section) => section.section_type === 'steps')!.id;
+    const preview = within(main).getByTestId(`preview-section-${stepsId}`);
+    expect(within(preview).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+      expect.stringContaining('Pilotes par vos savoir-faire'),
+      expect.stringContaining('Un cheminement pas à pas'),
+      expect.stringContaining("Toutes les formes d'organisation"),
+    ]);
+  });
 });
