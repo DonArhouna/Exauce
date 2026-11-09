@@ -22,6 +22,45 @@ function readable(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
 
+function SectionPreviewContent({
+  sectionType,
+  values,
+  lang,
+}: {
+  sectionType: string;
+  values: SectionValues;
+  lang: ContentLang;
+}) {
+  if (sectionType === 'modes') {
+    const items = Array.isArray(values.items) ? (values.items as SectionValues[]) : [];
+    return (
+      <>
+        <h4 className="font-semibold text-ink">{readable(values.title)}</h4>
+        <ol className="mt-2 grid gap-2 md:grid-cols-3">
+          {items.map((item, index) => (
+            <li key={`${index}-${readable(item.title)}`} className="rounded-control border border-line p-2">
+              <p className="font-medium text-ink">{readable(item.title)}</p>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-muted">{readable(item.text)}</p>
+            </li>
+          ))}
+        </ol>
+      </>
+    );
+  }
+  return (
+    <div className="mt-1 space-y-0.5">
+      {Object.entries(values)
+        .map(([key, value]) => ({ key, text: readable(value) }))
+        .filter((entry) => entry.text)
+        .map((entry) => (
+          <p key={`${lang}-${entry.key}`} className="truncate text-sm text-ink">
+            {entry.text}
+          </p>
+        ))}
+    </div>
+  );
+}
+
 /** Aperçu structurel : ordre des blocs et textes de la langue d'édition. */
 export function PagePreview({ page, types, lang }: PagePreviewProps) {
   const { t } = useTranslation();
@@ -53,20 +92,15 @@ export function PagePreview({ page, types, lang }: PagePreviewProps) {
             const type = types.find((item) => item.code === section.section_type);
             const values = section.data[lang] ?? {};
             return (
-              <li key={section.id} className="rounded-control border border-line bg-surface px-3 py-2">
+              <li
+                key={section.id}
+                className="rounded-control border border-line bg-surface px-3 py-2"
+                data-testid={`preview-section-${section.id}`}
+              >
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                   {section.position}. {type ? t(type.labelKey) : section.section_type}
                 </p>
-                <div className="mt-1 space-y-0.5">
-                  {Object.entries(values)
-                    .map(([key, value]) => ({ key, text: readable(value) }))
-                    .filter((entry) => entry.text)
-                    .map((entry) => (
-                      <p key={entry.key} className="truncate text-sm text-ink">
-                        {entry.text}
-                      </p>
-                    ))}
-                </div>
+                <SectionPreviewContent sectionType={section.section_type} values={values} lang={lang} />
               </li>
             );
           })}

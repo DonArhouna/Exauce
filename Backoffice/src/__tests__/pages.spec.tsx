@@ -166,6 +166,18 @@ describe('pages et sections', () => {
       expect(savedFr.title).toBe("Trois modes d'accompagnement");
       expect(savedEn.title).toBe('Three modes of support');
     });
+
+    const previewSection = await within(main).findByTestId(`preview-section-${modes.id}`);
+    expect(within(previewSection).getByRole('heading', { name: "Trois modes d'accompagnement" })).toBeInTheDocument();
+    expect(
+      within(previewSection)
+        .getAllByRole('listitem')
+        .map((item) => item.querySelector('p')?.textContent),
+    ).toEqual([
+      'Formation professionnelle',
+      'Conseil',
+      'Assistance',
+    ]);
   });
 
   it('verrouille les colonnes selon les permissions de contenu et de SEO', async () => {
