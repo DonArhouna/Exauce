@@ -19,6 +19,8 @@ Cette table précise la destination éditoriale de chaque champ exposé. Les cl�
 | `modes.title` | `services` / `modes` / `title`, FR/EN | `ServicesIndexPage.tsx` (`FamilyView`) → sur-titre au-dessus des trois cartes → `services.modesTitle` | Formulaire et aller-retour livrés ; le Frontend lit encore la locale |
 | `modes.items[].title` | `services` / `modes` / `items[].title`, FR/EN | `ServicesIndexPage.tsx` (`FamilyView`) → titre de chaque carte → `services.modeAssistanceTitle`, `services.modeConseilTitle`, `services.modeFormationTitle` (ordre 0, 1, 2) | Formulaire prérempli et ordre conservé ; le Frontend lit encore les locales |
 | `modes.items[].text` | `services` / `modes` / `items[].text`, FR/EN | `ServicesIndexPage.tsx` (`FamilyView`) → description de chaque carte → `services.modeAssistanceText`, `services.modeConseilText`, `services.modeFormationText` (ordre 0, 1, 2) | Formulaire, zone multiligne, test FR/EN, conservation des champs inconnus, réordonnancement clavier/souris et aperçu des trois cartes dans l'ordre livrés ; le Frontend lit encore les locales |
+| `what_we_do.kicker` | `about` / `what_we_do` / `kicker`, FR/EN | `AboutPage.tsx` → première section, colonne gauche → `about.whatWeDoKicker` | Chargement seed FR/EN, aller-retour bilingue et aperçu hiérarchisé livrés ; le Frontend lit encore les locales |
+| `what_we_do.text` | `about` / `what_we_do` / `text`, FR/EN | `AboutPage.tsx` → première section, colonne gauche sous le sur-titre → `about.whatWeDoText` | Zone multiligne, validation, conservation de champs inconnus, aller-retour bilingue et aperçu livrés ; le Frontend lit encore les locales |
 
 ## Valeurs de repli SEO
 

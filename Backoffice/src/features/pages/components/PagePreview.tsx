@@ -47,6 +47,14 @@ function SectionPreviewContent({
       </>
     );
   }
+  if (sectionType === 'what_we_do') {
+    return (
+      <div className="mt-1 space-y-1">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted">{readable(values.kicker)}</p>
+        <p className="whitespace-pre-wrap text-sm text-ink">{readable(values.text)}</p>
+      </div>
+    );
+  }
   return (
     <div className="mt-1 space-y-0.5">
       {Object.entries(values)

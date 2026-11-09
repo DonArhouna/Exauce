@@ -549,7 +549,9 @@
       "modesTitle": "Engagement modes heading",
       "modes": "Engagement modes",
       "modeTitle": "Mode name",
-      "modeText": "Mode description"
+      "modeText": "Mode description",
+      "whatWeDoKicker": "What we do — kicker",
+      "whatWeDoText": "What we do — text"
     },
     "sectionTypes": {
       "hero": "Home hero",

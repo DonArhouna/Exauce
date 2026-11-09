@@ -86,14 +86,14 @@ Un élément éditorial est ici une métadonnée Page (`title`, `nav_label`, `in
 | Secteurs (`sectors`) | 5 | 5 | 100 % | 0 % |
 | Publications (`publications`) | 5 | 5 | 100 % | 0 % |
 | Partenaires (`partners`) | 8 | 6 | 75 % | 0 % |
-| À propos (`about`) | 9 | 6 | 67 % | 0 % |
+| À propos (`about`) | 9 | 7 | 78 % | 0 % |
 | Contact (`contact`) | 7 | 5 | 71 % | 0 % |
 | Mentions légales (`legal_notice`) | 8 | 8 | 100 % | 0 % |
 | Espace client (`client_area`) | 5 | 5 | 100 % | 0 % |
 | Page introuvable (`not_found`) | 5 | 5 | 100 % | 0 % |
-| **Total** | **82** | **74** | **90 %** | **0/82 (0 %)** |
+| **Total** | **82** | **75** | **91 %** | **0/82 (0 %)** |
 
-Les 27 blocs sont répartis ainsi : accueil 10, services 4, interventions 1, partenaires 3, à propos 4, contact 2, mentions légales 3. Les cinq champs Page sont présents sur les 11 pages. Après l’ouverture du bloc `modes`, huit éléments restent sans formulaire ; l’objectif de 95 % de couverture Backoffice n’est donc pas atteint. La liaison publique est à 0/82 : les pages Frontend ne consomment pas encore l’API éditoriale, donc une édition enregistrée n’est pas encore prouvée sur le site.
+Les 27 blocs sont répartis ainsi : accueil 10, services 4, interventions 1, partenaires 3, à propos 4, contact 2, mentions légales 3. Les cinq champs Page sont présents sur les 11 pages. Après l’ouverture des blocs `modes` et `what_we_do`, sept éléments restent sans formulaire ; l’objectif de 95 % de couverture Backoffice n’est donc pas atteint. La liaison publique est à 0/82 : les pages Frontend ne consomment pas encore l’API éditoriale, donc une édition enregistrée n’est pas encore prouvée sur le site.
 
 UI, hors périmètre : recherche, sélecteur de langue, pagination, états de chargement/vide/erreur/succès.
 

@@ -549,7 +549,9 @@
       "modesTitle": "Titre du bandeau des modes",
       "modes": "Modes d’accompagnement",
       "modeTitle": "Nom du mode",
-      "modeText": "Description du mode"
+      "modeText": "Description du mode",
+      "whatWeDoKicker": "Sur-titre — Ce que nous faisons",
+      "whatWeDoText": "Texte — Ce que nous faisons"
     },
     "sectionTypes": {
       "hero": "En-tête d’accueil",

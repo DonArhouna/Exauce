@@ -163,6 +163,16 @@ const CATALOGUE: SectionTypeDef[] = [
       }),
     ],
   },
+  {
+    code: 'what_we_do',
+    labelKey: 'pages.sectionTypes.what_we_do',
+    usage: 'à propos',
+    editable: true,
+    fields: [
+      field('kicker', 'text', { required: true, maxLength: 60, labelKey: 'pages.fields.whatWeDoKicker' }),
+      field('text', 'textarea', { required: true, maxLength: 800, labelKey: 'pages.fields.whatWeDoText' }),
+    ],
+  },
   gridHeading('domains_grid'),
   gridHeading('audit_grid', [field('text', 'textarea', { maxLength: 400, labelKey: 'pages.fields.intro' })]),
   gridHeading('interventions_grid'),
@@ -176,7 +186,6 @@ const CATALOGUE: SectionTypeDef[] = [
     [
       ['values_grid', 'à propos'],
       ['steps', 'à propos'],
-      ['what_we_do', 'à propos'],
       ['interventions_compare', 'interventions'],
       ['contact_form', 'contact (position 1)'],
       ['offices_grid', 'contact (position 2)'],

@@ -224,6 +224,41 @@ describe('contenu réel des pages', () => {
     expect(findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!.data.fr).toEqual(reloadedFr);
   });
 
+  it('recharge et enregistre what_we_do en FR/EN sans perte ni écrasement croisé', () => {
+    const summary = listPages().find((page) => page.page_key === 'about')!;
+    const page = findPage(summary.id)!;
+    const section = page.sections.find((entry) => entry.section_type === 'what_we_do')!;
+    const originalFr = structuredClone(section.data.fr);
+    const originalEn = structuredClone(section.data.en);
+    expect(originalFr.kicker).toBe('Ce que nous faisons');
+    expect(originalFr.text).toContain('technologies du numérique');
+    expect(originalEn.kicker).toBe('What we do');
+    expect(originalEn.text).toContain('digital technologies');
+
+    const fr = updateSection(section.id, {
+      revision: page.revision,
+      lang: 'fr',
+      data: { ...originalFr, kicker: 'Nos activités', text: 'Texte FR aller-retour', unknown: { keep: true } },
+    });
+    expect(fr.ok).toBe(true);
+    if (!fr.ok) return;
+    const loadedFr = findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!.data.fr;
+    expect(loadedFr).toEqual({ ...originalFr, kicker: 'Nos activités', text: 'Texte FR aller-retour', unknown: { keep: true } });
+    expect(findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!.data.en).toEqual(originalEn);
+
+    const freshPage = findPage(summary.id)!;
+    const en = updateSection(section.id, {
+      revision: freshPage.revision,
+      lang: 'en',
+      data: { ...originalEn, kicker: 'Our work', text: 'EN round-trip text' },
+    });
+    expect(en.ok).toBe(true);
+    if (!en.ok) return;
+    const loaded = findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!;
+    expect(loaded.data.en).toEqual({ ...originalEn, kicker: 'Our work', text: 'EN round-trip text' });
+    expect(loaded.data.fr).toEqual(loadedFr);
+  });
+
   it('reprend les textes affichés par le site', () => {
     const home = listPages().find((page) => page.page_key === 'home');
     if (!home) throw new Error('accueil introuvable');

@@ -633,6 +633,18 @@ export const PAGE_SEED: SeedPage[] = [
         }
       },
       {
+        "type": "founder_card",
+        "source": "founder_card",
+        "fr": {
+          "kicker": "",
+          "empty_text": "Biographie détaillée du fondateur — contenu à venir."
+        },
+        "en": {
+          "kicker": "",
+          "empty_text": "Detailed founder biography — content to come."
+        }
+      },
+      {
         "type": "steps",
         "source": "how_we_work",
         "fr": {
@@ -680,18 +692,6 @@ export const PAGE_SEED: SeedPage[] = [
         "en": {
           "title": "Our values",
           "empty_text": "The firm's values will be specified here — content to come, to be validated by the firm."
-        }
-      },
-      {
-        "type": "founder_card",
-        "source": "founder_card",
-        "fr": {
-          "kicker": "",
-          "empty_text": "Biographie détaillée du fondateur — contenu à venir."
-        },
-        "en": {
-          "kicker": "",
-          "empty_text": "Detailed founder biography — content to come."
         }
       }
     ]

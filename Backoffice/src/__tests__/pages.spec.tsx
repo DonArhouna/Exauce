@@ -8,6 +8,7 @@ import { renderApp, signIn } from './harness';
 const HOME_ID = 'aaaaaaaa-0001-4001-8001-000000000001';
 const SERVICES_ID = 'aaaaaaaa-0002-4001-8001-000000000002';
 const LEGAL_ID = 'aaaaaaaa-0009-4001-8001-000000000009';
+const ABOUT_ID = 'aaaaaaaa-0007-4001-8001-000000000007';
 
 async function openPage(path: string, email: string, password: string) {
   renderApp(path);
@@ -334,5 +335,36 @@ describe('pages et sections', () => {
       // Les autres langues et les grilles restent intactes.
       expect(section?.data?.en?.title).toBe('A firm founded and led by a chartered accountant');
     });
+  });
+
+  it('édite what_we_do dans les deux langues et prévisualise sa hiérarchie', async () => {
+    const user = userEvent.setup();
+    const main = await openPage(`/pages/${ABOUT_ID}`, 'fondateur@exauceac.com', 'exauce-fondateur-2026');
+    const sections = await within(main).findAllByTestId(/^section-/);
+    const whatWeDo = sections.find((section) => within(section).queryByText('what_we_do'))!;
+    const textboxes = within(whatWeDo).getAllByRole('textbox');
+    const kickerInputs = [textboxes[0], textboxes[2]];
+    const textareas = [textboxes[1], textboxes[3]];
+    expect((kickerInputs[0] as HTMLInputElement).value).toBe('Ce que nous faisons');
+    expect((kickerInputs[1] as HTMLInputElement).value).toBe('What we do');
+    expect((textareas[0] as HTMLTextAreaElement).value).toContain('technologies du numérique');
+    expect((textareas[1] as HTMLTextAreaElement).value).toContain('digital technologies');
+
+    await user.clear(kickerInputs[0]);
+    await user.type(kickerInputs[0], 'Nos activités');
+    await user.clear(textareas[1]);
+    await user.type(textareas[1], 'Bilingual round trip');
+    await user.click(within(whatWeDo).getByRole('button', { name: /enregistrer le bloc/i }));
+
+    await waitFor(() => {
+      const saved = findPage(ABOUT_ID)!.sections.find((section) => section.section_type === 'what_we_do')!;
+      expect(saved.data.fr.kicker).toBe('Nos activités');
+      expect(saved.data.fr.text).toContain('technologies du numérique');
+      expect(saved.data.en.kicker).toBe('What we do');
+      expect(saved.data.en.text).toBe('Bilingual round trip');
+    });
+    const previewSection = within(main).getByTestId(`preview-section-${findPage(ABOUT_ID)!.sections.find((section) => section.section_type === 'what_we_do')!.id}`);
+    expect(within(previewSection).getByText('Nos activités')).toBeInTheDocument();
+    expect(within(previewSection).getByText(/Tous basés sur les technologies du numérique/)).toBeInTheDocument();
   });
 });
