@@ -96,6 +96,35 @@ function SectionPreviewContent({
       </div>
     );
   }
+  if (sectionType === 'interventions_compare') {
+    const rows = Array.isArray(values.rows) ? (values.rows as SectionValues[]) : [];
+    const columns = lang === 'fr' ? ['Récurrentes', 'Ponctuelles'] : ['Recurring', 'One-off'];
+    return (
+      <>
+        <h4 className="mt-1 font-semibold text-ink">{readable(values.title)}</h4>
+        <div className="mt-2 overflow-x-auto">
+          <table className="w-full border-collapse text-left text-sm">
+            <thead>
+              <tr className="bg-ink text-white">
+                <th className="p-2">{readable(values.head_label)}</th>
+                {columns.map((column) => <th key={column} className="p-2">{column}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <tr key={`${index}-${readable(row.label)}`} className={index % 2 === 0 ? 'bg-white' : 'bg-ivory'}>
+                  <th className="border-t border-line p-2 font-medium text-ink">{readable(row.label)}</th>
+                  <td className="border-t border-line p-2 text-ink">{readable(row.recurring)}</td>
+                  <td className="border-t border-line p-2 text-ink">{readable(row.oneoff)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-2 text-xs text-muted">{readable(values.caption)}</p>
+      </>
+    );
+  }
   return (
     <div className="mt-1 space-y-0.5">
       {Object.entries(values)

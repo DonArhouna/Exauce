@@ -467,4 +467,49 @@ describe('pages et sections', () => {
     expect(within(preview).getByText('Nos engagements')).toBeInTheDocument();
     expect(within(preview).getByText(/à valider par le cabinet/)).toBeInTheDocument();
   });
+
+  it('réordonne le comparatif des interventions et préserve ses valeurs FR/EN', async () => {
+    const user = userEvent.setup();
+    const id = 'aaaaaaaa-0003-4001-8001-000000000003';
+    const main = await openPage(`/pages/${id}`, 'fondateur@exauceac.com', 'exauce-fondateur-2026');
+    const sections = await within(main).findAllByTestId(/^section-/);
+    const compare = sections.find((section) => within(section).queryByText('interventions_compare'))!;
+    const groups = within(compare).getAllByRole('group', { name: 'Lignes du comparatif' });
+    expect(groups).toHaveLength(2);
+    const frRows = within(groups[0]).getAllByRole('listitem');
+    await user.click(within(frRows[0]).getByRole('button', { name: 'Déplacer l’élément 1 vers le bas' }));
+
+    const enRows = within(groups[1]).getAllByRole('listitem');
+    const dataTransfer = { effectAllowed: '', setData: vi.fn() };
+    fireEvent.dragStart(enRows[2], { dataTransfer });
+    fireEvent.dragOver(enRows[0], { dataTransfer });
+    fireEvent.drop(enRows[0], { dataTransfer });
+
+    const firstFrRecurring = compare.querySelector<HTMLTextAreaElement>('textarea[id*="-fr-rows-0-recurring"]')!;
+    const lastEnOneoff = compare.querySelector<HTMLTextAreaElement>('textarea[id*="-en-rows-0-oneoff"]')!;
+    await user.clear(firstFrRecurring);
+    await user.type(firstFrRecurring, 'Valeur française enregistrée');
+    await user.clear(lastEnOneoff);
+    await user.type(lastEnOneoff, 'English comparison saved');
+    await user.click(within(compare).getByRole('button', { name: 'Enregistrer le bloc' }));
+
+    await waitFor(() => {
+      const saved = findPage(id)!.sections.find((section) => section.section_type === 'interventions_compare')!;
+      const fr = saved.data.fr.rows as Record<string, string>[];
+      const en = saved.data.en.rows as Record<string, string>[];
+      expect(fr).toHaveLength(3);
+      expect(fr.map((row) => row.label)).toEqual([
+        "Ressort de l'intervention", 'Finalité pour le client', 'Ce que nous adorons',
+      ]);
+      expect(fr[0].recurring).toBe('Valeur française enregistrée');
+      expect(en).toHaveLength(3);
+      expect(en.map((row) => row.label)).toEqual([
+        'What we love', 'Purpose for the client', 'Lever of the intervention',
+      ]);
+      expect(en[0].oneoff).toBe('English comparison saved');
+    });
+    const preview = within(main).getByTestId(`preview-section-${findPage(id)!.sections.find((section) => section.section_type === 'interventions_compare')!.id}`);
+    expect(within(preview).getAllByRole('row')[1].textContent).toContain("Ressort de l'intervention");
+    expect(within(preview).getAllByRole('row')[2].textContent).toContain('Finalité pour le client');
+  });
 });

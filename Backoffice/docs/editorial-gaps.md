@@ -82,7 +82,7 @@ Un élément éditorial est ici une métadonnée Page (`title`, `nav_label`, `in
 |---|---:|---:|---:|---:|
 | Accueil (`home`) | 15 | 15 | 100 % | 0 % |
 | Services (`services`) | 9 | 9 | 100 % | 0 % |
-| Interventions (`interventions`) | 6 | 5 | 83 % | 0 % |
+| Interventions (`interventions`) | 6 | 6 | 100 % | 0 % |
 | Secteurs (`sectors`) | 5 | 5 | 100 % | 0 % |
 | Publications (`publications`) | 5 | 5 | 100 % | 0 % |
 | Partenaires (`partners`) | 8 | 6 | 75 % | 0 % |
@@ -91,9 +91,9 @@ Un élément éditorial est ici une métadonnée Page (`title`, `nav_label`, `in
 | Mentions légales (`legal_notice`) | 8 | 8 | 100 % | 0 % |
 | Espace client (`client_area`) | 5 | 5 | 100 % | 0 % |
 | Page introuvable (`not_found`) | 5 | 5 | 100 % | 0 % |
-| **Total** | **82** | **77** | **94 %** | **0/82 (0 %)** |
+| **Total** | **82** | **78** | **95 %** | **0/82 (0 %)** |
 
-Les 27 blocs sont répartis ainsi : accueil 10, services 4, interventions 1, partenaires 3, à propos 4, contact 2, mentions légales 3. Les cinq champs Page sont présents sur les 11 pages. Après l’ouverture des blocs `modes`, `what_we_do`, `steps` et `values_grid`, cinq éléments restent sans formulaire ; l’objectif de 95 % de couverture Backoffice n’est donc pas atteint. La liaison publique est à 0/82 : les pages Frontend ne consomment pas encore l’API éditoriale, donc une édition enregistrée n’est pas encore prouvée sur le site.
+Les 27 blocs sont répartis ainsi : accueil 10, services 4, interventions 1, partenaires 3, à propos 4, contact 2, mentions légales 3. Les cinq champs Page sont présents sur les 11 pages. Après l’ouverture des blocs `modes`, `what_we_do`, `steps`, `values_grid` et `interventions_compare`, quatre éléments restent sans formulaire. La couverture Backoffice atteint 95 %, mais la liaison publique demeure à 0/82.
 
 UI, hors périmètre : recherche, sélecteur de langue, pagination, états de chargement/vide/erreur/succès.
 

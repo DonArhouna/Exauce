@@ -202,6 +202,26 @@ const CATALOGUE: SectionTypeDef[] = [
       field('empty_text', 'textarea', { required: true, maxLength: 400, labelKey: 'pages.fields.valuesComing' }),
     ],
   },
+  {
+    code: 'interventions_compare',
+    labelKey: 'pages.sectionTypes.interventions_compare',
+    usage: 'interventions',
+    editable: true,
+    fields: [
+      field('title', 'text', { required: true, maxLength: 140, labelKey: 'pages.fields.compareTitle' }),
+      field('head_label', 'text', { required: true, maxLength: 80, labelKey: 'pages.fields.compareHead' }),
+      field('caption', 'textarea', { required: true, maxLength: 400, labelKey: 'pages.fields.compareCaption' }),
+      field('rows', 'list', {
+        required: true,
+        labelKey: 'pages.fields.compareRows',
+        itemFields: [
+          field('label', 'text', { required: true, maxLength: 100, labelKey: 'pages.fields.compareRowLabel' }),
+          field('recurring', 'textarea', { required: true, maxLength: 600, labelKey: 'pages.fields.compareRecurring' }),
+          field('oneoff', 'textarea', { required: true, maxLength: 600, labelKey: 'pages.fields.compareOneoff' }),
+        ],
+      }),
+    ],
+  },
   gridHeading('domains_grid'),
   gridHeading('audit_grid', [field('text', 'textarea', { maxLength: 400, labelKey: 'pages.fields.intro' })]),
   gridHeading('interventions_grid'),
@@ -213,7 +233,6 @@ const CATALOGUE: SectionTypeDef[] = [
   // Types présents dans le seed mais non outillés dans ce MVP : lecture seule.
   ...(
     [
-      ['interventions_compare', 'interventions'],
       ['contact_form', 'contact (position 1)'],
       ['offices_grid', 'contact (position 2)'],
       ['partners_marquee', 'partenaires'],

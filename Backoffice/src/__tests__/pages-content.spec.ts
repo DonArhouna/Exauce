@@ -375,6 +375,48 @@ describe('contenu réel des pages', () => {
     expect(loaded.data.fr).toEqual(loadedFr);
   });
 
+  it('recharge interventions_compare et conserve les trois lignes ordonnées en FR/EN', () => {
+    const summary = listPages().find((page) => page.page_key === 'interventions')!;
+    const page = findPage(summary.id)!;
+    const section = page.sections.find((entry) => entry.section_type === 'interventions_compare')!;
+    const originalFr = structuredClone(section.data.fr);
+    const originalEn = structuredClone(section.data.en);
+    const frRows = originalFr.rows as SectionValues[];
+    const enRows = originalEn.rows as SectionValues[];
+    expect(frRows).toHaveLength(3);
+    expect(enRows).toHaveLength(3);
+    expect(frRows[0].label).toBe('Finalité pour le client');
+    expect(enRows[2].label).toBe('What we love');
+
+    const fr = updateSection(section.id, {
+      revision: page.revision,
+      lang: 'fr',
+      data: { ...originalFr, rows: [frRows[1], { ...frRows[0], recurring: 'Valeur FR révisée', retained: true }, frRows[2]] },
+    });
+    expect(fr.ok).toBe(true);
+    if (!fr.ok) return;
+    const loadedFr = findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!.data.fr;
+    expect((loadedFr.rows as SectionValues[]).map((row) => row.label)).toEqual([
+      "Ressort de l'intervention", 'Finalité pour le client', 'Ce que nous adorons',
+    ]);
+    expect((loadedFr.rows as SectionValues[])[1]).toMatchObject({ recurring: 'Valeur FR révisée', retained: true });
+    expect(findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!.data.en).toEqual(originalEn);
+
+    const freshPage = findPage(summary.id)!;
+    const en = updateSection(section.id, {
+      revision: freshPage.revision,
+      lang: 'en',
+      data: { ...originalEn, rows: [enRows[2], enRows[0], enRows[1]] },
+    });
+    expect(en.ok).toBe(true);
+    if (!en.ok) return;
+    const loaded = findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!;
+    expect((loaded.data.en.rows as SectionValues[]).map((row) => row.label)).toEqual([
+      'What we love', 'Purpose for the client', 'Lever of the intervention',
+    ]);
+    expect(loaded.data.fr).toEqual(loadedFr);
+  });
+
   it('reprend les textes affichés par le site', () => {
     const home = listPages().find((page) => page.page_key === 'home');
     if (!home) throw new Error('accueil introuvable');

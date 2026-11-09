@@ -561,7 +561,14 @@
       "stepTitle": "Step title",
       "stepText": "Step description",
       "valuesTitle": "Values heading",
-      "valuesComing": "Values placeholder (to be confirmed by the firm)"
+      "valuesComing": "Values placeholder (to be confirmed by the firm)",
+      "compareTitle": "Comparison heading",
+      "compareHead": "First column heading",
+      "compareCaption": "Comparison caption",
+      "compareRows": "Comparison rows",
+      "compareRowLabel": "Characteristic",
+      "compareRecurring": "Text — recurring intervention",
+      "compareOneoff": "Text — one-off intervention"
     },
     "sectionTypes": {
       "hero": "Home hero",

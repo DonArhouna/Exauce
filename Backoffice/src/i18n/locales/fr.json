@@ -561,7 +561,14 @@
       "stepTitle": "Titre de l’étape",
       "stepText": "Description de l’étape",
       "valuesTitle": "Titre des valeurs",
-      "valuesComing": "Texte provisoire des valeurs (à valider par le cabinet)"
+      "valuesComing": "Texte provisoire des valeurs (à valider par le cabinet)",
+      "compareTitle": "Titre du comparatif",
+      "compareHead": "En-tête de la première colonne",
+      "compareCaption": "Légende du comparatif",
+      "compareRows": "Lignes du comparatif",
+      "compareRowLabel": "Caractéristique",
+      "compareRecurring": "Texte — intervention récurrente",
+      "compareOneoff": "Texte — intervention ponctuelle"
     },
     "sectionTypes": {
       "hero": "En-tête d’accueil",
