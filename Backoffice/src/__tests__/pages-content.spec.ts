@@ -455,6 +455,43 @@ describe('contenu réel des pages', () => {
     expect(loaded.data.fr).toEqual(loadedFr);
   });
 
+  it('recharge et enregistre offices_grid par langue sans altérer le texte de Contact', () => {
+    const summary = listPages().find((page) => page.page_key === 'contact')!;
+    const page = findPage(summary.id)!;
+    const section = page.sections.find((entry) => entry.section_type === 'offices_grid')!;
+    const originalFr = structuredClone(section.data.fr);
+    const originalEn = structuredClone(section.data.en);
+    expect(originalFr.title).toBe('Nos implantations');
+    expect(originalFr.intro).toContain('siège à Dakar');
+    expect(originalFr.empty_text).toContain('à valider par le cabinet');
+    expect(originalEn.title).toBe('Our locations');
+    expect(originalEn.map_empty_text).toContain('once addresses are confirmed');
+
+    const fr = updateSection(section.id, {
+      revision: page.revision,
+      lang: 'fr',
+      data: { ...originalFr, intro: 'Introduction bureaux FR mise à jour', unknown: 'preserved' },
+    });
+    expect(fr.ok).toBe(true);
+    if (!fr.ok) return;
+    const loadedFr = findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!.data.fr;
+    expect(loadedFr).toEqual({ ...originalFr, intro: 'Introduction bureaux FR mise à jour', unknown: 'preserved' });
+    expect(findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!.data.en).toEqual(originalEn);
+
+    const freshPage = findPage(summary.id)!;
+    const en = updateSection(section.id, {
+      revision: freshPage.revision,
+      lang: 'en',
+      data: { ...originalEn, map_empty_text: 'Map copy updated after address confirmation.' },
+    });
+    expect(en.ok).toBe(true);
+    if (!en.ok) return;
+    const loaded = findPage(summary.id)!.sections.find((entry) => entry.id === section.id)!;
+    expect(loaded.data.en).toEqual({ ...originalEn, map_empty_text: 'Map copy updated after address confirmation.' });
+    expect(loaded.data.fr).toEqual(loadedFr);
+    expect(findPage(summary.id)!.intro).toEqual(page.intro);
+  });
+
   it('reprend les textes affichés par le site', () => {
     const home = listPages().find((page) => page.page_key === 'home');
     if (!home) throw new Error('accueil introuvable');

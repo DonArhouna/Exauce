@@ -231,6 +231,18 @@ const CATALOGUE: SectionTypeDef[] = [
       field('success_text', 'textarea', { required: true, maxLength: 300, labelKey: 'pages.fields.contactSuccess' }),
     ],
   },
+  {
+    code: 'offices_grid',
+    labelKey: 'pages.sectionTypes.offices_grid',
+    usage: 'contact (position 2)',
+    editable: true,
+    fields: [
+      field('title', 'text', { required: true, maxLength: 100, labelKey: 'pages.fields.officesTitle' }),
+      field('intro', 'textarea', { required: true, maxLength: 500, labelKey: 'pages.fields.officesIntro' }),
+      field('empty_text', 'textarea', { required: true, maxLength: 300, labelKey: 'pages.fields.officesAddressPlaceholder' }),
+      field('map_empty_text', 'textarea', { required: true, maxLength: 300, labelKey: 'pages.fields.officesMapPlaceholder' }),
+    ],
+  },
   gridHeading('domains_grid'),
   gridHeading('audit_grid', [field('text', 'textarea', { maxLength: 400, labelKey: 'pages.fields.intro' })]),
   gridHeading('interventions_grid'),
@@ -242,7 +254,6 @@ const CATALOGUE: SectionTypeDef[] = [
   // Types présents dans le seed mais non outillés dans ce MVP : lecture seule.
   ...(
     [
-      ['offices_grid', 'contact (position 2)'],
       ['partners_marquee', 'partenaires'],
       ['partners_grid', 'partenaires'],
       ['coming_soon', 'espace client (bloc non rendu par le site)'],

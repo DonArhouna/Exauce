@@ -37,6 +37,10 @@ Cette table précise la destination éditoriale de chaque champ exposé. Les cl�
 | `interventions_compare.rows[].recurring` | `interventions` / `interventions_compare` / `rows[].recurring`, FR/EN | `InterventionsPage.tsx` → cellule colonne Récurrentes, lignes 0, 1, 2 → `interventions.rowFocusR`, `rowActionR`, `rowHeartR` | Ordre/nombre (3), clavier/souris, aller-retour FR/EN et aperçu tableau testés ; le Frontend lit encore les locales |
 | `interventions_compare.rows[].oneoff` | `interventions` / `interventions_compare` / `rows[].oneoff`, FR/EN | `InterventionsPage.tsx` → cellule colonne Ponctuelles, lignes 0, 1, 2 → `interventions.rowFocusP`, `rowActionP`, `rowHeartP` | Ordre/nombre (3), clavier/souris, aller-retour FR/EN et aperçu tableau testés ; le Frontend lit encore les locales |
 | `contact_form.success_text` | `contact` / `contact_form` / `success_text`, FR/EN | `ContactPage.tsx` → état de confirmation après l’envoi → `contact.success` | Formulaire UI hors édition ; message après envoi éditable, aller-retour FR/EN et aperçu de confirmation livrés |
+| `offices_grid.title` | `contact` / `offices_grid` / `title`, FR/EN | `ContactPage.tsx` → titre de la section implantations → `contact.officesTitle` | Chargement de la locale, test FR/EN et aperçu livrés ; les coordonnées structurées restent dans les fiches Office |
+| `offices_grid.intro` | `contact` / `offices_grid` / `intro`, FR/EN | `ContactPage.tsx` → texte sous le titre des implantations → `contact.officesIntro` | Zone multiligne, validation et aller-retour FR/EN livrés ; Frontend encore statique |
+| `offices_grid.empty_text` | `contact` / `offices_grid` / `empty_text`, FR/EN | `ContactPage.tsx` → texte d’adresse provisoire dans chaque carte Office → `contact.addressesComing` | Texte provisoire à valider, aller-retour FR/EN et aperçu du bureau réel (ordre API) livrés |
+| `offices_grid.map_empty_text` | `contact` / `offices_grid` / `map_empty_text`, FR/EN | `ContactPage.tsx` → texte accessible et visible dans le cadre de carte → `contact.mapComing` | Texte provisoire à valider, aller-retour FR/EN et aperçu carte livrés |
 
 ## Valeurs de repli SEO
 

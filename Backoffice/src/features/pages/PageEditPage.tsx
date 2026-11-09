@@ -24,6 +24,7 @@ import {
   patchSection,
   removeSection,
 } from '@/services/api/endpoints/pages';
+import { listOffices } from '@/services/api/endpoints/offices';
 import { ApiError } from '@/services/api/problem';
 import type { AdminPageDetail, ContentLang, PageStatus } from '@/services/api/types';
 import { hasPermission } from '@/services/auth/permissions';
@@ -53,6 +54,11 @@ export default function PageEditPage() {
 
   const pageQuery = useQuery({ queryKey: ['page', id], queryFn: () => getPage(id), enabled: Boolean(id) });
   const typesQuery = useQuery({ queryKey: ['section-types'], queryFn: getSectionTypes });
+  const officesQuery = useQuery({
+    queryKey: ['offices'],
+    queryFn: listOffices,
+    enabled: pageQuery.data?.page_key === 'contact' && hasPermission(permissions, 'offices', 'view'),
+  });
 
   const [dirty, setDirty] = useState<Record<string, boolean>>({});
   const [conflict, setConflict] = useState(false);
@@ -367,7 +373,7 @@ export default function PageEditPage() {
           )}
         </section>
 
-        {previewOpen ? <PagePreview page={page} types={types} lang={lang} /> : null}
+        {previewOpen ? <PagePreview page={page} types={types} lang={lang} offices={officesQuery.data?.items} /> : null}
       </div>
 
       <ConfirmDialog

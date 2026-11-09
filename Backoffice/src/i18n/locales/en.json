@@ -569,7 +569,11 @@
       "compareRowLabel": "Characteristic",
       "compareRecurring": "Text — recurring intervention",
       "compareOneoff": "Text — one-off intervention",
-      "contactSuccess": "Confirmation shown after submission"
+      "contactSuccess": "Confirmation shown after submission",
+      "officesTitle": "Locations heading",
+      "officesIntro": "Locations introduction",
+      "officesAddressPlaceholder": "Address placeholder (to be confirmed)",
+      "officesMapPlaceholder": "Map placeholder (to be confirmed)"
     },
     "sectionTypes": {
       "hero": "Home hero",

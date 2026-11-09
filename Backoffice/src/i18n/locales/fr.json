@@ -569,7 +569,11 @@
       "compareRowLabel": "Caractéristique",
       "compareRecurring": "Texte — intervention récurrente",
       "compareOneoff": "Texte — intervention ponctuelle",
-      "contactSuccess": "Confirmation affichée après l’envoi"
+      "contactSuccess": "Confirmation affichée après l’envoi",
+      "officesTitle": "Titre des implantations",
+      "officesIntro": "Introduction des implantations",
+      "officesAddressPlaceholder": "Texte provisoire d’adresse (à valider)",
+      "officesMapPlaceholder": "Texte provisoire de carte (à valider)"
     },
     "sectionTypes": {
       "hero": "En-tête d’accueil",

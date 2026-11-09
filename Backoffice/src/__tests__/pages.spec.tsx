@@ -545,4 +545,36 @@ describe('pages et sections', () => {
     const preview = within(main).getByTestId(`preview-section-${formId}`);
     expect(within(preview).getByText(/Confirmation bilingue — version FR/)).toBeInTheDocument();
   });
+
+  it('édite offices_grid et prévisualise le bureau dans son ordre réel', async () => {
+    const user = userEvent.setup();
+    const id = 'aaaaaaaa-0008-4001-8001-000000000008';
+    const main = await openPage(`/pages/${id}`, 'fondateur@exauceac.com', 'exauce-fondateur-2026');
+    const sections = await within(main).findAllByTestId(/^section-/);
+    const offices = sections.find((section) => within(section).queryByText('offices_grid'))!;
+    const textboxes = within(offices).getAllByRole('textbox');
+    expect(textboxes).toHaveLength(8);
+    expect((textboxes[0] as HTMLInputElement).value).toBe('Nos implantations');
+    expect((textboxes[4] as HTMLInputElement).value).toBe('Our locations');
+    expect((textboxes[6] as HTMLTextAreaElement).value).toContain('to be validated by the firm');
+
+    await user.clear(textboxes[0]);
+    await user.type(textboxes[0], 'Nos bureaux');
+    await user.clear(textboxes[7]);
+    await user.type(textboxes[7], 'Map copy ready for firm approval.');
+    await user.click(within(offices).getByRole('button', { name: 'Enregistrer le bloc' }));
+    await waitFor(() => {
+      const saved = findPage(id)!.sections.find((section) => section.section_type === 'offices_grid')!;
+      expect(saved.data.fr.title).toBe('Nos bureaux');
+      expect(saved.data.fr.intro).toContain('siège à Dakar');
+      expect(saved.data.en.title).toBe('Our locations');
+      expect(saved.data.en.map_empty_text).toBe('Map copy ready for firm approval.');
+    });
+
+    const officesId = findPage(id)!.sections.find((section) => section.section_type === 'offices_grid')!.id;
+    const preview = within(main).getByTestId(`preview-section-${officesId}`);
+    expect(within(preview).getByText('Nos bureaux')).toBeInTheDocument();
+    expect(await within(preview).findByText('Siège — Dakar (Sénégal)')).toBeInTheDocument();
+    expect(within(preview).getByText('Dakar', { exact: true })).toBeInTheDocument();
+  });
 });

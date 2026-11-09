@@ -1,11 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui';
-import type { AdminPageDetail, ContentLang, SectionTypeDef, SectionValues } from '@/services/api/types';
+import type { AdminOffice, AdminPageDetail, ContentLang, SectionTypeDef, SectionValues } from '@/services/api/types';
 
 interface PagePreviewProps {
   page: AdminPageDetail;
   types: SectionTypeDef[];
   lang: ContentLang;
+  offices?: AdminOffice[];
 }
 
 /** Texte lisible d'une valeur, jamais de HTML brut. */
@@ -26,10 +27,12 @@ function SectionPreviewContent({
   sectionType,
   values,
   lang,
+  offices,
 }: {
   sectionType: string;
   values: SectionValues;
   lang: ContentLang;
+  offices?: AdminOffice[];
 }) {
   if (sectionType === 'modes') {
     const items = Array.isArray(values.items) ? (values.items as SectionValues[]) : [];
@@ -141,6 +144,30 @@ function SectionPreviewContent({
       </div>
     );
   }
+  if (sectionType === 'offices_grid') {
+    const orderedOffices = [...(offices ?? [])].filter((office) => office.is_active).sort((a, b) => a.position - b.position);
+    return (
+      <>
+        <h4 className="mt-1 font-semibold text-ink">{readable(values.title)}</h4>
+        <p className="mt-1 text-sm text-muted">{readable(values.intro)}</p>
+        <div className="mt-3 grid gap-2 md:grid-cols-2">
+          {orderedOffices.map((office) => (
+            <article key={office.id} className="rounded-control border border-line bg-white p-3">
+              <h5 className="font-medium text-ink">{office.translations[lang].name}</h5>
+              <p className="text-sm text-muted">{office.translations[lang].city}</p>
+              <p className="mt-2 text-xs text-muted">{readable(values.empty_text)}</p>
+            </article>
+          ))}
+          {orderedOffices.length === 0 ? (
+            <p className="rounded-control border border-line p-3 text-sm text-muted">{readable(values.empty_text)}</p>
+          ) : null}
+          <div role="img" aria-label={readable(values.map_empty_text)} className="flex min-h-28 items-center justify-center rounded-control border-2 border-dashed border-line bg-ink text-center text-sm text-white">
+            {readable(values.map_empty_text)}
+          </div>
+        </div>
+      </>
+    );
+  }
   return (
     <div className="mt-1 space-y-0.5">
       {Object.entries(values)
@@ -156,7 +183,7 @@ function SectionPreviewContent({
 }
 
 /** Aperçu structurel : ordre des blocs et textes de la langue d'édition. */
-export function PagePreview({ page, types, lang }: PagePreviewProps) {
+export function PagePreview({ page, types, lang, offices }: PagePreviewProps) {
   const { t } = useTranslation();
   const active = page.sections.filter((section) => section.is_active);
 
@@ -194,7 +221,7 @@ export function PagePreview({ page, types, lang }: PagePreviewProps) {
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                   {section.position}. {type ? t(type.labelKey) : section.section_type}
                 </p>
-                <SectionPreviewContent sectionType={section.section_type} values={values} lang={lang} />
+                <SectionPreviewContent sectionType={section.section_type} values={values} lang={lang} offices={offices} />
               </li>
             );
           })}
