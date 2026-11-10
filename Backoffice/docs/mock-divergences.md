@@ -5,14 +5,14 @@ Ce fichier liste les points où le mock du Backoffice s'écarte volontairement d
 soit un manque de contrat à combler, soit une décision du propriétaire que le
 Backend n'a pas encore intégrée.
 
-Dernière mise à jour : écrans « Pages et sections », « Demandes de contact » et « Bureaux ».
+Dernière mise à jour : contenu réel du site chargé dans le mock (étape 2).
 
 ## 1. Contrat OpenAPI — manques à combler
 
 | # | Manque | Ce que fait le mock | À ajouter au contrat |
 |---|---|---|---|
 | 1 | Aucun endpoint de catalogue des types de section | `GET /admin/section-types` renvoie `{ items: SectionTypeDef[] }` (code, libellé i18n, usage, `editable`, champs) | `GET /admin/section-types` exposant `config_schema` et `translation_schema` de `section_types` |
-| 2 | `Section.data` est un objet plat, sans écriture par langue | `data` est un objet `{ fr: {...}, en: {...} }` ; `PATCH /admin/sections/{id}` accepte `{ lang, data }` | `data` localisé (ou `entity_translations` par champ) + `PATCH` par langue |
+| 2 | Le Backend n'implémente pas encore les écritures de contenu par langue | le client Backoffice utilise `PUT /admin/sections/{id}/content/{lang}` avec `{ revision, data }`, conformément au contrat ; la réponse garde la structure bilingue | implémenter la route contractuelle avant les tests HTTP de bout en bout |
 | 3 | Aucun contrôle de concurrence | chaque page porte `revision` ; toute mutation l'envoie et le serveur répond `409 CONFLICT` si elle a changé | `revision` (ou `ETag`/`If-Match`) sur `PageDetail` et les mutations |
 | 4 | Aucun endpoint de workflow éditorial | `POST /admin/pages/{id}/workflow` avec `{ action, revision, comment? }` | `submit-review`, `approve`, `reject` (+ `publish` distinct) avec `x-permission` et `409` sur transition invalide |
 | 5 | Statuts de page non énumérés | `draft`, `in_review`, `approved`, `published`, `archived` | enum `status` sur `PageSummary`/`PageDetail` + machine à états documentée |
@@ -88,3 +88,45 @@ l'écran n'appelle que ces cinq routes.
 | 4 | Pas de code d'erreur de doublon | création ou renommage avec un code existant → `409 OFFICE_CODE_TAKEN` | ajouter le code à `Problem.code` |
 
 Sans réponse du Backend, le mock reste l'autorité locale pour ces quatre points.
+
+## 7. Contenu des pages (étape 2)
+
+Le contenu du mock n'est plus inventé : il reprend celui du site public
+(`editorial_i18n.json`, `content_data.json`, locales `partners.*`). Il vit dans
+`src/services/api/mock/pagesSeed.ts` (11 pages, 27 blocs après migration des cinq `page_header` dans le panneau Page). Le seed Backend conserve encore 32 blocs : les cinq `page_header` y sont toujours présents.
+
+| # | Écart | Ce que fait le mock | Proposition de contrat |
+|---|---|---|---|
+| 1 | Mutation des champs Page et SEO | contrat étendu en 3a.1 : `PageDetail` expose `nav_label`, `intro`, `seo_title`, `seo_description` par langue ; `PUT /admin/pages/{id}/content/{lang}` et `/seo/{lang}` définissent les droits correspondants | endpoints à implémenter côté Backend avant le mode HTTP |
+| 2 | Le seed Backend contient encore cinq `page_header` (32 blocs contre 27 dans le mock) | les textes ont été migrés dans Page ; les 5 blocs et leur type de catalogue sont retirés du mock après le test exact de non-perte. `coming_soon` reste un gabarit des pages techniques, pas un bloc | aligner le seed Backend avant le mode HTTP ; conserver les gabarits |
+| 3 | `hero` déclare `primary_cta`/`secondary_cta` | champs retirés : le site lit `common.*` | retirer du type, éditer les CTA dans Paramètres |
+| 4 | Les grilles déclarent une introduction | seuls `kicker` + `title` (et `text` pour `audit_grid`) | aligner `section_types.json` |
+| 5 | Pas de page Partenaires | 11ᵉ page + 4 blocs + 8 partenaires de démonstration | ajouter page, types et entité `partner` |
+| 6 | `stats` expose `value` | `value` est un décompte calculé (7/3/3/2), à passer en lecture seule | marquer `readOnly` au catalogue |
+| 7 | Un seul bureau publié | siège de Dakar, adresse en texte d'attente, e-mail et téléphones du site | aucune règle nouvelle |
+
+Les champs manquants au doc 15 et les changements Backend sont listés dans
+`docs/editorial-gaps.md`.
+
+## 8. Source de vérité publique
+
+Les routes et sections du Frontend lisent actuellement `Frontend/src/i18n/locales`, `Frontend/src/data/content.data.ts` et des constantes de composants ; elles n'appellent pas les endpoints d'administration. Les mutations de l'API peuvent être testées en mode mock ou HTTP, mais une relecture du Backoffice ne prouve donc pas encore que le site public affiche l'écriture. Le branchement Frontend aux données publiées du Backend est un prérequis de validation bout en bout ; le Frontend et le Backend restent hors du périmètre modifiable de ce worktree.
+
+Le contrat définit `PUT /admin/sections/{id}/content/{lang}` et `PUT /admin/pages/{id}/content/{lang}` ainsi que l'écriture SEO par langue. Le Backend doit livrer ces routes avant que les tests HTTP d'aller-retour puissent réussir.
+
+## 9. Coordonnées du CTA public
+
+Le composant `Frontend/src/components/sections/ContactCtaSection.tsx` lit le
+titre, le texte et le libellé secondaire dans les locales `home.*`, puis
+l’e-mail et les deux téléphones dans `ORGANIZATION` (`content.data.ts`). Le
+catalogue de sections ne déclare pour `cta` que `title`, `text` et
+`secondary_label` : il ne déclare aucun champ de coordonnées. Le contrat public
+décrit bien `PublicSettings.email`, `phone_fixed` et `phone_mobile`, et
+`/admin/settings/contact` accepte un groupe de paramètres générique, mais ne
+spécifie pas le schéma de ces clés.
+
+Les coordonnées ne sont donc pas ajoutées au bloc `cta` dans le mock : cela
+créerait un second propriétaire à côté de `settings.contact` et du modèle
+`PublicSettings`. Point d’arrêt 3b : confirmer que leur propriétaire Backoffice
+est le groupe Paramètres `contact` (avec schéma contractuel explicite) ou faire
+évoluer le contrat du type `cta`. Le Frontend et le Backend ne sont pas modifiés.

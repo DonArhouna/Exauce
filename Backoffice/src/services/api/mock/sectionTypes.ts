@@ -44,14 +44,21 @@ const field = (
 });
 
 /**
- * Grille éditoriale : seuls le titre et l'introduction sont saisissables, le
- * contenu (domaines, secteurs, publications…) vient des données du site.
- * Le texte reste stocké sous `text`, comme dans le seed du Backend.
+ * Grilles d'accueil et de services : le site affiche un sur-titre et un titre ;
+ * le contenu (domaines, secteurs, publications, interventions) vient des
+ * données, jamais du bloc. Seul le bloc audit affiche un texte d'introduction.
  */
-const gridFields: SectionField[] = [
-  field('title', 'text', { required: true, maxLength: 80 }),
-  field('text', 'textarea', { maxLength: 240, labelKey: 'pages.fields.intro' }),
-];
+const gridHeading = (code: string, extra: SectionField[] = []): SectionTypeDef => ({
+  code,
+  labelKey: `pages.sectionTypes.${code}`,
+  usage: code === 'domains_grid' || code === 'audit_grid' ? 'accueil, services' : 'accueil',
+  editable: true,
+  fields: [
+    field('kicker', 'text', { maxLength: 40 }),
+    field('title', 'text', { required: true, maxLength: 80 }),
+    ...extra,
+  ],
+});
 
 const CATALOGUE: SectionTypeDef[] = [
   {
@@ -62,20 +69,7 @@ const CATALOGUE: SectionTypeDef[] = [
     fields: [
       field('brand_line1', 'text', { required: true, maxLength: 40 }),
       field('brand_line2', 'text', { required: true, maxLength: 40 }),
-      field('subtitle', 'textarea', { required: true, maxLength: 240 }),
-      field('primary_cta', 'text', { maxLength: 40 }),
-      field('secondary_cta', 'text', { maxLength: 40 }),
-    ],
-  },
-  {
-    code: 'page_header',
-    labelKey: 'pages.sectionTypes.page_header',
-    usage: 'pages internes',
-    editable: true,
-    fields: [
-      field('kicker', 'text', { maxLength: 40 }),
-      field('title', 'text', { required: true, maxLength: 80 }),
-      field('intro', 'textarea', { maxLength: 280 }),
+      field('subtitle', 'textarea', { required: true, maxLength: 300 }),
     ],
   },
   {
@@ -85,8 +79,8 @@ const CATALOGUE: SectionTypeDef[] = [
     editable: true,
     fields: [
       field('title', 'text', { required: true, maxLength: 80 }),
-      field('text', 'textarea', { maxLength: 240 }),
-      field('secondary_label', 'text', { maxLength: 40 }),
+      field('text', 'textarea', { maxLength: 300 }),
+      field('secondary_label', 'text', { maxLength: 60 }),
     ],
   },
   {
@@ -135,7 +129,7 @@ const CATALOGUE: SectionTypeDef[] = [
     fields: [
       field('kicker', 'text', { maxLength: 40 }),
       field('title', 'text', { required: true, maxLength: 80 }),
-      field('text', 'textarea', { maxLength: 240 }),
+      field('text', 'textarea', { maxLength: 400 }),
       field('cta_label', 'text', { maxLength: 40 }),
     ],
   },
@@ -145,30 +139,124 @@ const CATALOGUE: SectionTypeDef[] = [
     usage: 'accueil, à propos',
     editable: true,
     fields: [
-      field('kicker', 'text', { maxLength: 40 }),
-      field('empty_text', 'text', { maxLength: 80 }),
+      field('name', 'text', { required: true, maxLength: 80, labelKey: 'pages.fields.founderName' }),
+      field('role', 'text', { required: true, maxLength: 140, labelKey: 'pages.fields.founderRole' }),
+      field('photo_alt', 'text', { required: true, maxLength: 120, labelKey: 'pages.fields.founderPhotoAlt' }),
+      field('empty_text', 'textarea', { required: true, maxLength: 240, labelKey: 'pages.fields.founderBioComing' }),
     ],
   },
-  ...(['domains_grid', 'audit_grid', 'interventions_grid', 'sectors_grid', 'publications_grid'] as const).map(
-    (code) => ({
-      code,
-      labelKey: `pages.sectionTypes.${code}`,
-      usage: code === 'domains_grid' || code === 'audit_grid' ? 'accueil, services' : 'accueil',
-      editable: true,
-      fields: gridFields,
-    }),
-  ),
+  {
+    code: 'modes',
+    labelKey: 'pages.sectionTypes.modes',
+    usage: 'services/:familleSlug/accompagnement',
+    editable: true,
+    fields: [
+      field('title', 'text', {
+        required: true,
+        labelKey: 'pages.fields.modesTitle',
+      }),
+      field('items', 'list', {
+        required: true,
+        labelKey: 'pages.fields.modes',
+        itemFields: [
+          field('title', 'text', { required: true, labelKey: 'pages.fields.modeTitle' }),
+          field('text', 'textarea', { required: true, labelKey: 'pages.fields.modeText' }),
+        ],
+      }),
+    ],
+  },
+  {
+    code: 'what_we_do',
+    labelKey: 'pages.sectionTypes.what_we_do',
+    usage: 'à propos',
+    editable: true,
+    fields: [
+      field('kicker', 'text', { required: true, maxLength: 60, labelKey: 'pages.fields.whatWeDoKicker' }),
+      field('text', 'textarea', { required: true, maxLength: 800, labelKey: 'pages.fields.whatWeDoText' }),
+    ],
+  },
+  {
+    code: 'steps',
+    labelKey: 'pages.sectionTypes.steps',
+    usage: 'à propos',
+    editable: true,
+    fields: [
+      field('kicker', 'text', { required: true, maxLength: 80, labelKey: 'pages.fields.stepsKicker' }),
+      field('items', 'list', {
+        required: true,
+        labelKey: 'pages.fields.steps',
+        itemFields: [
+          field('title', 'text', { required: true, maxLength: 120, labelKey: 'pages.fields.stepTitle' }),
+          field('text', 'textarea', { required: true, maxLength: 1200, labelKey: 'pages.fields.stepText' }),
+        ],
+      }),
+    ],
+  },
+  {
+    code: 'values_grid',
+    labelKey: 'pages.sectionTypes.values_grid',
+    usage: 'à propos',
+    editable: true,
+    fields: [
+      field('title', 'text', { required: true, maxLength: 100, labelKey: 'pages.fields.valuesTitle' }),
+      field('empty_text', 'textarea', { required: true, maxLength: 400, labelKey: 'pages.fields.valuesComing' }),
+    ],
+  },
+  {
+    code: 'interventions_compare',
+    labelKey: 'pages.sectionTypes.interventions_compare',
+    usage: 'interventions',
+    editable: true,
+    fields: [
+      field('title', 'text', { required: true, maxLength: 140, labelKey: 'pages.fields.compareTitle' }),
+      field('head_label', 'text', { required: true, maxLength: 80, labelKey: 'pages.fields.compareHead' }),
+      field('caption', 'textarea', { required: true, maxLength: 400, labelKey: 'pages.fields.compareCaption' }),
+      field('rows', 'list', {
+        required: true,
+        labelKey: 'pages.fields.compareRows',
+        itemFields: [
+          field('label', 'text', { required: true, maxLength: 100, labelKey: 'pages.fields.compareRowLabel' }),
+          field('recurring', 'textarea', { required: true, maxLength: 600, labelKey: 'pages.fields.compareRecurring' }),
+          field('oneoff', 'textarea', { required: true, maxLength: 600, labelKey: 'pages.fields.compareOneoff' }),
+        ],
+      }),
+    ],
+  },
+  {
+    code: 'contact_form',
+    labelKey: 'pages.sectionTypes.contact_form',
+    usage: 'contact (position 1)',
+    editable: true,
+    fields: [
+      field('success_text', 'textarea', { required: true, maxLength: 300, labelKey: 'pages.fields.contactSuccess' }),
+    ],
+  },
+  {
+    code: 'offices_grid',
+    labelKey: 'pages.sectionTypes.offices_grid',
+    usage: 'contact (position 2)',
+    editable: true,
+    fields: [
+      field('title', 'text', { required: true, maxLength: 100, labelKey: 'pages.fields.officesTitle' }),
+      field('intro', 'textarea', { required: true, maxLength: 500, labelKey: 'pages.fields.officesIntro' }),
+      field('empty_text', 'textarea', { required: true, maxLength: 300, labelKey: 'pages.fields.officesAddressPlaceholder' }),
+      field('map_empty_text', 'textarea', { required: true, maxLength: 300, labelKey: 'pages.fields.officesMapPlaceholder' }),
+    ],
+  },
+  gridHeading('domains_grid'),
+  gridHeading('audit_grid', [field('text', 'textarea', { maxLength: 400, labelKey: 'pages.fields.intro' })]),
+  gridHeading('interventions_grid'),
+  gridHeading('sectors_grid'),
+  gridHeading('publications_grid', [
+    field('cta_label', 'text', { maxLength: 40 }),
+    field('empty_text', 'text', { maxLength: 120 }),
+  ]),
   // Types présents dans le seed mais non outillés dans ce MVP : lecture seule.
   ...(
     [
-      ['modes', 'services'],
-      ['values_grid', 'à propos'],
-      ['steps', 'à propos'],
-      ['what_we_do', 'à propos'],
-      ['interventions_compare', 'interventions'],
-      ['contact_form', 'contact (position 1)'],
-      ['offices_grid', 'contact (position 2)'],
-      ['coming_soon', 'espace client'],
+      ['partners_marquee', 'partenaires'],
+      ['partners_grid', 'partenaires'],
+      ['coming_soon', 'espace client (bloc non rendu par le site)'],
     ] as const
   ).map(([code, usage]) => ({
     code,

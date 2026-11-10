@@ -41,6 +41,43 @@ export async function patchPage(id: string, patch: PagePatch): Promise<AdminPage
   });
 }
 
+export interface PageContentPatch {
+  revision: number;
+  title?: string;
+  nav_label?: string;
+  intro?: string;
+}
+
+/** `PUT /admin/pages/{id}/content/{lang}` — titres et introduction d'une langue. */
+export async function patchPageContent(
+  id: string,
+  lang: ContentLang,
+  patch: PageContentPatch,
+): Promise<AdminPageDetail> {
+  return apiRequest<AdminPageDetail>(
+    `/admin/pages/${encodeURIComponent(id)}/content/${lang}`,
+    { method: 'PUT', body: patch },
+  );
+}
+
+export interface PageSeoPatch {
+  revision: number;
+  seo_title?: string;
+  seo_description?: string;
+}
+
+/** `PUT /admin/pages/{id}/seo/{lang}` — métadonnées SEO d'une langue. */
+export async function patchPageSeo(
+  id: string,
+  lang: ContentLang,
+  patch: PageSeoPatch,
+): Promise<AdminPageDetail> {
+  return apiRequest<AdminPageDetail>(
+    `/admin/pages/${encodeURIComponent(id)}/seo/${lang}`,
+    { method: 'PUT', body: patch },
+  );
+}
+
 export interface SectionCreate {
   revision: number;
   section_type: string;
@@ -60,18 +97,31 @@ export interface SectionPatch {
   revision: number;
   position?: number;
   is_active?: boolean;
-  config?: SectionValues;
-  /** Langue des données écrites (extension locale). */
-  lang?: ContentLang;
-  data?: SectionValues;
 }
 
-/** `PATCH /admin/sections/{id}` — ordre, activation, config et données. */
+/** `PATCH /admin/sections/{id}` — ordre et activation. */
 export async function patchSection(id: string, patch: SectionPatch): Promise<SectionMutation> {
   return apiRequest<SectionMutation>(`/admin/sections/${encodeURIComponent(id)}`, {
     method: 'PATCH',
     body: patch,
   });
+}
+
+export interface SectionContentUpdate {
+  revision: number;
+  data: SectionValues;
+}
+
+/** `PUT /admin/sections/{id}/content/{lang}` — données d'une seule langue. */
+export async function putSectionContent(
+  id: string,
+  lang: ContentLang,
+  input: SectionContentUpdate,
+): Promise<SectionMutation> {
+  return apiRequest<SectionMutation>(
+    `/admin/sections/${encodeURIComponent(id)}/content/${lang}`,
+    { method: 'PUT', body: input },
+  );
 }
 
 /** `DELETE /admin/sections/{id}` — retrait d'un bloc. */

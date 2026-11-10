@@ -24,11 +24,13 @@ import {
   patchSection,
   removeSection,
 } from '@/services/api/endpoints/pages';
+import { listOffices } from '@/services/api/endpoints/offices';
 import { ApiError } from '@/services/api/problem';
 import type { AdminPageDetail, ContentLang, PageStatus } from '@/services/api/types';
 import { hasPermission } from '@/services/auth/permissions';
 import { useAuth } from '@/services/auth/useAuth';
 import { useEditionLanguage } from '@/services/edition/useEditionLanguage';
+import { PagePanel } from './components/PagePanel';
 import { PagePreview } from './components/PagePreview';
 import { SectionCard } from './components/SectionCard';
 import { WorkflowBar } from './components/WorkflowBar';
@@ -52,6 +54,11 @@ export default function PageEditPage() {
 
   const pageQuery = useQuery({ queryKey: ['page', id], queryFn: () => getPage(id), enabled: Boolean(id) });
   const typesQuery = useQuery({ queryKey: ['section-types'], queryFn: getSectionTypes });
+  const officesQuery = useQuery({
+    queryKey: ['offices'],
+    queryFn: listOffices,
+    enabled: pageQuery.data?.page_key === 'contact' && hasPermission(permissions, 'offices', 'view'),
+  });
 
   const [dirty, setDirty] = useState<Record<string, boolean>>({});
   const [conflict, setConflict] = useState(false);
@@ -299,6 +306,15 @@ export default function PageEditPage() {
         </div>
       </section>
 
+      <PagePanel
+        page={page}
+        canEditContent={canEdit}
+        canEditSeo={(contentLang) => hasPermission(permissions, 'seo', 'edit', contentLang)}
+        onSaved={applyPage}
+        onDirtyChange={onDirtyChange}
+        onConflict={() => setConflict(true)}
+      />
+
       <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <section className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -357,7 +373,7 @@ export default function PageEditPage() {
           )}
         </section>
 
-        {previewOpen ? <PagePreview page={page} types={types} lang={lang} /> : null}
+        {previewOpen ? <PagePreview page={page} types={types} lang={lang} offices={officesQuery.data?.items} /> : null}
       </div>
 
       <ConfirmDialog

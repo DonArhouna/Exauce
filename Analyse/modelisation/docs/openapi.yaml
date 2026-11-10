@@ -1390,6 +1390,68 @@ paths:
       responses:
         '200': {description: 'Page mise à jour'}
 
+  /admin/pages/{id}/content/{lang}:
+    put:
+      operationId: adminPutPageContent
+      tags: [admin-pages]
+      summary: Écriture des champs de page pour une langue
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - name: lang
+          in: path
+          required: true
+          schema: {type: string, enum: [fr, en]}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PageContentUpdate'}
+      x-permission: [pages, edit, lang]
+      responses:
+        '200':
+          description: Page mise à jour
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PageDetail'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '404': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
+
+  /admin/pages/{id}/seo/{lang}:
+    put:
+      operationId: adminPutPageSeo
+      tags: [admin-pages]
+      summary: Écriture des métadonnées SEO d'une langue
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - name: lang
+          in: path
+          required: true
+          schema: {type: string, enum: [fr, en]}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PageSeoUpdate'}
+      x-permission: [seo, edit, lang]
+      responses:
+        '200':
+          description: Métadonnées SEO mises à jour
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PageDetail'}
+        '403': {$ref: '#/components/responses/Eproblem'}
+        '404': {$ref: '#/components/responses/Eproblem'}
+        '409': {$ref: '#/components/responses/Eproblem'}
+        '422': {$ref: '#/components/responses/Eproblem'}
+
   /admin/pages/{id}/sections:
     post:
       operationId: adminAddSection
@@ -2864,6 +2926,32 @@ components:
         body: {type: string}
         cover_media_id: {type: string, format: uuid, nullable: true}
 
+    LocalizedTexts:
+      type: object
+      description: Valeurs textuelles complètes en français et en anglais.
+      required: [fr, en]
+      properties:
+        fr: {type: string}
+        en: {type: string}
+      additionalProperties: false
+
+    PageContentUpdate:
+      type: object
+      required: [revision]
+      properties:
+        revision: {type: integer, minimum: 0}
+        title: {type: string}
+        nav_label: {type: string}
+        intro: {type: string}
+
+    PageSeoUpdate:
+      type: object
+      required: [revision]
+      properties:
+        revision: {type: integer, minimum: 0}
+        seo_title: {type: string}
+        seo_description: {type: string}
+
     PageSummary:
       type: object
       properties:
@@ -2903,6 +2991,10 @@ components:
             Titre par langue (`fr`, `en`), pour l'édition côte à côte. `title`
             reste la valeur de la langue demandée avec son `is_fallback`.
           additionalProperties: {type: string}
+        nav_label: {$ref: '#/components/schemas/LocalizedTexts'}
+        intro: {$ref: '#/components/schemas/LocalizedTexts'}
+        seo_title: {$ref: '#/components/schemas/LocalizedTexts'}
+        seo_description: {$ref: '#/components/schemas/LocalizedTexts'}
         slugs:
           type: object
           description: Slug par langue (`fr`, `en`).

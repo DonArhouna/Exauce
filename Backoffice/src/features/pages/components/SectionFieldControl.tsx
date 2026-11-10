@@ -1,4 +1,5 @@
-import { Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Field, Input, Textarea } from '@/components/ui';
 import type { SectionField, SectionValues } from '@/services/api/types';
@@ -22,6 +23,7 @@ export function SectionFieldControl({
   onChange,
 }: SectionFieldControlProps) {
   const { t } = useTranslation();
+  const draggedIndex = useRef<number | null>(null);
   const id = `${idPrefix}-${field.key}`;
   const label = t(field.labelKey);
   const errorMessage = error
@@ -38,6 +40,13 @@ export function SectionFieldControl({
       );
       onChange(copy);
     };
+    const move = (from: number, to: number) => {
+      if (to < 0 || to >= items.length) return;
+      const copy = [...items];
+      const [item] = copy.splice(from, 1);
+      copy.splice(to, 0, item);
+      onChange(copy);
+    };
 
     return (
       <fieldset className="space-y-2" aria-describedby={errorMessage ? `${id}-error` : undefined}>
@@ -51,7 +60,31 @@ export function SectionFieldControl({
         </legend>
         <ul className="space-y-2">
           {items.map((item, index) => (
-            <li key={index} className="rounded-control border border-line bg-ivory/60 p-2">
+            <li
+              key={index}
+              className="rounded-control border border-line bg-ivory/60 p-2"
+              draggable={!disabled}
+              onDragStart={(event) => {
+                draggedIndex.current = index;
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', String(index));
+                event.stopPropagation();
+              }}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const from = draggedIndex.current;
+                if (from !== null) move(from, index);
+                draggedIndex.current = null;
+              }}
+              onDragEnd={() => {
+                draggedIndex.current = null;
+              }}
+            >
               <div className="flex items-start gap-2">
                 <div className="grid flex-1 gap-2 sm:grid-cols-2">
                   {(field.itemFields ?? []).map((itemField) => (
@@ -66,25 +99,55 @@ export function SectionFieldControl({
                           : undefined
                       }
                     >
-                      <Input
-                        id={`${id}-${index}-${itemField.key}`}
-                        value={String(item[itemField.key] ?? '')}
-                        maxLength={itemField.maxLength}
-                        disabled={disabled}
-                        onChange={(event) => update(index, itemField.key, event.target.value)}
-                      />
+                      {itemField.kind === 'textarea' ? (
+                        <Textarea
+                          id={`${id}-${index}-${itemField.key}`}
+                          value={String(item[itemField.key] ?? '')}
+                          maxLength={itemField.maxLength}
+                          disabled={disabled}
+                          onChange={(event) => update(index, itemField.key, event.target.value)}
+                        />
+                      ) : (
+                        <Input
+                          id={`${id}-${index}-${itemField.key}`}
+                          value={String(item[itemField.key] ?? '')}
+                          maxLength={itemField.maxLength}
+                          disabled={disabled}
+                          onChange={(event) => update(index, itemField.key, event.target.value)}
+                        />
+                      )}
                     </Field>
                   ))}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={disabled}
-                  aria-label={t('pages.form.removeItem')}
-                  onClick={() => onChange(items.filter((_, position) => position !== index))}
-                >
-                  <Trash2 className="h-4 w-4" aria-hidden="true" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={disabled || index === 0}
+                    aria-label={t('pages.form.moveItemUp', { index: index + 1 })}
+                    onClick={() => move(index, index - 1)}
+                  >
+                    <ArrowUp className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={disabled || index === items.length - 1}
+                    aria-label={t('pages.form.moveItemDown', { index: index + 1 })}
+                    onClick={() => move(index, index + 1)}
+                  >
+                    <ArrowDown className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={disabled}
+                    aria-label={t('pages.form.removeItem')}
+                    onClick={() => onChange(items.filter((_, position) => position !== index))}
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                </div>
               </div>
             </li>
           ))}
