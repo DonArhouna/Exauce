@@ -58,7 +58,7 @@ describe('pages et sections', () => {
     expect((subtitles[1] as HTMLTextAreaElement).value).toContain('most complex problems');
   });
 
-  it('édite les champs de page et SEO par langue depuis le panneau Page', async () => {
+  it('édite les champs Page en FR sans modifier la colonne EN', async () => {
     const user = userEvent.setup();
     const main = await openPage(
       `/pages/${SERVICES_ID}`,
@@ -68,15 +68,56 @@ describe('pages et sections', () => {
     const panel = await within(main).findByTestId('page-panel');
     const frColumn = within(panel).getByRole('region', { name: 'Contenu FR' });
     const enColumn = within(panel).getByRole('region', { name: 'Contenu EN' });
-
     const title = within(frColumn).getByLabelText('Titre de la page') as HTMLInputElement;
     const navLabel = within(frColumn).getByLabelText('Libellé de navigation') as HTMLInputElement;
     const intro = within(frColumn).getByLabelText('Introduction') as HTMLTextAreaElement;
-    const seoTitle = within(frColumn).getByLabelText('Titre SEO') as HTMLInputElement;
-    const seoDescription = within(frColumn).getByLabelText('Description SEO') as HTMLTextAreaElement;
+    const pageBefore = findPage(SERVICES_ID)!;
 
     expect(title.value).toBe('Deux grandes familles, une même exigence');
     expect(navLabel.value).toBe('Services');
+    expect(intro.value).toContain('focalisation totale');
+
+    await user.clear(title);
+    await user.paste('Nos services d’audit');
+    await user.clear(navLabel);
+    await user.paste('Conseil et audit');
+    await user.click(within(frColumn).getByRole('button', { name: 'Enregistrer FR' }));
+
+    await waitFor(() => {
+      const page = findPage(SERVICES_ID)!;
+      expect(page.title.fr).toBe('Nos services d’audit');
+      expect(page.nav_label.fr).toBe('Conseil et audit');
+    });
+    const saved = findPage(SERVICES_ID)!;
+    expect(saved.title.en).toBe(pageBefore.title.en);
+    expect(saved.nav_label.en).toBe(pageBefore.nav_label.en);
+    expect(saved.intro.fr).toBe(pageBefore.intro.fr);
+    expect(saved.intro.en).toBe(pageBefore.intro.en);
+    expect(saved.intro.en).toContain('total focus on their skills');
+    expect(saved.seo_title).toEqual(pageBefore.seo_title);
+    expect(saved.seo_description).toEqual(pageBefore.seo_description);
+    expect((within(enColumn).getByLabelText('Titre de la page') as HTMLInputElement).value).toBe(
+      'Two great families, one standard of excellence',
+    );
+  });
+
+  it('édite le SEO en FR sans modifier le SEO EN ni le contenu Page', async () => {
+    const user = userEvent.setup();
+    const main = await openPage(
+      `/pages/${SERVICES_ID}`,
+      'fondateur@exauceac.com',
+      'exauce-fondateur-2026',
+    );
+    const panel = await within(main).findByTestId('page-panel');
+    const frColumn = within(panel).getByRole('region', { name: 'Contenu FR' });
+    const enColumn = within(panel).getByRole('region', { name: 'Contenu EN' });
+    const title = within(frColumn).getByLabelText('Titre de la page') as HTMLInputElement;
+    const intro = within(frColumn).getByLabelText('Introduction') as HTMLTextAreaElement;
+    const seoTitle = within(frColumn).getByLabelText('Titre SEO') as HTMLInputElement;
+    const seoDescription = within(frColumn).getByLabelText('Description SEO') as HTMLTextAreaElement;
+    const pageBefore = findPage(SERVICES_ID)!;
+
+    expect(title.value).toBe('Deux grandes familles, une même exigence');
     expect(intro.value).toContain('focalisation totale');
     expect(seoTitle.placeholder).toBe(
       'Repli Frontend actuel : Services — EXAUCE Audit & Conseils',
@@ -85,27 +126,26 @@ describe('pages et sections', () => {
       'Repli Frontend actuel : Services — EXAUCE Audit & Conseils',
     );
 
-    await user.clear(title);
-    await user.type(title, 'Nos services d’audit');
-    await user.clear(navLabel);
-    await user.type(navLabel, 'Conseil et audit');
     await user.clear(seoTitle);
-    await user.type(seoTitle, 'Services — EXAUCE');
+    await user.paste('Services — EXAUCE');
     await user.clear(seoDescription);
-    await user.type(seoDescription, 'Conseil et audit à Dakar.');
+    await user.paste('Conseil et audit à Dakar.');
     await user.click(within(frColumn).getByRole('button', { name: 'Enregistrer FR' }));
 
     await waitFor(() => {
       const page = findPage(SERVICES_ID)!;
-      expect(page.title.fr).toBe('Nos services d’audit');
-      expect(page.nav_label.fr).toBe('Conseil et audit');
       expect(page.seo_title.fr).toBe('Services — EXAUCE');
       expect(page.seo_description.fr).toBe('Conseil et audit à Dakar.');
     });
+    const saved = findPage(SERVICES_ID)!;
+    expect(saved.seo_title.en).toBe(pageBefore.seo_title.en);
+    expect(saved.seo_description.en).toBe(pageBefore.seo_description.en);
+    expect(saved.title).toEqual(pageBefore.title);
+    expect(saved.nav_label).toEqual(pageBefore.nav_label);
+    expect(saved.intro).toEqual(pageBefore.intro);
     expect((within(enColumn).getByLabelText('Titre de la page') as HTMLInputElement).value).toBe(
       'Two great families, one standard of excellence',
     );
-    expect(findPage(SERVICES_ID)?.intro.en).toContain('total focus on their skills');
   });
 
   it('édite modes en FR/EN, préserve les champs inconnus et conserve l’ordre explicite', async () => {
